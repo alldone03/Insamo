@@ -5,6 +5,9 @@ import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 import Home from "./pages/Home";
 import Profile from "./pages/auth/Profile";
+import Device from "./pages/Device";
+import History from "./pages/History";
+import Sensordata from "./pages/Sensordata";
 import MainLayout from "./components/MainLayout";
 
 function App() {
@@ -22,6 +25,9 @@ function App() {
       <Route element={user ? <MainLayout /> : <Navigate to="/login" />}>
         <Route path="/" element={<Home />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/device" element={<Device />} />
+        <Route path="/device/:id/data" element={<Sensordata />} />
+        <Route path="/history" element={<History />} />
       </Route>
     </Routes>
   );

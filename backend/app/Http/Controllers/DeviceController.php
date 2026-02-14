@@ -9,7 +9,17 @@ class DeviceController extends Controller
 {
     public function index()
     {
-        return Device::with('settings')->get();
+        $user = auth()->user();
+        $query = Device::with(['settings', 'users']);
+
+        // Only filter if NOT SuperAdmin (Role ID 1)
+        if ($user->role_id !== 1) {
+            $query->whereHas('users', function($q) use ($user) {
+                $q->where('users.id', $user->id);
+            });
+        }
+
+        return $query->get();
     }
 
     public function store(Request $request)
