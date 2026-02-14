@@ -24,6 +24,24 @@ export default function Sensordata() {
     // The previous DeviceController.php show() method does load('sensorReadings')
     const readings = device?.sensor_readings || [];
 
+    // Format datetime for display
+    const formatDateTime = (dateString) => {
+        const date = new Date(dateString);
+        const yyyy = date.getFullYear();
+        const mm = String(date.getMonth() + 1).padStart(2, '0');
+        const dd = String(date.getDate()).padStart(2, '0');
+        const hh = String(date.getHours()).padStart(2, '0');
+        const min = String(date.getMinutes()).padStart(2, '0');
+        const ss = String(date.getSeconds()).padStart(2, '0');
+        return `${yyyy}-${mm}-${dd} ${hh}:${min}:${ss}`;
+    };
+
+    // Format readings with datetime
+    const formattedReadings = readings.map(r => ({
+        ...r,
+        datetime: formatDateTime(r.recorded_at)
+    })).reverse();
+
     if (isLoadingDevice) return <div className="flex justify-center p-20"><span className="loading loading-spinner loading-lg text-primary"></span></div>;
 
     const renderCharts = () => {
@@ -35,26 +53,38 @@ export default function Sensordata() {
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <ChartCard title="Tilt Stability (X & Y)" icon={<Move className="text-primary" />}>
                             <ResponsiveContainer width="100%" height={300}>
-                                <AreaChart data={readings}>
+                                <AreaChart data={formattedReadings}>
                                     <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
-                                    <XAxis dataKey="recorded_at" hide />
+                                    <XAxis
+                                        dataKey="datetime"
+                                        angle={-45}
+                                        textAnchor="end"
+                                        height={80}
+                                        tick={{ fontSize: 10 }}
+                                    />
                                     <YAxis />
                                     <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }} />
                                     <Legend />
-                                    <Area type="monotone" dataKey="tilt_x" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.1} strokeWidth={3} />
-                                    <Area type="monotone" dataKey="tilt_y" stroke="#8b5cf6" fill="#8b5cf6" fillOpacity={0.1} strokeWidth={3} />
+                                    <Area type="monotone" dataKey="tilt_x" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.1} strokeWidth={3} isAnimationActive={false} />
+                                    <Area type="monotone" dataKey="tilt_y" stroke="#8b5cf6" fill="#8b5cf6" fillOpacity={0.1} strokeWidth={3} isAnimationActive={false} />
                                 </AreaChart>
                             </ResponsiveContainer>
                         </ChartCard>
                         <ChartCard title="Magnitude Analysis" icon={<Zap className="text-accent" />}>
                             <ResponsiveContainer width="100%" height={300}>
-                                <LineChart data={readings}>
+                                <LineChart data={formattedReadings}>
                                     <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
-                                    <XAxis dataKey="recorded_at" hide />
+                                    <XAxis
+                                        dataKey="datetime"
+                                        angle={-45}
+                                        textAnchor="end"
+                                        height={80}
+                                        tick={{ fontSize: 10 }}
+                                    />
                                     <YAxis />
                                     <Tooltip contentStyle={{ borderRadius: '16px' }} />
                                     <Legend />
-                                    <Line type="stepAfter" dataKey="magnitude" stroke="#f59e0b" strokeWidth={3} dot={false} />
+                                    <Line type="stepAfter" dataKey="magnitude" stroke="#f59e0b" strokeWidth={3} dot={false} isAnimationActive={false} />
                                 </LineChart>
                             </ResponsiveContainer>
                         </ChartCard>
@@ -65,21 +95,27 @@ export default function Sensordata() {
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <ChartCard title="Water Level & Wind Speed" icon={<Waves className="text-secondary" />}>
                             <ResponsiveContainer width="100%" height={300}>
-                                <LineChart data={readings}>
+                                <LineChart data={formattedReadings}>
                                     <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
-                                    <XAxis dataKey="recorded_at" hide />
+                                    <XAxis
+                                        dataKey="datetime"
+                                        angle={-45}
+                                        textAnchor="end"
+                                        height={80}
+                                        tick={{ fontSize: 10 }}
+                                    />
                                     <YAxis yAxisId="left" />
                                     <YAxis yAxisId="right" orientation="right" />
                                     <Tooltip contentStyle={{ borderRadius: '16px' }} />
                                     <Legend />
-                                    <Line yAxisId="left" type="monotone" dataKey="water_level" stroke="#0ea5e9" strokeWidth={3} dot={false} />
-                                    <Line yAxisId="right" type="monotone" dataKey="wind_speed" stroke="#64748b" strokeWidth={2} dot={false} strokeDasharray="5 5" />
+                                    <Line yAxisId="left" type="monotone" dataKey="water_level" stroke="#0ea5e9" strokeWidth={3} dot={false} isAnimationActive={false} />
+                                    <Line yAxisId="right" type="monotone" dataKey="wind_speed" stroke="#64748b" strokeWidth={2} dot={false} strokeDasharray="5 5" isAnimationActive={false} />
                                 </LineChart>
                             </ResponsiveContainer>
                         </ChartCard>
                         <ChartCard title="Ambient Temperature" icon={<Thermometer className="text-error" />}>
                             <ResponsiveContainer width="100%" height={300}>
-                                <AreaChart data={readings}>
+                                <AreaChart data={formattedReadings}>
                                     <defs>
                                         <linearGradient id="colorTemp" x1="0" y1="0" x2="0" y2="1">
                                             <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3} />
@@ -87,21 +123,33 @@ export default function Sensordata() {
                                         </linearGradient>
                                     </defs>
                                     <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
-                                    <XAxis dataKey="recorded_at" hide />
+                                    <XAxis
+                                        dataKey="datetime"
+                                        angle={-45}
+                                        textAnchor="end"
+                                        height={80}
+                                        tick={{ fontSize: 10 }}
+                                    />
                                     <YAxis domain={['dataMin - 5', 'dataMax + 5']} />
                                     <Tooltip contentStyle={{ borderRadius: '16px' }} />
-                                    <Area type="monotone" dataKey="temperature" stroke="#ef4444" fillOpacity={1} fill="url(#colorTemp)" strokeWidth={3} />
+                                    <Area type="monotone" dataKey="temperature" stroke="#ef4444" fillOpacity={1} fill="url(#colorTemp)" strokeWidth={3} isAnimationActive={false} />
                                 </AreaChart>
                             </ResponsiveContainer>
                         </ChartCard>
                         <ChartCard title="Rainfall Intensity" icon={<Droplets className="text-primary" />}>
                             <ResponsiveContainer width="100%" height={300}>
-                                <BarChart data={readings}>
+                                <BarChart data={formattedReadings}>
                                     <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
-                                    <XAxis dataKey="recorded_at" hide />
+                                    <XAxis
+                                        dataKey="datetime"
+                                        angle={-45}
+                                        textAnchor="end"
+                                        height={80}
+                                        tick={{ fontSize: 10 }}
+                                    />
                                     <YAxis />
                                     <Tooltip contentStyle={{ borderRadius: '16px' }} />
-                                    <Bar dataKey="rainfall_intensity" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                                    <Bar dataKey="rainfall_intensity" fill="#3b82f6" radius={[4, 4, 0, 0]} isAnimationActive={false} />
                                 </BarChart>
                             </ResponsiveContainer>
                         </ChartCard>
@@ -112,12 +160,18 @@ export default function Sensordata() {
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <ChartCard title="Landslide Risk Score" icon={<TrendingUp className="text-warning" />}>
                             <ResponsiveContainer width="100%" height={300}>
-                                <BarChart data={readings}>
+                                <BarChart data={formattedReadings}>
                                     <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
-                                    <XAxis dataKey="recorded_at" hide />
+                                    <XAxis
+                                        dataKey="datetime"
+                                        angle={-45}
+                                        textAnchor="end"
+                                        height={80}
+                                        tick={{ fontSize: 10 }}
+                                    />
                                     <YAxis domain={[0, 100]} />
                                     <Tooltip contentStyle={{ borderRadius: '16px' }} />
-                                    <Bar dataKey="landslide_score" fill="#f97316" radius={[4, 4, 0, 0]} />
+                                    <Bar dataKey="landslide_score" fill="#f97316" radius={[4, 4, 0, 0]} isAnimationActive={false} />
                                 </BarChart>
                             </ResponsiveContainer>
                         </ChartCard>
@@ -127,8 +181,8 @@ export default function Sensordata() {
                                     <AlertTriangle className="text-error" size={16} /> Current Status
                                 </h3>
                                 <div className="flex flex-col items-center justify-center flex-grow py-8">
-                                    <div className={`text-5xl font-black italic mb-2 ${readings[readings.length - 1]?.landslide_status === 'DANGER' ? 'text-error' : 'text-success'}`}>
-                                        {readings[readings.length - 1]?.landslide_status || 'STABLE'}
+                                    <div className={`text-5xl font-black italic mb-2 ${formattedReadings[formattedReadings.length - 1]?.landslide_status === 'DANGER' ? 'text-error' : 'text-success'}`}>
+                                        {formattedReadings[formattedReadings.length - 1]?.landslide_status || 'STABLE'}
                                     </div>
                                     <p className="text-xs opacity-50 font-bold">LATEST ANALYTICS REPORT</p>
                                 </div>

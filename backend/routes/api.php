@@ -18,6 +18,9 @@ Route::controller(AuthController::class)->group(function () {
     Route::post('me', 'me');
 });
 
+// Public endpoint for IoT devices to send sensor data
+Route::post('sensor-readings', [SensorReadingController::class, 'store']);
+
 Route::middleware('auth:api')->group(function () {
     Route::apiResource('roles', RoleController::class);
     Route::apiResource('users', UserController::class);
@@ -26,6 +29,10 @@ Route::middleware('auth:api')->group(function () {
     
     Route::apiResource('devices', DeviceController::class);
     Route::apiResource('device-settings', DeviceSettingController::class);
-    Route::apiResource('sensor-readings', SensorReadingController::class);
+    
+    // Sensor readings (except store which is public)
+    Route::get('sensor-readings', [SensorReadingController::class, 'index']);
+    Route::get('sensor-readings/{sensorReading}', [SensorReadingController::class, 'show']);
+    
     Route::apiResource('classification-results', ClassificationResultController::class);
 });

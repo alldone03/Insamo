@@ -19,10 +19,22 @@ class SensorReadingController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'device_id' => 'required|exists:devices,id',
+            'device_code' => 'required|exists:devices,device_code',
             'recorded_at' => 'required|date',
         ]);
-        return SensorReading::create($request->all());
+
+        // Lookup device by code
+        $device = \App\Models\Device::where('device_code', $request->device_code)->first();
+        
+        if (!$device) {
+            return response()->json(['error' => 'Device not found'], 404);
+        }
+
+        // Create sensor reading with device_id
+        $data = $request->except('device_code');
+        $data['device_id'] = $device->id;
+
+        return SensorReading::create($data);
     }
 
     public function show(SensorReading $sensorReading)

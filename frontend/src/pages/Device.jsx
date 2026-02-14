@@ -4,6 +4,9 @@ import { Link, useNavigate } from "react-router-dom";
 import { api } from "../lib/api";
 import { useAuth } from "../lib/auth_context";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 
 export default function Device() {
     const { user } = useAuth();
@@ -32,7 +35,10 @@ export default function Device() {
         device_type: "SIGMA",
         latitude: "",
         longitude: "",
-        address: ""
+        address: "",
+        initial_distance: 10,
+        alert_threshold: 50,
+        danger_threshold: 80
     });
 
     // Helper: Show Toast
@@ -147,7 +153,17 @@ export default function Device() {
     }, [rawDevices, searchTerm, sortConfig]);
 
     const resetForm = () => {
-        setFormData({ device_code: "", name: "", device_type: "SIGMA", latitude: "", longitude: "", address: "" });
+        setFormData({
+            device_code: "",
+            name: "",
+            device_type: "SIGMA",
+            latitude: "",
+            longitude: "",
+            address: "",
+            initial_distance: 10,
+            alert_threshold: 50,
+            danger_threshold: 80
+        });
         setSelectedDevice(null);
     };
 
@@ -157,6 +173,42 @@ export default function Device() {
             case 'FLOWS': return 'badge-secondary';
             case 'LANDSLIDE': return 'badge-accent';
             default: return 'badge-ghost';
+        }
+    };
+
+    // Component for map click handler
+    function LocationPicker({ onLocationSelect }) {
+        useMapEvents({
+            click(e) {
+                onLocationSelect(e.latlng);
+            },
+        });
+        return null;
+    }
+
+    // Custom marker icon
+    const customIcon = L.icon({
+        iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+        shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+    });
+
+    // Helper: Check device online/offline status
+    const getDeviceStatus = (device) => {
+        if (!device.sensor_readings || device.sensor_readings.length === 0) {
+            return { status: 'offline', label: 'OFFLINE', color: 'badge-error' };
+        }
+
+        const latestReading = device.sensor_readings[0];
+        const recordedAt = new Date(latestReading.recorded_at);
+        const now = new Date();
+        const diffMinutes = (now - recordedAt) / 1000 / 60;
+
+        if (diffMinutes < 1) {
+            return { status: 'online', label: 'ONLINE', color: 'badge-success' };
+        } else {
+            return { status: 'offline', label: 'OFFLINE', color: 'badge-error' };
         }
     };
 
@@ -206,6 +258,7 @@ export default function Device() {
                                 <th onClick={() => handleSort('device_code')} className="cursor-pointer">Code <ArrowUpDown size={12} /></th>
                                 <th onClick={() => handleSort('name')} className="cursor-pointer">Asset Name <ArrowUpDown size={12} /></th>
                                 <th>Type</th>
+                                <th>Status</th>
                                 {isSuperAdmin && <th>Access (Assigned Users)</th>}
                                 <th className="text-right">Actions</th>
                             </tr>
@@ -219,6 +272,12 @@ export default function Device() {
                                         <div className="text-[10px] opacity-40">{device.address}</div>
                                     </td>
                                     <td><span className={`badge ${getTypeColor(device.device_type)} badge-sm font-black`}>{device.device_type}</span></td>
+                                    <td>
+                                        <span className={`badge ${getDeviceStatus(device).color} badge-sm font-black gap-1`}>
+                                            <span className={`w-2 h-2 rounded-full ${getDeviceStatus(device).status === 'online' ? 'bg-white animate-pulse' : 'bg-white/50'}`}></span>
+                                            {getDeviceStatus(device).label}
+                                        </span>
+                                    </td>
                                     {isSuperAdmin && (
                                         <td>
                                             <div className="flex flex-wrap gap-1 items-center">
@@ -240,7 +299,16 @@ export default function Device() {
                                         >
                                             <Eye size={14} className="mr-1" /> Detail
                                         </button>
-                                        <button className="btn btn-ghost btn-sm btn-square" onClick={() => { setSelectedDevice(device); setFormData(device); setIsEditModalOpen(true); }}>
+                                        <button className="btn btn-ghost btn-sm btn-square" onClick={() => {
+                                            setSelectedDevice(device);
+                                            setFormData({
+                                                ...device,
+                                                initial_distance: device.settings?.initial_distance || 10,
+                                                alert_threshold: device.settings?.alert_threshold || 50,
+                                                danger_threshold: device.settings?.danger_threshold || 80
+                                            });
+                                            setIsEditModalOpen(true);
+                                        }}>
                                             <Edit2 size={16} />
                                         </button>
                                         {isSuperAdmin && (
@@ -259,15 +327,152 @@ export default function Device() {
             {/* Modal: Create/Edit */}
             {(isCreateModalOpen || isEditModalOpen) && (
                 <div className="modal modal-open">
-                    <div className="modal-box rounded-3xl p-8 border border-base-300">
+                    <div className="modal-box max-w-2xl rounded-3xl p-8 border border-base-300">
                         <button className="btn btn-sm btn-circle btn-ghost absolute right-4 top-4" onClick={() => { setIsCreateModalOpen(false); setIsEditModalOpen(false); }}><X /></button>
                         <h3 className="font-black text-2xl italic mb-6 uppercase tracking-tighter">
                             {isEditModalOpen ? "Update Asset Configuration" : "New Asset Registration"}
                         </h3>
                         <div className="grid grid-cols-2 gap-4">
-                            <div className="form-control col-span-1"><label className="label text-xs font-black opacity-50">CODE</label><input className="input input-bordered font-bold" value={formData.device_code} onChange={e => setFormData({ ...formData, device_code: e.target.value })} /></div>
-                            <div className="form-control col-span-1"><label className="label text-xs font-black opacity-50">NAME</label><input className="input input-bordered font-bold" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} /></div>
-                            <div className="form-control col-span-2"><label className="label text-xs font-black opacity-50">LOCATION ADDRESS</label><textarea className="textarea textarea-bordered font-medium" value={formData.address} onChange={e => setFormData({ ...formData, address: e.target.value })} /></div>
+                            {/* Device Code - Disabled for Admin when editing */}
+                            <div className="form-control col-span-1">
+                                <label className="label text-xs font-black opacity-50">DEVICE CODE</label>
+                                <input
+                                    className="input input-bordered font-bold"
+                                    value={formData.device_code}
+                                    onChange={e => setFormData({ ...formData, device_code: e.target.value })}
+                                    disabled={isEditModalOpen && !isSuperAdmin}
+                                />
+                            </div>
+
+                            {/* Device Type - Disabled for Admin when editing */}
+                            <div className="form-control col-span-1">
+                                <label className="label text-xs font-black opacity-50">DEVICE TYPE</label>
+                                <select
+                                    className="select select-bordered font-bold"
+                                    value={formData.device_type}
+                                    onChange={e => setFormData({ ...formData, device_type: e.target.value })}
+                                    disabled={isEditModalOpen && !isSuperAdmin}
+                                >
+                                    <option value="SIGMA">SIGMA</option>
+                                    <option value="FLOWS">FLOWS</option>
+                                    <option value="LANDSLIDE">LANDSLIDE</option>
+                                </select>
+                            </div>
+
+                            {/* Device Name */}
+                            <div className="form-control col-span-2">
+                                <label className="label text-xs font-black opacity-50">ASSET NAME</label>
+                                <input
+                                    className="input input-bordered font-bold"
+                                    value={formData.name}
+                                    onChange={e => setFormData({ ...formData, name: e.target.value })}
+                                />
+                            </div>
+
+                            {/* Coordinates */}
+                            <div className="form-control col-span-1">
+                                <label className="label text-xs font-black opacity-50">LATITUDE</label>
+                                <input
+                                    type="number"
+                                    step="any"
+                                    className="input input-bordered font-mono text-sm"
+                                    value={formData.latitude}
+                                    onChange={e => setFormData({ ...formData, latitude: e.target.value })}
+                                    placeholder="-6.2088"
+                                />
+                            </div>
+                            <div className="form-control col-span-1">
+                                <label className="label text-xs font-black opacity-50">LONGITUDE</label>
+                                <input
+                                    type="number"
+                                    step="any"
+                                    className="input input-bordered font-mono text-sm"
+                                    value={formData.longitude}
+                                    onChange={e => setFormData({ ...formData, longitude: e.target.value })}
+                                    placeholder="106.8456"
+                                />
+                            </div>
+
+                            {/* Interactive Map for Location Selection */}
+                            <div className="col-span-2">
+                                <label className="label text-xs font-black opacity-50 flex items-center gap-2">
+                                    <MapPin size={14} /> CLICK ON MAP TO SET LOCATION
+                                </label>
+                                <div className="h-64 rounded-2xl overflow-hidden border-2 border-base-300 shadow-lg">
+                                    <MapContainer
+                                        center={[
+                                            formData.latitude || -6.2088,
+                                            formData.longitude || 106.8456
+                                        ]}
+                                        zoom={13}
+                                        style={{ height: "100%", width: "100%" }}
+                                        key={`${formData.latitude}-${formData.longitude}`}
+                                    >
+                                        <TileLayer
+                                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                                            attribution='&copy; OpenStreetMap'
+                                        />
+                                        <LocationPicker
+                                            onLocationSelect={(latlng) => {
+                                                setFormData({
+                                                    ...formData,
+                                                    latitude: latlng.lat.toFixed(6),
+                                                    longitude: latlng.lng.toFixed(6)
+                                                });
+                                            }}
+                                        />
+                                        {formData.latitude && formData.longitude && (
+                                            <Marker
+                                                position={[formData.latitude, formData.longitude]}
+                                                icon={customIcon}
+                                            />
+                                        )}
+                                    </MapContainer>
+                                </div>
+                            </div>
+
+                            {/* Address */}
+                            <div className="form-control col-span-2">
+                                <label className="label text-xs font-black opacity-50">LOCATION ADDRESS</label>
+                                <textarea
+                                    className="textarea textarea-bordered font-medium"
+                                    value={formData.address}
+                                    onChange={e => setFormData({ ...formData, address: e.target.value })}
+                                    rows="2"
+                                />
+                            </div>
+
+                            {/* Divider for Settings */}
+                            <div className="col-span-2 divider text-xs font-black opacity-30">SENSOR CONFIGURATION</div>
+
+                            {/* Device Settings */}
+                            <div className="form-control col-span-1">
+                                <label className="label text-xs font-black opacity-50">INITIAL DISTANCE</label>
+                                <input
+                                    type="number"
+                                    className="input input-bordered font-bold"
+                                    value={formData.initial_distance}
+                                    onChange={e => setFormData({ ...formData, initial_distance: e.target.value })}
+                                />
+                            </div>
+                            <div className="form-control col-span-1">
+                                <label className="label text-xs font-black opacity-50">ALERT THRESHOLD</label>
+                                <input
+                                    type="number"
+                                    className="input input-bordered font-bold"
+                                    value={formData.alert_threshold}
+                                    onChange={e => setFormData({ ...formData, alert_threshold: e.target.value })}
+                                />
+                            </div>
+                            <div className="form-control col-span-1">
+                                <label className="label text-xs font-black opacity-50">DANGER THRESHOLD</label>
+                                <input
+                                    type="number"
+                                    className="input input-bordered font-bold"
+                                    value={formData.danger_threshold}
+                                    onChange={e => setFormData({ ...formData, danger_threshold: e.target.value })}
+                                />
+                            </div>
                         </div>
                         <div className="modal-action">
                             <button className="btn btn-primary px-12 italic font-black shadow-lg shadow-primary/20" onClick={() => isEditModalOpen ? updateMutation.mutate(formData) : createMutation.mutate(formData)}>
