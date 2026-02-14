@@ -16,7 +16,8 @@ export default function Sensordata() {
         queryFn: async () => {
             const res = await api.get(`/devices/${id}`);
             return res.data;
-        }
+        },
+        refetchInterval: 5000, // Update charts every 5 seconds
     });
 
     // Assume the backend returns sensorReadings along with the device or we fetch it separately
