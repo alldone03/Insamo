@@ -1,0 +1,10 @@
+vendor
+node_modules
+.git
+.env
+.idea
+.vscode
+storage/framework/cache/data
+storage/app
+storage/framework/views
+storage/logs
