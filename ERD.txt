@@ -1,0 +1,103 @@
+// =========================
+// USERS & ROLES
+// =========================
+
+Table roles {
+  id int [pk, increment]
+  name varchar // SuperAdmin, Admin
+}
+
+Table users {
+  id bigint [pk, increment]
+  name varchar
+  email varchar [unique]
+  password varchar
+  photo_path varchar [null]
+  role_id int [ref: > roles.id]
+  created_at timestamp
+  updated_at timestamp
+}
+
+// =========================
+// DEVICES
+// =========================
+
+Table devices {
+  id bigint [pk, increment]
+  device_code varchar [unique]
+  name varchar
+  device_type enum('SIGMA','FLOWS','LANDSLIDE')
+
+  // Location for Map (Leaflet)
+  latitude double
+  longitude double
+
+  // Location for Human Readable
+  address text
+
+  created_at timestamp
+  updated_at timestamp
+}
+
+// =========================
+// DEVICE ACCESS CONTROL
+// =========================
+
+Table device_user {
+  id bigint [pk, increment]
+  user_id bigint [ref: > users.id]
+  device_id bigint [ref: > devices.id]
+  created_at timestamp
+}
+
+// =========================
+// DEVICE SETTINGS
+// =========================
+
+Table device_settings {
+  id bigint [pk, increment]
+  device_id bigint [ref: > devices.id]
+  initial_distance float
+  alert_threshold float
+  danger_threshold float
+  created_at timestamp
+  updated_at timestamp
+}
+
+// =========================
+// SENSOR DATA
+// =========================
+
+Table sensor_readings {
+  id bigint [pk, increment]
+  device_id bigint [ref: > devices.id]
+  recorded_at datetime
+
+  temperature double
+  humidity double
+  wind_speed double
+
+  water_level double
+
+  tilt_x double
+  tilt_y double
+  magnitude double
+
+  landslide_score float
+  landslide_status varchar
+
+  created_at timestamp
+}
+
+// =========================
+// AI RESULTS
+// =========================
+
+Table classification_results {
+  id bigint [pk, increment]
+  sensor_reading_id bigint [ref: > sensor_readings.id]
+  device_id bigint [ref: > devices.id]
+  label varchar
+  confidence float
+  created_at timestamp
+}
