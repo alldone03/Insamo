@@ -1,15 +1,10 @@
-FROM php:8.2-fpm
+FROM php:8.2-cli
 
-# Install system dependencies
 RUN apt-get update && apt-get install -y \
-    git \
-    curl \
-    libpng-dev \
-    libonig-dev \
-    libxml2-dev \
-    zip \
-    unzip \
-    libzip-dev
+    git unzip curl libpng-dev libonig-dev libxml2-dev libzip-dev \
+ && docker-php-ext-install pdo_mysql mbstring zip
+
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 # Clear cache
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
@@ -18,7 +13,9 @@ RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip
 
 # Get latest Composer
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+# COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
 
 # Set working directory
 WORKDIR /var/www
@@ -29,7 +26,6 @@ COPY . /var/www
 # Copy existing application directory permissions
 COPY --chown=www-data:www-data . /var/www
 
-# Install dependencies (will run on build, but we might want to run it on entrypoint for dev)
 RUN composer install
 
 # Expose port 9000 and start php-fpm server

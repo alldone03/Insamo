@@ -18,6 +18,7 @@ return new class extends Migration
             $table->double('water_level')->nullable();
             $table->double('tilt_x')->nullable();
             $table->double('tilt_y')->nullable();
+            $table->double('tilt_z')->nullable();
             $table->double('magnitude')->nullable();
             $table->float('landslide_score')->nullable();
             $table->string('landslide_status')->nullable();

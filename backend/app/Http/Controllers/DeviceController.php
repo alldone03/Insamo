@@ -10,13 +10,13 @@ class DeviceController extends Controller
     public function index()
     {
         $user = auth()->user();
-        $query = Device::with(['settings', 'users', 'sensorReadings' => function($q) {
+        $query = Device::with(['settings', 'users', 'sensorReadings' => function ($q) {
             $q->latest('recorded_at')->limit(1);
         }]);
 
         // Only filter if NOT SuperAdmin (Role ID 1)
         if ($user->role_id !== 1) {
-            $query->whereHas('users', function($q) use ($user) {
+            $query->whereHas('users', function ($q) use ($user) {
                 $q->where('users.id', $user->id);
             });
         }
@@ -40,7 +40,12 @@ class DeviceController extends Controller
         ]);
 
         $device = Device::create($request->only([
-            'device_code', 'name', 'device_type', 'latitude', 'longitude', 'address'
+            'device_code',
+            'name',
+            'device_type',
+            'latitude',
+            'longitude',
+            'address'
         ]));
 
         // Create device settings if provided
@@ -61,21 +66,20 @@ class DeviceController extends Controller
         // return $device->take(100);
 
         // return $device->load('settings', 'users', 'sensorReadings');
-        
-$device->load([
-    'settings',
-    'users',
-    'sensorReadings' => fn ($q) =>
-        $q->orderBy('created_at', 'desc')->limit(100)
-]);
 
-// balik urutan setelah data diambil
-$device->sensorReadings = $device->sensorReadings
-    ->reverse()
-    ->values();
+        $device->load([
+            'settings',
+            'users',
+            'sensorReadings' => fn($q) =>
+            $q->orderBy('created_at', 'desc')->limit(100)
+        ]);
 
-return $device;
+        // balik urutan setelah data diambil
+        $device->sensorReadings = $device->sensorReadings
+            ->reverse()
+            ->values();
 
+        return $device;
     }
 
     public function update(Request $request, Device $device)
@@ -97,7 +101,7 @@ return $device;
 
         // Only SuperAdmin can update device_code and device_type
         if ($isSuperAdmin) {
-            $validationRules['device_code'] = 'sometimes|required|unique:devices,device_code,'.$device->id;
+            $validationRules['device_code'] = 'sometimes|required|unique:devices,device_code,' . $device->id;
             $validationRules['device_type'] = 'sometimes|required|in:SIGMA,FLOWS,LANDSLIDE';
         }
 
