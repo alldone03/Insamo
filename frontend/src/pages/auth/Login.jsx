@@ -50,8 +50,8 @@ export default function Login() {
                                 required
                             />
                         </div>
-                        <div className="form-control mt-6">
-                            <button className="btn btn-primary">Login</button>
+                        <div className="form-control mt-6 flex justify-center">
+                            <button className="btn btn-primary w-full">Login</button>
                         </div>
                     </form>
                     <div className="mt-4 text-center">
