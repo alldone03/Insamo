@@ -56,10 +56,10 @@ This project is a Disaster Monitoring System built with React (Frontend) and Lar
 
 ### Backend Deployment (Laravel)
 
-1.  `docker-compose -f docker-compose.prod.yml exec app rm -rf /var/www/storage/framework/views/*`
-2.  `docker-compose -f docker-compose.prod.yml exec app php artisan view:clear`
-3.  `docker-compose -f docker-compose.prod.yml exec app php artisan config:clear`
-4.  `docker-compose -f docker-compose.prod.yml exec app php artisan cache:clear`
+1.  `docker compose -f docker-compose.prod.yml exec app rm -rf /var/www/storage/framework/views/*`
+2.  `docker compose -f docker-compose.prod.yml exec app php artisan view:clear`
+3.  `docker compose -f docker-compose.prod.yml exec app php artisan config:clear`
+4.  `docker compose -f docker-compose.prod.yml exec app php artisan cache:clear`
 
 
 
