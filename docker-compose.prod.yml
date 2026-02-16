@@ -11,10 +11,11 @@ services:
     environment:
       APP_ENV: production
       APP_DEBUG: ${APP_DEBUG:-true}
+      APP_KEY: ${APP_KEY}
       FRONTEND_URL: ${FRONTEND_URL:-http://app.insamo.id}
       APP_URL: ${APP_URL:-http://apiapp.insamo.id}
     command: >
-      sh -c "chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache && php-fpm"
+      sh -c "mkdir -p /var/www/storage/logs && touch /var/www/storage/logs/laravel.log && chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache && chmod -R 775 /var/www/storage /var/www/bootstrap/cache && php-fpm"
     volumes:
       - ./backend/storage:/var/www/storage
     networks:
