@@ -11,8 +11,8 @@ services:
     environment:
       APP_ENV: production
       APP_DEBUG: ${APP_DEBUG:-false}
-      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
-      APP_URL: ${APP_URL:-http://localhost:8000}
+      FRONTEND_URL: ${FRONTEND_URL:-http://app.insamo.id:5173}
+      APP_URL: ${APP_URL:-http://apiapp.insamo.id:8000}
     networks:
       - insamo-prod-network
       - web
@@ -52,7 +52,7 @@ services:
     container_name: insamo-frontend-prod
     restart: unless-stopped
     environment:
-      VITE_API_URL: ${VITE_API_URL:-http://localhost:8000/api}
+      VITE_API_URL: ${VITE_API_URL:-http://apiapp.insamo.id:8000/api}
     command: sh -c "yarn build && yarn preview --host --port 5173"
     ports:
       - "5173:5173"
