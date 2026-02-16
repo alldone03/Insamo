@@ -14,8 +14,8 @@ services:
       APP_ENV: production
       APP_DEBUG: ${APP_DEBUG:-true}
       APP_KEY: ${APP_KEY}
-      FRONTEND_URL: ${FRONTEND_URL:-http://app.insamo.id}
-      APP_URL: ${APP_URL:-http://apiapp.insamo.id}
+      FRONTEND_URL: ${FRONTEND_URL:-https://app.insamo.id}
+      APP_URL: ${APP_URL:-https://apiapp.insamo.id}
       DB_CONNECTION: mysql
       DB_HOST: db
       DB_PORT: 3306
@@ -63,7 +63,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile.prod
       args:
-        VITE_API_URL: ${VITE_API_URL:-http://apiapp.insamo.id/api}
+        VITE_API_URL: ${VITE_API_URL:-https://apiapp.insamo.id/api}
     image: insamo-frontend:prod
     container_name: insamo-frontend-prod
     restart: unless-stopped
