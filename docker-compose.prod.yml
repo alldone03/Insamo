@@ -66,7 +66,7 @@ services:
     container_name: insamo-frontend-prod
     restart: unless-stopped
     environment:
-      - VITE_API_URL=http://apiapp.insamo.id/api
+      VITE_API_URL: ${VITE_API_URL:-http://apiapp.insamo.id/api}
     # Ports dihapus karena diakses via network 'web' oleh Nginx Server
     networks:
       - insamo-prod-network
