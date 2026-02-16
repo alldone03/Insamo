@@ -13,6 +13,8 @@ services:
       APP_DEBUG: ${APP_DEBUG:-false}
       FRONTEND_URL: ${FRONTEND_URL:-http://app.insamo.id}
       APP_URL: ${APP_URL:-http://apiapp.insamo.id}
+    volumes:
+      - ./backend/storage:/var/www/storage
     networks:
       - insamo-prod-network
       - web
@@ -33,8 +35,7 @@ services:
     image: nginx:alpine
     container_name: insamo-nginx-prod
     restart: unless-stopped
-    # ports:
-    #   - "80:80"
+    # Ports dihapus karena diakses via network 'web' oleh Nginx Server
     volumes:
       - ./backend:/var/www
       - ./docker/nginx/conf.d:/etc/nginx/conf.d
@@ -47,15 +48,13 @@ services:
   frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.prod
     image: insamo-frontend:prod
     container_name: insamo-frontend-prod
     restart: unless-stopped
     environment:
-      VITE_API_URL: ${VITE_API_URL:-http://apiapp.insamo.id/api}
-    command: sh -c "yarn build && yarn preview --host --port 5173"
-    # ports:
-    #   - "5173:5173"
+      - VITE_API_URL=http://apiapp.insamo.id/api
+    # Ports dihapus karena diakses via network 'web' oleh Nginx Server
     networks:
       - insamo-prod-network
       - web
