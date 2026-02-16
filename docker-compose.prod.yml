@@ -62,11 +62,11 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile.prod
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://apiapp.insamo.id/api}
     image: insamo-frontend:prod
     container_name: insamo-frontend-prod
     restart: unless-stopped
-    environment:
-      VITE_API_URL: ${VITE_API_URL:-http://apiapp.insamo.id/api}
     # Ports dihapus karena diakses via network 'web' oleh Nginx Server
     networks:
       - insamo-prod-network
