@@ -2,14 +2,17 @@ version: "3.7"
 services:
   app:
     build:
-      context: ./backend-laravel
+      context: ./backend
       dockerfile: Dockerfile
     image: insamo-backend
     container_name: insamo-backend
     restart: unless-stopped
     working_dir: /var/www
     volumes:
-      - ./backend-laravel:/var/www
+      - ./backend:/var/www
+    environment:
+      FRONTEND_URL: http://localhost:5173
+      APP_URL: http://localhost:8000
     networks:
       - insamo-network
 
@@ -36,7 +39,7 @@ services:
     ports:
       - "8000:80"
     volumes:
-      - ./backend-laravel:/var/www
+      - ./backend:/var/www
       - ./docker/nginx/conf.d:/etc/nginx/conf.d
     networks:
       - insamo-network
@@ -49,6 +52,8 @@ services:
       dockerfile: Dockerfile
     image: insamo-frontend
     container_name: insamo-frontend
+    environment:
+      VITE_API_URL: http://localhost:8000/api
     ports:
       - "5173:5173"
     volumes:
