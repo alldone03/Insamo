@@ -54,6 +54,15 @@ This project is a Disaster Monitoring System built with React (Frontend) and Lar
 6.  `php artisan migrate --seed`
 7.  `php artisan serve` (Runs on http://localhost:8000)
 
+### Backend Deployment (Laravel)
+
+1.  `docker-compose -f docker-compose.prod.yml exec app rm -rf /var/www/storage/framework/views/*`
+2.  `docker-compose -f docker-compose.prod.yml exec app php artisan view:clear`
+3.  `docker-compose -f docker-compose.prod.yml exec app php artisan config:clear`
+4.  `docker-compose -f docker-compose.prod.yml exec app php artisan cache:clear`
+
+
+
 ### Frontend (React)
 
 1.  `cd frontend`
