@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../lib/auth_context";
-import { Mail, Lock, LogIn, Eye, EyeOff, AlertCircle } from "lucide-react";
+
 
 export default function Login() {
     const [email, setEmail] = useState("");
@@ -9,7 +9,7 @@ export default function Login() {
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState("");
     const [isLoading, setIsLoading] = useState(false);
-    
+
     const navigate = useNavigate();
     const { login } = useAuth();
 
@@ -74,7 +74,7 @@ export default function Login() {
                                     onChange={(e) => setPassword(e.target.value)}
                                     required
                                 />
-                                <button 
+                                <button
                                     type="button"
                                     className="absolute right-3 top-1/2 -translate-y-1/2 opacity-40 hover:opacity-100 transition-opacity"
                                     onClick={() => setShowPassword(!showPassword)}
@@ -83,7 +83,7 @@ export default function Login() {
                                 </button>
                             </div>
                             <label className="label justify-end">
-                                <a href="#" className="label-text-alt link link-hover text-primary font-bold">Forgot password?</a>
+                                <Link href="#" className="label-text-alt link link-hover text-primary font-bold">Forgot password?</Link>
                             </label>
                         </div>
 
