@@ -12,7 +12,7 @@ export default function MainLayout() {
     const [theme, setTheme] = useState(() => localStorage.getItem("theme") || "light");
 
     useEffect(() => {
-        const daisyTheme = theme === "dark" ? "dark" : "winter";
+        const daisyTheme = theme === "dark" ? "dark" : "light";
         document.documentElement.setAttribute("data-theme", daisyTheme);
         localStorage.setItem("theme", theme);
     }, [theme]);

@@ -20,7 +20,7 @@ export default function Profile() {
         setDarkMode(newMode);
         const html = document.querySelector('html');
         if (html) {
-            const theme = newMode ? 'dark' : 'winter';
+            const theme = newMode ? 'dark' : 'light';
             html.setAttribute('data-theme', theme);
             localStorage.setItem('theme', newMode ? 'dark' : 'light');
         }
