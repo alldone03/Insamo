@@ -3,15 +3,17 @@ import { useAuth } from "../lib/auth_context";
 import { LayoutDashboard, User, LogOut, Menu, Cpu, History, Settings, Sun, Moon } from "lucide-react";
 import { useState, useEffect } from "react";
 import InsamoLogo from "../assets/logoInsamo.webp";
+import { getImageUrl } from "../lib/api";
 
 export default function MainLayout() {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
-    const [theme, setTheme] = useState(localStorage.getItem("theme") || "light");
+    const [theme, setTheme] = useState(() => localStorage.getItem("theme") || "light");
 
     useEffect(() => {
-        document.documentElement.setAttribute("data-theme", theme);
+        const daisyTheme = theme === "dark" ? "dark" : "winter";
+        document.documentElement.setAttribute("data-theme", daisyTheme);
         localStorage.setItem("theme", theme);
     }, [theme]);
 
@@ -94,8 +96,12 @@ export default function MainLayout() {
                     <div className="dropdown dropdown-top w-full">
                         <div tabIndex={0} role="button" className="flex items-center gap-4 p-3 hover:bg-base-200 rounded-2xl cursor-pointer transition-all active:scale-95">
                             <div className="avatar">
-                                <div className="w-12 rounded-2xl shadow-md ring ring-primary ring-offset-base-100 ring-offset-2">
-                                    <img src={user?.photo_path || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.name || "User"}`} alt="avatar" />
+                                <div className="w-12 h-12 rounded-2xl shadow-md ring ring-primary ring-offset-base-100 ring-offset-2 overflow-hidden bg-base-300">
+                                    <img
+                                        src={getImageUrl(user?.photo_path) || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.name || "User"}`}
+                                        alt="avatar"
+                                        className="w-full h-full object-cover"
+                                    />
                                 </div>
                             </div>
                             <div className="flex-grow overflow-hidden">

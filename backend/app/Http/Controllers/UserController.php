@@ -40,12 +40,22 @@ class UserController extends Controller
             'name' => 'sometimes|required',
             'email' => 'sometimes|required|email|unique:users,email,'.$user->id,
             'password' => 'sometimes|required|min:6',
-            'role_id' => 'nullable|exists:roles,id'
+            'role_id' => 'nullable|exists:roles,id',
+            'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
-        $data = $request->except('password');
+        $data = $request->except(['password', 'photo']);
         if ($request->has('password')) {
             $data['password'] = Hash::make($request->password);
+        }
+
+        if ($request->hasFile('photo')) {
+            // Delete old photo if exists
+            if ($user->photo_path && \Storage::disk('public')->exists($user->photo_path)) {
+                \Storage::disk('public')->delete($user->photo_path);
+            }
+            $path = $request->file('photo')->store('profiles', 'public');
+            $data['photo_path'] = $path;
         }
 
         $user->update($data);

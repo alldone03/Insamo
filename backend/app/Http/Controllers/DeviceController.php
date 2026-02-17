@@ -37,7 +37,7 @@ class DeviceController extends Controller
             'initial_distance' => 'nullable|numeric',
             'alert_threshold' => 'nullable|numeric',
             'danger_threshold' => 'nullable|numeric',
-            'image' => 'nullable|string|url',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
         $device = Device::create($request->only([
@@ -46,8 +46,14 @@ class DeviceController extends Controller
             'device_type',
             'latitude',
             'longitude',
-            'address'
+            'address',
+            'image'
         ]));
+
+        if ($request->hasFile('image')) {
+            $path = $request->file('image')->store('devices', 'public');
+            $device->update(['image' => $path]);
+        }
 
         // Create device settings if provided
         if ($request->has('initial_distance') || $request->has('alert_threshold') || $request->has('danger_threshold')) {
@@ -98,7 +104,7 @@ class DeviceController extends Controller
             'initial_distance' => 'nullable|numeric',
             'alert_threshold' => 'nullable|numeric',
             'danger_threshold' => 'nullable|numeric',
-            'image' => 'nullable|string|url',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ];
 
         // Only SuperAdmin can update device_code and device_type
@@ -114,6 +120,16 @@ class DeviceController extends Controller
         if ($isSuperAdmin) {
             $deviceData = array_merge($deviceData, $request->only(['device_code', 'device_type']));
         }
+
+        if ($request->hasFile('image')) {
+            // Delete old image if exists
+            if ($device->image && \Storage::disk('public')->exists($device->image)) {
+                \Storage::disk('public')->delete($device->image);
+            }
+            $path = $request->file('image')->store('devices', 'public');
+            $deviceData['image'] = $path;
+        }
+
         $device->update($deviceData);
 
         // Update or create settings

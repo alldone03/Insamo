@@ -1,21 +1,49 @@
 
 import { useState } from "react";
 import { useAuth } from "../../lib/auth_context";
-import { User, Lock, Moon, Sun, Camera } from "lucide-react";
+import { User, Lock, Moon, Sun, Camera, Check, AlertCircle } from "lucide-react";
+import { api, getImageUrl } from "../../lib/api";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function Profile() {
     const { user } = useAuth();
-    const [darkMode, setDarkMode] = useState(false);
+    const queryClient = useQueryClient();
+    const [darkMode, setDarkMode] = useState(() => localStorage.getItem('theme') === 'dark');
+    const [previewImage, setPreviewImage] = useState(null);
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState({ text: "", type: "" });
 
     const toggleTheme = () => {
-        setDarkMode(!darkMode);
+        const newMode = !darkMode;
+        setDarkMode(newMode);
         const html = document.querySelector('html');
         if (html) {
-            html.setAttribute('data-theme', darkMode ? 'winter' : 'dark');
+            const theme = newMode ? 'dark' : 'winter';
+            html.setAttribute('data-theme', theme);
+            localStorage.setItem('theme', newMode ? 'dark' : 'light');
+        }
+    };
+
+    const handleUpdatePhoto = async (file) => {
+        setLoading(true);
+        const formData = new FormData();
+        formData.append('photo', file);
+        formData.append('_method', 'PUT');
+
+        try {
+            await api.post(`/users/${user.id}`, formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+            setMessage({ text: "Profile photo updated!", type: "success" });
+            queryClient.invalidateQueries(["user"]); // If user is fetched via react-query
+            // Fallback: reload page if user context isn't automatically updated
+            window.location.reload();
+        } catch (err) {
+            setMessage({ text: "Failed to upload photo", type: "error" });
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -57,12 +85,28 @@ export default function Profile() {
                         <h2 className="card-title"><User /> Profile Information</h2>
                         <div className="flex flex-col items-center gap-4 mt-4">
                             <div className="avatar relative">
-                                <div className="w-24 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2">
-                                    <img src={user?.photo_path || "https://ui-avatars.com/api/?name=" + (user?.name || "User")} alt="profile" />
+                                <div className="w-24 h-24 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2 overflow-hidden bg-base-300">
+                                    <img
+                                        src={previewImage || getImageUrl(user?.photo_path) || "https://ui-avatars.com/api/?name=" + (user?.name || "User")}
+                                        alt="profile"
+                                        className="w-full h-full object-cover"
+                                    />
                                 </div>
-                                <button className="btn btn-circle btn-xs btn-primary absolute bottom-0 right-0">
+                                <label className="btn btn-circle btn-xs btn-primary absolute bottom-0 right-0 cursor-pointer">
                                     <Camera size={12} />
-                                </button>
+                                    <input
+                                        type="file"
+                                        className="hidden"
+                                        accept="image/*"
+                                        onChange={(e) => {
+                                            const file = e.target.files[0];
+                                            if (file) {
+                                                setPreviewImage(URL.createObjectURL(file));
+                                                handleUpdatePhoto(file);
+                                            }
+                                        }}
+                                    />
+                                </label>
                             </div>
                             <div className="text-center">
                                 <p className="text-xl font-bold">{user?.name}</p>

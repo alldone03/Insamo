@@ -11,7 +11,7 @@ class Device extends Model
 
     protected $fillable = [
         'device_code', 'name', 'device_type',
-        'latitude', 'longitude', 'address'
+        'latitude', 'longitude', 'address', 'image'
     ];
 
     public function users()
