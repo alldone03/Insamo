@@ -40,7 +40,7 @@ jobs:
             docker compose -f docker-compose.prod.yml exec -T app php artisan cache:clear
 
             # Database migration
-            docker compose -f docker-compose.prod.yml exec -T app php artisan migrate --seed --force
+            docker compose -f docker-compose.prod.yml exec -T app php artisan migrate --force 
 
             # Optional: Clear other caches
             docker compose -f docker-compose.prod.yml exec -T app php artisan config:cache
