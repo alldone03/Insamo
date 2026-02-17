@@ -40,19 +40,15 @@ class DeviceController extends Controller
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
-        $device = Device::create($request->only([
-            'device_code',
-            'name',
-            'device_type',
-            'latitude',
-            'longitude',
-            'address',
-            'image'
-        ]));
+        $deviceData = $request->except('image');
+        $device = Device::create($deviceData);
 
         if ($request->hasFile('image')) {
             $path = $request->file('image')->store('devices', 'public');
             $device->update(['image' => $path]);
+        } elseif ($request->filled('image') && is_string($request->image)) {
+            // Case for URL-based images
+            $device->update(['image' => $request->image]);
         }
 
         // Create device settings if provided
@@ -128,6 +124,9 @@ class DeviceController extends Controller
             }
             $path = $request->file('image')->store('devices', 'public');
             $deviceData['image'] = $path;
+        } elseif ($request->filled('image') && is_string($request->image)) {
+            // Case for manual URL update
+            $deviceData['image'] = $request->image;
         }
 
         $device->update($deviceData);

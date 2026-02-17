@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { api } from "../lib/api";
+import { api, getImageUrl } from "../lib/api";
 import {
     LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
     AreaChart, Area, BarChart, Bar
@@ -197,13 +197,27 @@ export default function Sensordata() {
 
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="flex items-center gap-4">
-                <button onClick={() => navigate(-1)} className="btn btn-circle btn-ghost">
-                    <ArrowLeft size={24} />
-                </button>
-                <div>
-                    <h2 className="text-3xl font-black italic uppercase">{device?.name} - SENSOR DATA</h2>
-                    <p className="text-sm opacity-60 font-bold uppercase tracking-widest">{device?.device_code} ({device?.device_type})</p>
+            <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                    <button onClick={() => navigate(-1)} className="btn btn-circle btn-ghost">
+                        <ArrowLeft size={24} />
+                    </button>
+                    <div className="flex items-center gap-4">
+                        <div className="w-16 h-16 rounded-2xl overflow-hidden bg-base-300 shadow-sm border border-base-200 hidden md:block">
+                            <img
+                                src={getImageUrl(device?.image) || "https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=200&auto=format&fit=crop"}
+                                alt={device?.name}
+                                className="w-full h-full object-cover"
+                            />
+                        </div>
+                        <div>
+                            <h2 className="text-3xl font-black italic uppercase">{device?.name} - SENSOR DATA</h2>
+                            <p className="text-sm opacity-60 font-bold uppercase tracking-widest">{device?.device_code} ({device?.device_type})</p>
+                        </div>
+                    </div>
+                </div>
+                <div className="hidden lg:block">
+                    <span className="badge badge-primary badge-outline font-black italic p-4 tracking-tighter">DATA NODE: {id}</span>
                 </div>
             </div>
 
