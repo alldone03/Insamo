@@ -15,7 +15,7 @@ import "leaflet/dist/leaflet.css";
 
 // Kategori Perangkat (Default Image tetap ada sebagai cadangan)
 const DEVICE_CATEGORIES = {
-    FLOOD: {
+    FLOWS: {
         label: "Flood Detection",
         icon: Waves,
         color: "text-blue-500",
@@ -220,9 +220,9 @@ export default function Device() {
     };
 
     const groupedDevices = useMemo(() => {
-        const groups = { FLOOD: [], LANDSLIDE: [], SIGMA: [], WILDFIRE: [] };
+        const groups = { FLOWS: [], LANDSLIDE: [], SIGMA: [], WILDFIRE: [] };
         rawDevices.forEach(device => {
-            let type = device.device_type === 'FLOWS' ? 'FLOOD' : device.device_type;
+            let type = device.device_type;
             if (groups[type] && (
                 device.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 device.device_code.toLowerCase().includes(searchTerm.toLowerCase())
@@ -343,7 +343,6 @@ export default function Device() {
                                                                 setSelectedDevice(device);
                                                                 setFormData({
                                                                     ...device,
-                                                                    device_type: device.device_type === 'FLOWS' ? 'FLOOD' : device.device_type,
                                                                     image: null, // Don't pre-fill with path string for file input
                                                                     initial_distance: device.settings?.initial_distance || 10,
                                                                     alert_threshold: device.settings?.alert_threshold || 50,

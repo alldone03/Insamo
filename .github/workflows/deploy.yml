@@ -28,10 +28,10 @@ jobs:
               cp .env.example .env
             fi
 
-            docker compose down
+            # docker compose down
 
             # Restart containers
-            docker compose -f docker-compose.prod.yml up -d --build
+            docker compose -f docker-compose.prod.yml up -d --build && docker exec nginx-gateway nginx -s reload
             docker compose -f docker-compose.prod.yml exec -T app php artisan jwt:secret
             docker compose -f docker-compose.prod.yml exec -T app php artisan migrate --force 
 

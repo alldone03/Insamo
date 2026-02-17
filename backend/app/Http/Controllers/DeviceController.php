@@ -110,7 +110,7 @@ class DeviceController extends Controller
         // Only SuperAdmin can update device_code and device_type
         if ($isSuperAdmin) {
             $validationRules['device_code'] = 'sometimes|required|unique:devices,device_code,' . $device->id;
-            $validationRules['device_type'] = 'sometimes|required|in:SIGMA,FLOWS,LANDSLIDE';
+            $validationRules['device_type'] = 'sometimes|required|in:SIGMA,FLOWS,LANDSLIDE,WILDFIRE';
         }
 
         $request->validate($validationRules);
