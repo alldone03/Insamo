@@ -6,6 +6,7 @@ import {
     AreaChart, Area, BarChart, Bar
 } from 'recharts';
 import { Activity, ArrowLeft, Thermometer, Droplets, Wind, Waves, Move, Zap, TrendingUp, AlertTriangle } from "lucide-react";
+import InsamoLogo from "../assets/InsamoLogo.webp";
 
 export default function Sensordata() {
     const { id } = useParams();
@@ -205,9 +206,13 @@ export default function Sensordata() {
                     <div className="flex items-center gap-4">
                         <div className="w-16 h-16 rounded-2xl overflow-hidden bg-base-300 shadow-sm border border-base-200 hidden md:block">
                             <img
-                                src={getImageUrl(device?.image) || "https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=200&auto=format&fit=crop"}
+                                src={getImageUrl(device?.image) || InsamoLogo}
                                 alt={device?.name}
                                 className="w-full h-full object-cover"
+                                onError={(e) => {
+                                    e.target.src = InsamoLogo;
+                                    e.target.onerror = null;
+                                }}
                             />
                         </div>
                         <div>

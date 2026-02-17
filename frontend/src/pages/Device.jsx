@@ -8,12 +8,12 @@ import {
 import { useNavigate } from "react-router-dom";
 import { api, getImageUrl } from "../lib/api";
 import { useAuth } from "../lib/auth_context";
+import InsamoLogo from "../assets/InsamoLogo.webp";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
-// Kategori Perangkat (Default Image tetap ada sebagai cadangan)
 const DEVICE_CATEGORIES = {
     FLOWS: {
         label: "Flood Detection",
@@ -22,7 +22,7 @@ const DEVICE_CATEGORIES = {
         bg: "bg-blue-500/5",
         border: "border-blue-500/20",
         badge: "badge-info",
-        defaultImage: "https://images.unsplash.com/photo-1545065099-0d19114f24f5?q=80&w=300&auto=format&fit=crop"
+        defaultImage: InsamoLogo
     },
     LANDSLIDE: {
         label: "Landslide Monitor",
@@ -31,7 +31,7 @@ const DEVICE_CATEGORIES = {
         bg: "bg-amber-600/5",
         border: "border-amber-600/20",
         badge: "badge-warning",
-        defaultImage: "https://images.unsplash.com/photo-1557456170-0cf4f4d0d362?q=80&w=300&auto=format&fit=crop"
+        defaultImage: InsamoLogo
     },
     SIGMA: {
         label: "Sigma System",
@@ -40,7 +40,7 @@ const DEVICE_CATEGORIES = {
         bg: "bg-purple-500/5",
         border: "border-purple-500/20",
         badge: "badge-primary",
-        defaultImage: "https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=300&auto=format&fit=crop"
+        defaultImage: InsamoLogo
     },
     WILDFIRE: {
         label: "Wildfire Alert",
@@ -49,7 +49,7 @@ const DEVICE_CATEGORIES = {
         bg: "bg-red-500/5",
         border: "border-red-500/20",
         badge: "badge-error",
-        defaultImage: "https://images.unsplash.com/photo-1602484894318-72e276856526?q=80&w=300&auto=format&fit=crop"
+        defaultImage: InsamoLogo
     }
 };
 
@@ -313,7 +313,10 @@ export default function Device() {
                                                         src={deviceImage}
                                                         alt={device.name}
                                                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                                                        onError={(e) => { e.target.src = category.defaultImage }} // Fallback on error
+                                                        onError={(e) => {
+                                                            e.target.src = InsamoLogo;
+                                                            e.target.onerror = null;
+                                                        }} // Safe fallback
                                                     />
                                                     <div className={`absolute bottom-0 w-full text-[8px] font-black text-center text-white py-1 ${status.status === 'online' ? 'bg-success/80' : 'bg-error/80'}`}>
                                                         {status.label}
