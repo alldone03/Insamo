@@ -2,6 +2,7 @@ import { Outlet, Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../lib/auth_context";
 import { LayoutDashboard, User, LogOut, Menu, Cpu, History, Settings, Sun, Moon } from "lucide-react";
 import { useState, useEffect } from "react";
+import InsamoLogo from "../assets/logoInsamo.webp";
 
 export default function MainLayout() {
     const { user, logout } = useAuth();
@@ -40,7 +41,7 @@ export default function MainLayout() {
                             <Menu />
                         </label>
                     </div>
-                    <img src="/src/assets/logoInsamo.webp" alt="INSAMO Logo" className="w-12 h-12" />
+                    <img src={InsamoLogo} alt="INSAMO Logo" className="w-12 h-12" />
                     <div className="flex-1 justify-center lg:justify-start ml-2">
                         <span className="text-4xl font-black tracking-widest text-primary">INSAMO</span>
                     </div>
@@ -65,7 +66,7 @@ export default function MainLayout() {
                 <label htmlFor="my-drawer-2" className="drawer-overlay"></label>
                 <div className="menu p-4 w-72 min-h-full bg-base-100 text-base-content flex flex-col shadow-xl">
                     <div className="px-4 py-6 mb-4">
-                        <img src="/src/assets/logoInsamo.webp" alt="INSAMO Logo" className="w-12 h-12" />
+                        <img src={InsamoLogo} alt="INSAMO Logo" className="w-12 h-12" />
                         <h1 className="text-3xl font-black text-primary italic">INSAMO</h1>
                         <p className="text-xs opacity-50 font-bold uppercase tracking-widest">Integrated Smart Monitoring</p>
                     </div>
