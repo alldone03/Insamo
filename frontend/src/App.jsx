@@ -9,6 +9,7 @@ import Device from "./pages/Device";
 import History from "./pages/History";
 import Sensordata from "./pages/Sensordata";
 import MainLayout from "./components/MainLayout";
+import NotFound from "./pages/NotFound";
 
 function App() {
   const { user, loading } = useAuth();
@@ -29,6 +30,8 @@ function App() {
         <Route path="/device/:id/data" element={<Sensordata />} />
         <Route path="/history" element={<History />} />
       </Route>
+
+      <Route path="*" element={<NotFound />} />
     </Routes>
   );
 }
