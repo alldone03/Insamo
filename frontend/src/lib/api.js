@@ -49,6 +49,22 @@ api.interceptors.response.use(
 export const getImageUrl = (path) => {
     if (!path) return null;
     if (path.startsWith('http')) return path;
-    const baseUrl = (import.meta.env.VITE_API_URL || "http://localhost:8000/api").replace('/api', '');
-    return `${baseUrl}/storage/${path}`;
+    
+    // Clean path (remove leading slashes)
+    const cleanPath = path.replace(/^\//, "");
+    
+    const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
+    // Standardize: extract domain/base from API URL (strip /api or /api/)
+    // We regex for /api with or without trailing slash
+    let baseUrl = apiUrl.split(/\/api($|\/)/)[0].replace(/\/$/, "");
+    
+    // Force absolute if protocol is missing
+    if (baseUrl && !baseUrl.startsWith('http') && !baseUrl.startsWith('/')) {
+        // Use current protocol if missing
+        baseUrl = `${window.location.protocol}//${baseUrl}`;
+    }
+
+    const finalUrl = `${baseUrl || ""}/storage/${cleanPath}`;
+    // console.log(`DEBUG: Rendering Image URL: ${finalUrl} (Path: ${path}, ApiUrl: ${apiUrl})`);
+    return finalUrl;
 };
