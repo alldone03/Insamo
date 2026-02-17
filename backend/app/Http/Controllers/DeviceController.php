@@ -29,7 +29,7 @@ class DeviceController extends Controller
         $request->validate([
             'device_code' => 'required|unique:devices',
             'name' => 'required',
-            'device_type' => 'required|in:SIGMA,FLOWS,LANDSLIDE',
+            'device_type' => 'required|in:SIGMA,FLOWS,LANDSLIDE,WILDFIRE',
             'latitude' => 'required|numeric',
             'longitude' => 'required|numeric',
             'address' => 'required',
@@ -37,6 +37,7 @@ class DeviceController extends Controller
             'initial_distance' => 'nullable|numeric',
             'alert_threshold' => 'nullable|numeric',
             'danger_threshold' => 'nullable|numeric',
+            'image' => 'nullable|string|url',
         ]);
 
         $device = Device::create($request->only([
@@ -93,6 +94,7 @@ return $device;
             'initial_distance' => 'nullable|numeric',
             'alert_threshold' => 'nullable|numeric',
             'danger_threshold' => 'nullable|numeric',
+            'image' => 'nullable|string|url',
         ];
 
         // Only SuperAdmin can update device_code and device_type

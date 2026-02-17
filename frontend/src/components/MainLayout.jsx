@@ -40,9 +40,9 @@ export default function MainLayout() {
                             <Menu />
                         </label>
                     </div>
-
-                    <div className="flex-1 justify-center">
-                        <span className="text-2xl font-black tracking-widest text-primary">INSAMO</span>
+                    <img src="/src/assets/logoInsamo.webp" alt="INSAMO Logo" className="w-12 h-12" />
+                    <div className="flex-1 justify-center lg:justify-start ml-2">
+                        <span className="text-4xl font-black tracking-widest text-primary">INSAMO</span>
                     </div>
 
                     <div className="flex-none gap-2">
@@ -61,10 +61,11 @@ export default function MainLayout() {
                 </main>
             </div>
 
-            <div className="drawer-side h-full z-20">
+            <div className="drawer-side h-full z-20 ">
                 <label htmlFor="my-drawer-2" className="drawer-overlay"></label>
                 <div className="menu p-4 w-72 min-h-full bg-base-100 text-base-content flex flex-col shadow-xl">
                     <div className="px-4 py-6 mb-4">
+                        <img src="/src/assets/logoInsamo.webp" alt="INSAMO Logo" className="w-12 h-12" />
                         <h1 className="text-3xl font-black text-primary italic">INSAMO</h1>
                         <p className="text-xs opacity-50 font-bold uppercase tracking-widest">Integrated Smart Monitoring</p>
                     </div>
