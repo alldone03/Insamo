@@ -29,7 +29,7 @@ jobs:
             fi
 
             # Restart containers
-            docker compose -f docker-compose.prod.yml up -d --build
+            docker compose -f docker-compose.prod.yml up -d
 
             # Cleanup and optimization
             docker compose -f docker-compose.prod.yml exec -T app rm -rf /var/www/storage/framework/views/*
