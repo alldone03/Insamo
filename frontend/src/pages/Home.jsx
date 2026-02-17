@@ -24,6 +24,7 @@ const getCustomIcon = (type) => {
     let color = "#3b82f6"; // Default Blue (SIGMA)
     if (type === 'FLOWS') color = "#06b6d4"; // Cyan
     if (type === 'LANDSLIDE') color = "#f97316"; // Orange
+    if (type === 'WILDFIRE') color = "#ef4444"; // Red
 
     return L.divIcon({
         className: "custom-div-icon",
@@ -99,6 +100,7 @@ export default function Home() {
                         <LegendItem color="bg-blue-500" label="SIGMA" />
                         <LegendItem color="bg-cyan-500" label="FLOWS" />
                         <LegendItem color="bg-orange-500" label="LANDSLIDE" />
+                        <LegendItem color="bg-red-500" label="WILDFIRE" />
                     </div>
                     <div className="divider my-2 opacity-10"></div>
                     <p className="text-[10px] italic opacity-40 font-medium leading-tight">Click on markers to see live details and analysis.</p>

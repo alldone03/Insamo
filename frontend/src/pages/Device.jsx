@@ -1,12 +1,57 @@
 import { useState, useMemo } from "react";
-import { Cpu, Plus, Trash2, Search, Edit2, MapPin, Hash, Activity, ArrowUpDown, X, Check, UserPlus, ShieldAlert, UserMinus, Eye } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { 
+    Cpu, Plus, Trash2, Search, Edit2, MapPin, 
+    Activity, X, Check, UserPlus, 
+    ShieldAlert, UserMinus, Eye, Waves, Mountain, Flame,
+    AlertTriangle, ImageIcon
+} from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { api } from "../lib/api";
 import { useAuth } from "../lib/auth_context";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+
+// Kategori Perangkat (Default Image tetap ada sebagai cadangan)
+const DEVICE_CATEGORIES = {
+    FLOOD: { 
+        label: "Flood Detection", 
+        icon: Waves, 
+        color: "text-blue-500", 
+        bg: "bg-blue-500/5", 
+        border: "border-blue-500/20",
+        badge: "badge-info",
+        defaultImage: "https://images.unsplash.com/photo-1545065099-0d19114f24f5?q=80&w=300&auto=format&fit=crop"
+    },
+    LANDSLIDE: { 
+        label: "Landslide Monitor", 
+        icon: Mountain, 
+        color: "text-amber-600", 
+        bg: "bg-amber-600/5", 
+        border: "border-amber-600/20",
+        badge: "badge-warning",
+        defaultImage: "https://images.unsplash.com/photo-1557456170-0cf4f4d0d362?q=80&w=300&auto=format&fit=crop"
+    },
+    SIGMA: { 
+        label: "Sigma System", 
+        icon: Activity, 
+        color: "text-purple-500", 
+        bg: "bg-purple-500/5", 
+        border: "border-purple-500/20",
+        badge: "badge-primary",
+        defaultImage: "https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=300&auto=format&fit=crop"
+    },
+    WILDFIRE: { 
+        label: "Wildfire Alert", 
+        icon: Flame, 
+        color: "text-red-500", 
+        bg: "bg-red-500/5", 
+        border: "border-red-500/20",
+        badge: "badge-error",
+        defaultImage: "https://images.unsplash.com/photo-1602484894318-72e276856526?q=80&w=300&auto=format&fit=crop"
+    }
+};
 
 export default function Device() {
     const { user } = useAuth();
@@ -16,10 +61,7 @@ export default function Device() {
 
     // Toast State
     const [toast, setToast] = useState({ show: false, message: "", type: "success" });
-
-    // Search and Sort State
     const [searchTerm, setSearchTerm] = useState("");
-    const [sortConfig, setSortConfig] = useState({ key: 'device_code', direction: 'asc' });
 
     // Modal States
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -36,38 +78,28 @@ export default function Device() {
         latitude: "",
         longitude: "",
         address: "",
+        image: "", // New Field for Image URL
         initial_distance: 10,
         alert_threshold: 50,
         danger_threshold: 80
     });
 
-    // Helper: Show Toast
     const showToast = (message, type = "success") => {
         setToast({ show: true, message, type });
         setTimeout(() => setToast({ show: false, message: "", type: "success" }), 3000);
     };
 
-    // API: Fetch Devices
     const { data: rawDevices = [], isLoading: isLoadingDevices } = useQuery({
         queryKey: ["devices"],
-        queryFn: async () => {
-            const res = await api.get("/devices");
-            return res.data;
-        }
+        queryFn: async () => (await api.get("/devices")).data
     });
 
-    // API: Fetch All Potential Users
     const { data: allUsers = [] } = useQuery({
         queryKey: ["users"],
-        queryFn: async () => {
-            if (!isSuperAdmin) return [];
-            const res = await api.get("/users");
-            return res.data;
-        },
+        queryFn: async () => isSuperAdmin ? (await api.get("/users")).data : [],
         enabled: isSuperAdmin
     });
 
-    // Mutations
     const createMutation = useMutation({
         mutationFn: (newDevice) => api.post("/devices", newDevice),
         onSuccess: () => {
@@ -104,7 +136,6 @@ export default function Device() {
             queryClient.invalidateQueries(["devices"]);
             setTargetUserId("");
             showToast("Access granted successfully!", "success");
-            // Refresh local selected device users
             api.get("/devices").then(res => {
                 const refreshed = res.data.find(d => d.id === selectedDevice.id);
                 setSelectedDevice(refreshed);
@@ -117,40 +148,12 @@ export default function Device() {
         onSuccess: () => {
             queryClient.invalidateQueries(["devices"]);
             showToast("Access revoked!", "warning");
-            // Refresh local selected device users
             api.get("/devices").then(res => {
                 const refreshed = res.data.find(d => d.id === selectedDevice.id);
                 setSelectedDevice(refreshed);
             });
         }
     });
-
-    const handleSort = (key) => {
-        let direction = 'asc';
-        if (sortConfig.key === key && sortConfig.direction === 'asc') {
-            direction = 'desc';
-        }
-        setSortConfig({ key, direction });
-    };
-
-    const sortedAndFiltered = useMemo(() => {
-        let items = [...rawDevices].filter(d =>
-            d.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            d.device_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            d.device_type.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-
-        if (sortConfig.key) {
-            items.sort((a, b) => {
-                const valA = a[sortConfig.key]?.toLowerCase?.() || a[sortConfig.key];
-                const valB = b[sortConfig.key]?.toLowerCase?.() || b[sortConfig.key];
-                if (valA < valB) return sortConfig.direction === 'asc' ? -1 : 1;
-                if (valA > valB) return sortConfig.direction === 'asc' ? 1 : -1;
-                return 0;
-            });
-        }
-        return items;
-    }, [rawDevices, searchTerm, sortConfig]);
 
     const resetForm = () => {
         setFormData({
@@ -160,6 +163,7 @@ export default function Device() {
             latitude: "",
             longitude: "",
             address: "",
+            image: "",
             initial_distance: 10,
             alert_threshold: 50,
             danger_threshold: 80
@@ -167,26 +171,11 @@ export default function Device() {
         setSelectedDevice(null);
     };
 
-    const getTypeColor = (type) => {
-        switch (type) {
-            case 'SIGMA': return 'badge-primary';
-            case 'FLOWS': return 'badge-secondary';
-            case 'LANDSLIDE': return 'badge-accent';
-            default: return 'badge-ghost';
-        }
-    };
-
-    // Component for map click handler
     function LocationPicker({ onLocationSelect }) {
-        useMapEvents({
-            click(e) {
-                onLocationSelect(e.latlng);
-            },
-        });
+        useMapEvents({ click(e) { onLocationSelect(e.latlng); } });
         return null;
     }
 
-    // Custom marker icon
     const customIcon = L.icon({
         iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
         shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
@@ -194,146 +183,203 @@ export default function Device() {
         iconAnchor: [12, 41],
     });
 
-    // Helper: Check device online/offline status
     const getDeviceStatus = (device) => {
         if (!device.sensor_readings || device.sensor_readings.length === 0) {
-            return { status: 'offline', label: 'OFFLINE', color: 'badge-error' };
+            return { status: 'offline', label: 'OFFLINE', color: 'text-error' };
         }
-
         const latestReading = device.sensor_readings[0];
         const recordedAt = new Date(latestReading.recorded_at);
-        const now = new Date();
-        const diffMinutes = (now - recordedAt) / 1000 / 60;
-
-        if (diffMinutes < 1) {
-            return { status: 'online', label: 'ONLINE', color: 'badge-success' };
-        } else {
-            return { status: 'offline', label: 'OFFLINE', color: 'badge-error' };
-        }
+        const diffMinutes = (new Date() - recordedAt) / 1000 / 60;
+        return diffMinutes < 1 
+            ? { status: 'online', label: 'ONLINE', color: 'text-success' }
+            : { status: 'offline', label: 'OFFLINE', color: 'text-error' };
     };
 
+    const groupedDevices = useMemo(() => {
+        const groups = { FLOOD: [], LANDSLIDE: [], SIGMA: [], WILDFIRE: [] };
+        rawDevices.forEach(device => {
+            let type = device.device_type === 'FLOWS' ? 'FLOOD' : device.device_type;
+            if (groups[type] && (
+                device.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                device.device_code.toLowerCase().includes(searchTerm.toLowerCase())
+            )) {
+                groups[type].push(device);
+            }
+        });
+        return groups;
+    }, [rawDevices, searchTerm]);
+
     return (
-        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            {/* DaisyUI Toast */}
+        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
             {toast.show && (
                 <div className="toast toast-top toast-end z-[999]">
-                    <div className={`alert ${toast.type === 'success' ? 'alert-success' : toast.type === 'error' ? 'alert-error' : toast.type === 'warning' ? 'alert-warning' : 'alert-info'} shadow-2xl rounded-2xl border-none`}>
-                        <div className="flex items-center gap-2 text-white font-bold italic uppercase tracking-widest text-xs">
-                            {toast.type === 'success' && <Check size={16} />}
+                    <div className={`alert ${toast.type === 'success' ? 'alert-success' : 'alert-error'} shadow-2xl rounded-2xl`}>
+                        <div className="flex items-center gap-2 text-white font-bold text-xs uppercase">
+                            {toast.type === 'success' ? <Check size={16} /> : <AlertTriangle size={16} />}
                             <span>{toast.message}</span>
                         </div>
                     </div>
                 </div>
             )}
 
-            {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h2 className="text-3xl font-black flex items-center gap-3 italic">
                         <Cpu className="text-primary" size={32} />
-                        DEVICE MANAGEMENT
+                        MONITORING DASHBOARD
                     </h2>
-                    <p className="opacity-60 font-medium">Configure hardware access and system visibility</p>
+                    <p className="opacity-60 font-medium">Real-time Environmental Monitoring Systems</p>
                 </div>
-                {isSuperAdmin && (
-                    <button className="btn btn-primary shadow-lg shadow-primary/30" onClick={() => { resetForm(); setIsCreateModalOpen(true); }}>
-                        <Plus size={20} /> REGISTER DEVICE
-                    </button>
-                )}
+                <div className="flex gap-2">
+                    <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 opacity-30" size={18} />
+                        <input 
+                            type="text" 
+                            placeholder="Find asset..." 
+                            className="input input-bordered pl-10 w-full md:w-64 font-bold" 
+                            value={searchTerm} 
+                            onChange={(e) => setSearchTerm(e.target.value)} 
+                        />
+                    </div>
+                    {isSuperAdmin && (
+                        <button className="btn btn-primary shadow-lg shadow-primary/30" onClick={() => { resetForm(); setIsCreateModalOpen(true); }}>
+                            <Plus size={20} /> NEW DEVICE
+                        </button>
+                    )}
+                </div>
             </div>
 
-            {/* Table */}
-            <div className="card bg-base-100 shadow-2xl border border-base-200">
-                <div className="p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-base-200">
-                    <h3 className="text-xl font-black italic">DEVICE LIST & ACCESS</h3>
-                    <div className="relative w-full md:w-80">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 opacity-30" size={18} />
-                        <input type="text" placeholder="Search..." className="input input-bordered w-full pl-10" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-                    </div>
-                </div>
-                <div className="overflow-x-auto">
-                    <table className="table w-full">
-                        <thead className="bg-base-200/50 font-black uppercase text-xs">
-                            <tr>
-                                <th onClick={() => handleSort('device_code')} className="cursor-pointer">Code <ArrowUpDown size={12} /></th>
-                                <th onClick={() => handleSort('name')} className="cursor-pointer">Asset Name <ArrowUpDown size={12} /></th>
-                                <th>Type</th>
-                                <th>Status</th>
-                                {isSuperAdmin && <th>Access (Assigned Users)</th>}
-                                <th className="text-right">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {isLoadingDevices ? <tr><td colSpan="5" className="text-center p-8"><span className="loading loading-spinner"></span></td></tr> : sortedAndFiltered.map((device) => (
-                                <tr key={device.id} className="hover:bg-primary/5">
-                                    <td className="font-mono font-black text-primary">{device.device_code}</td>
-                                    <td>
-                                        <div className="font-bold">{device.name}</div>
-                                        <div className="text-[10px] opacity-40">{device.address}</div>
-                                    </td>
-                                    <td><span className={`badge ${getTypeColor(device.device_type)} badge-sm font-black`}>{device.device_type}</span></td>
-                                    <td>
-                                        <span className={`badge ${getDeviceStatus(device).color} badge-sm font-black gap-1`}>
-                                            <span className={`w-2 h-2 rounded-full ${getDeviceStatus(device).status === 'online' ? 'bg-white animate-pulse' : 'bg-white/50'}`}></span>
-                                            {getDeviceStatus(device).label}
-                                        </span>
-                                    </td>
-                                    {isSuperAdmin && (
-                                        <td>
-                                            <div className="flex flex-wrap gap-1 items-center">
-                                                {device.users?.length > 0 ? device.users.map(u => (
-                                                    <div key={u.id} className="badge badge-info gap-1 badge-outline px-2 h-6 text-[10px] font-bold">
-                                                        {u.name}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {Object.keys(DEVICE_CATEGORIES).map((key) => {
+                    const category = DEVICE_CATEGORIES[key];
+                    const devices = groupedDevices[key] || [];
+                    const Icon = category.icon;
+
+                    return (
+                        <div key={key} className={`card bg-base-100 shadow-xl overflow-hidden border-t-4 ${category.border.replace('border-', 'border-t-')}`}>
+                            <div className="p-4 bg-base-100 border-b border-base-200 flex justify-between items-center">
+                                <div className="flex items-center gap-3">
+                                    <div className={`p-2 rounded-lg ${category.bg} ${category.color}`}>
+                                        <Icon size={20} />
+                                    </div>
+                                    <h3 className="font-black italic text-lg">{category.label}</h3>
+                                </div>
+                                <span className={`badge ${category.badge} font-bold`}>{devices.length} Items</span>
+                            </div>
+
+                            <div className="p-4 space-y-3 min-h-[200px] bg-base-200/30">
+                                {isLoadingDevices ? (
+                                    <div className="flex justify-center items-center h-32"><span className="loading loading-spinner"></span></div>
+                                ) : devices.length === 0 ? (
+                                    <div className="flex flex-col items-center justify-center h-40 border-2 border-dashed border-base-300 rounded-xl opacity-40">
+                                        <Icon size={32} className="mb-2" />
+                                        <span className="text-xs font-bold uppercase">No Devices</span>
+                                    </div>
+                                ) : (
+                                    devices.map(device => {
+                                        const status = getDeviceStatus(device);
+                                        // Gunakan gambar spesifik device jika ada, jika tidak gunakan default kategori
+                                        const deviceImage = device.image || category.defaultImage;
+
+                                        return (
+                                            <div key={device.id} className="card card-side bg-base-100 shadow-sm border border-base-200 hover:shadow-md transition-all p-2 gap-3 items-center group">
+                                                {/* DEVICE IMAGE (THUMBNAIL) */}
+                                                <figure className="w-24 h-24 rounded-xl overflow-hidden flex-shrink-0 bg-base-300 relative">
+                                                    <img 
+                                                        src={deviceImage} 
+                                                        alt={device.name} 
+                                                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                                                        onError={(e) => {e.target.src = category.defaultImage}} // Fallback on error
+                                                    />
+                                                    <div className={`absolute bottom-0 w-full text-[8px] font-black text-center text-white py-1 ${status.status === 'online' ? 'bg-success/80' : 'bg-error/80'}`}>
+                                                        {status.label}
                                                     </div>
-                                                )) : <span className="text-[10px] opacity-30 italic">Public / Unassigned</span>}
-                                                <button onClick={() => { setSelectedDevice(device); setIsAssignModalOpen(true); }} className="btn btn-xs btn-circle btn-primary btn-outline">
-                                                    <UserPlus size={10} />
-                                                </button>
+                                                </figure>
+                                                
+                                                {/* DEVICE INFO */}
+                                                <div className="flex-1 min-w-0">
+                                                    <h4 className="font-bold text-sm truncate">{device.name}</h4>
+                                                    <p className="text-[10px] font-mono opacity-50 mb-1">{device.device_code}</p>
+                                                    <p className="text-[10px] opacity-60 line-clamp-2 leading-tight">
+                                                        {device.address || "No location address set."}
+                                                    </p>
+                                                </div>
+
+                                                {/* ACTIONS */}
+                                                <div className="flex flex-col gap-1 pr-2">
+                                                    <button 
+                                                        onClick={() => navigate(`/device/${device.id}/data`)}
+                                                        className="btn btn-xs btn-primary btn-outline"
+                                                    >
+                                                        <Eye size={12} />
+                                                    </button>
+                                                    {isSuperAdmin && (
+                                                        <button 
+                                                            onClick={() => {
+                                                                setSelectedDevice(device);
+                                                                setFormData({
+                                                                    ...device,
+                                                                    device_type: device.device_type === 'FLOWS' ? 'FLOOD' : device.device_type,
+                                                                    image: device.image || "", // Load existing image URL
+                                                                    initial_distance: device.settings?.initial_distance || 10,
+                                                                    alert_threshold: device.settings?.alert_threshold || 50,
+                                                                    danger_threshold: device.settings?.danger_threshold || 80
+                                                                });
+                                                                setIsEditModalOpen(true);
+                                                            }} 
+                                                            className="btn btn-xs btn-ghost"
+                                                        >
+                                                            <Edit2 size={12} />
+                                                        </button>
+                                                    )}
+                                                </div>
                                             </div>
-                                        </td>
-                                    )}
-                                    <td className="text-right space-x-2">
-                                        <button
-                                            className="btn btn-primary btn-sm px-4 italic font-black"
-                                            onClick={() => navigate(`/device/${device.id}/data`)}
-                                        >
-                                            <Eye size={14} className="mr-1" /> Detail
-                                        </button>
-                                        <button className="btn btn-ghost btn-sm btn-square" onClick={() => {
-                                            setSelectedDevice(device);
-                                            setFormData({
-                                                ...device,
-                                                initial_distance: device.settings?.initial_distance || 10,
-                                                alert_threshold: device.settings?.alert_threshold || 50,
-                                                danger_threshold: device.settings?.danger_threshold || 80
-                                            });
-                                            setIsEditModalOpen(true);
-                                        }}>
-                                            <Edit2 size={16} />
-                                        </button>
-                                        {isSuperAdmin && (
-                                            <button className="btn btn-ghost btn-sm btn-square text-error" onClick={() => { if (window.confirm("Delete asset?")) deleteMutation.mutate(device.id) }}>
-                                                <Trash2 size={16} />
-                                            </button>
-                                        )}
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                                        )
+                                    })
+                                )}
+                            </div>
+                        </div>
+                    );
+                })}
             </div>
 
             {/* Modal: Create/Edit */}
             {(isCreateModalOpen || isEditModalOpen) && (
-                <div className="modal modal-open">
-                    <div className="modal-box max-w-2xl rounded-3xl p-8 border border-base-300">
-                        <button className="btn btn-sm btn-circle btn-ghost absolute right-4 top-4" onClick={() => { setIsCreateModalOpen(false); setIsEditModalOpen(false); }}><X /></button>
-                        <h3 className="font-black text-2xl italic mb-6 uppercase tracking-tighter">
-                            {isEditModalOpen ? "Update Asset Configuration" : "New Asset Registration"}
-                        </h3>
-                        <div className="grid grid-cols-2 gap-4">
-                            {/* Device Code - Disabled for Admin when editing */}
+                <div className="modal modal-open z-[1000]">
+                    <div className="modal-box max-w-2xl rounded-3xl p-0 border border-base-300 overflow-hidden">
+                        <div className="p-6 border-b border-base-200 bg-base-200/30 flex justify-between items-center">
+                            <h3 className="font-black text-xl italic uppercase tracking-tight">
+                                {isEditModalOpen ? "Configure Asset" : "Register New Asset"}
+                            </h3>
+                            <button className="btn btn-sm btn-circle btn-ghost" onClick={() => { setIsCreateModalOpen(false); setIsEditModalOpen(false); }}><X size={18} /></button>
+                        </div>
+                        
+                        <div className="p-8 grid grid-cols-2 gap-4 max-h-[70vh] overflow-y-auto">
+                            {/* Device Type Selection */}
+                            <div className="col-span-2 form-control">
+                                <label className="label text-xs font-black opacity-50">SYSTEM TYPE</label>
+                                <div className="grid grid-cols-4 gap-2">
+                                    {Object.keys(DEVICE_CATEGORIES).map(type => {
+                                        const Cat = DEVICE_CATEGORIES[type];
+                                        const isSelected = formData.device_type === type;
+                                        return (
+                                            <div 
+                                                key={type}
+                                                onClick={() => (!isEditModalOpen || isSuperAdmin) && setFormData({...formData, device_type: type})}
+                                                className={`
+                                                    cursor-pointer rounded-xl border-2 p-3 flex flex-col items-center gap-2 transition-all
+                                                    ${isSelected ? `border-${Cat.color.split('-')[1]}-500 bg-base-200` : 'border-base-200 hover:border-base-300'}
+                                                    ${(isEditModalOpen && !isSuperAdmin) ? 'opacity-50 cursor-not-allowed' : ''}
+                                                `}
+                                            >
+                                                <Cat.icon className={isSelected ? Cat.color : 'opacity-30'} size={24} />
+                                                <span className={`text-[10px] font-black ${isSelected ? '' : 'opacity-40'}`}>{type}</span>
+                                            </div>
+                                        )
+                                    })}
+                                </div>
+                            </div>
+
                             <div className="form-control col-span-1">
                                 <label className="label text-xs font-black opacity-50">DEVICE CODE</label>
                                 <input
@@ -341,201 +387,86 @@ export default function Device() {
                                     value={formData.device_code}
                                     onChange={e => setFormData({ ...formData, device_code: e.target.value })}
                                     disabled={isEditModalOpen && !isSuperAdmin}
+                                    placeholder="e.g. SIG-001"
                                 />
                             </div>
-
-                            {/* Device Type - Disabled for Admin when editing */}
                             <div className="form-control col-span-1">
-                                <label className="label text-xs font-black opacity-50">DEVICE TYPE</label>
-                                <select
-                                    className="select select-bordered font-bold"
-                                    value={formData.device_type}
-                                    onChange={e => setFormData({ ...formData, device_type: e.target.value })}
-                                    disabled={isEditModalOpen && !isSuperAdmin}
-                                >
-                                    <option value="SIGMA">SIGMA</option>
-                                    <option value="FLOWS">FLOWS</option>
-                                    <option value="LANDSLIDE">LANDSLIDE</option>
-                                </select>
-                            </div>
-
-                            {/* Device Name */}
-                            <div className="form-control col-span-2">
                                 <label className="label text-xs font-black opacity-50">ASSET NAME</label>
                                 <input
                                     className="input input-bordered font-bold"
                                     value={formData.name}
                                     onChange={e => setFormData({ ...formData, name: e.target.value })}
+                                    placeholder="e.g. Sector 7 Unit"
                                 />
                             </div>
 
-                            {/* Coordinates */}
-                            <div className="form-control col-span-1">
-                                <label className="label text-xs font-black opacity-50">LATITUDE</label>
-                                <input
-                                    type="number"
-                                    step="any"
-                                    className="input input-bordered font-mono text-sm"
-                                    value={formData.latitude}
-                                    onChange={e => setFormData({ ...formData, latitude: e.target.value })}
-                                    placeholder="-6.2088"
-                                />
-                            </div>
-                            <div className="form-control col-span-1">
-                                <label className="label text-xs font-black opacity-50">LONGITUDE</label>
-                                <input
-                                    type="number"
-                                    step="any"
-                                    className="input input-bordered font-mono text-sm"
-                                    value={formData.longitude}
-                                    onChange={e => setFormData({ ...formData, longitude: e.target.value })}
-                                    placeholder="106.8456"
-                                />
-                            </div>
-
-                            {/* Interactive Map for Location Selection */}
-                            <div className="col-span-2">
+                            {/* Image URL Input */}
+                            <div className="form-control col-span-2">
                                 <label className="label text-xs font-black opacity-50 flex items-center gap-2">
-                                    <MapPin size={14} /> CLICK ON MAP TO SET LOCATION
+                                    <ImageIcon size={12}/> DEVICE IMAGE URL
                                 </label>
-                                <div className="h-64 rounded-2xl overflow-hidden border-2 border-base-300 shadow-lg">
+                                <input
+                                    className="input input-bordered text-sm font-mono"
+                                    value={formData.image}
+                                    onChange={e => setFormData({ ...formData, image: e.target.value })}
+                                    placeholder="https://example.com/my-device-photo.jpg"
+                                />
+                                <label className="label">
+                                    <span className="label-text-alt opacity-50">Paste a direct link to an image. Leave empty to use category default.</span>
+                                </label>
+                            </div>
+
+                            <div className="col-span-2 mt-2">
+                                <div className="h-48 rounded-xl overflow-hidden border-2 border-base-300 relative group">
+                                    <div className="absolute top-2 left-2 z-[500] bg-base-100/90 px-2 py-1 rounded text-[10px] font-bold shadow backdrop-blur">
+                                        Lat: {formData.latitude || "?"}, Lng: {formData.longitude || "?"}
+                                    </div>
                                     <MapContainer
-                                        center={[
-                                            formData.latitude || -6.2088,
-                                            formData.longitude || 106.8456
-                                        ]}
+                                        center={[formData.latitude || -6.2088, formData.longitude || 106.8456]}
                                         zoom={13}
                                         style={{ height: "100%", width: "100%" }}
-                                        key={`${formData.latitude}-${formData.longitude}`}
                                     >
-                                        <TileLayer
-                                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                                            attribution='&copy; OpenStreetMap'
-                                        />
-                                        <LocationPicker
-                                            onLocationSelect={(latlng) => {
-                                                setFormData({
-                                                    ...formData,
-                                                    latitude: latlng.lat.toFixed(6),
-                                                    longitude: latlng.lng.toFixed(6)
-                                                });
-                                            }}
-                                        />
-                                        {formData.latitude && formData.longitude && (
-                                            <Marker
-                                                position={[formData.latitude, formData.longitude]}
-                                                icon={customIcon}
-                                            />
-                                        )}
+                                        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                                        <LocationPicker onLocationSelect={(latlng) => setFormData({...formData, latitude: latlng.lat.toFixed(6), longitude: latlng.lng.toFixed(6)})} />
+                                        {formData.latitude && <Marker position={[formData.latitude, formData.longitude]} icon={customIcon} />}
                                     </MapContainer>
                                 </div>
                             </div>
 
-                            {/* Address */}
                             <div className="form-control col-span-2">
-                                <label className="label text-xs font-black opacity-50">LOCATION ADDRESS</label>
-                                <textarea
-                                    className="textarea textarea-bordered font-medium"
+                                <label className="label text-xs font-black opacity-50">FULL ADDRESS</label>
+                                <input
+                                    className="input input-bordered text-sm"
                                     value={formData.address}
                                     onChange={e => setFormData({ ...formData, address: e.target.value })}
-                                    rows="2"
+                                    placeholder="Street, City, Province..."
                                 />
                             </div>
 
-                            {/* Divider for Settings */}
-                            <div className="col-span-2 divider text-xs font-black opacity-30">SENSOR CONFIGURATION</div>
-
-                            {/* Device Settings */}
-                            <div className="form-control col-span-1">
-                                <label className="label text-xs font-black opacity-50">INITIAL DISTANCE</label>
-                                <input
-                                    type="number"
-                                    className="input input-bordered font-bold"
-                                    value={formData.initial_distance}
-                                    onChange={e => setFormData({ ...formData, initial_distance: e.target.value })}
-                                />
+                            <div className="col-span-2 divider text-xs font-black opacity-30 mt-4">CALIBRATION</div>
+                            <div className="form-control col-span-2 md:col-span-1">
+                                <label className="label text-xs font-black opacity-50">INITIAL DISTANCE (CM)</label>
+                                <input type="number" className="input input-bordered font-mono font-bold" value={formData.initial_distance} onChange={e => setFormData({ ...formData, initial_distance: e.target.value })} />
                             </div>
-                            <div className="form-control col-span-1">
-                                <label className="label text-xs font-black opacity-50">ALERT THRESHOLD</label>
-                                <input
-                                    type="number"
-                                    className="input input-bordered font-bold"
-                                    value={formData.alert_threshold}
-                                    onChange={e => setFormData({ ...formData, alert_threshold: e.target.value })}
-                                />
-                            </div>
-                            <div className="form-control col-span-1">
-                                <label className="label text-xs font-black opacity-50">DANGER THRESHOLD</label>
-                                <input
-                                    type="number"
-                                    className="input input-bordered font-bold"
-                                    value={formData.danger_threshold}
-                                    onChange={e => setFormData({ ...formData, danger_threshold: e.target.value })}
-                                />
-                            </div>
-                        </div>
-                        <div className="modal-action">
-                            <button className="btn btn-primary px-12 italic font-black shadow-lg shadow-primary/20" onClick={() => isEditModalOpen ? updateMutation.mutate(formData) : createMutation.mutate(formData)}>
-                                <Check size={18} /> {isEditModalOpen ? "Update" : "Register"}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Modal: Advanced User Access Assignment */}
-            {isAssignModalOpen && (
-                <div className="modal modal-open">
-                    <div className="modal-box max-w-lg p-8 rounded-3xl border-2 border-primary/20 bg-base-100 shadow-2xl">
-                        <button className="btn btn-sm btn-circle btn-ghost absolute right-4 top-4" onClick={() => setIsAssignModalOpen(false)}><X /></button>
-                        <div className="flex items-center gap-3 mb-6">
-                            <ShieldAlert className="text-primary" size={28} />
-                            <h3 className="font-black text-2xl italic uppercase tracking-tighter">ACCESS CONTROL</h3>
-                        </div>
-
-                        <div className="bg-base-200 p-4 rounded-2xl mb-6">
-                            <p className="text-xs font-black opacity-50 uppercase mb-2">Selected Device</p>
-                            <div className="flex justify-between items-center">
-                                <span className="font-mono font-black text-primary">{selectedDevice?.device_code}</span>
-                                <span className="text-sm font-bold">{selectedDevice?.name}</span>
-                            </div>
-                        </div>
-
-                        <div className="space-y-4">
-                            <div>
-                                <label className="label font-black text-[10px] uppercase opacity-50">Grant New Access</label>
+                            <div className="form-control col-span-1 md:col-span-1">
                                 <div className="flex gap-2">
-                                    <select className="select select-bordered grow font-bold" value={targetUserId} onChange={e => setTargetUserId(e.target.value)}>
-                                        <option value="">Choose User...</option>
-                                        {allUsers.filter(u => !selectedDevice?.users?.some(du => du.id === u.id)).map(u => (
-                                            <option key={u.id} value={u.id}>{u.name} ({u.role?.name})</option>
-                                        ))}
-                                    </select>
-                                    <button className="btn btn-primary" onClick={() => attachMutation.mutate({ deviceId: selectedDevice.id, userId: targetUserId })} disabled={!targetUserId || attachMutation.isPending}>
-                                        ADD
-                                    </button>
+                                    <div>
+                                        <label className="label text-xs font-black opacity-50 text-warning">ALERT</label>
+                                        <input type="number" className="input input-bordered w-full font-mono font-bold text-warning" value={formData.alert_threshold} onChange={e => setFormData({ ...formData, alert_threshold: e.target.value })} />
+                                    </div>
+                                    <div>
+                                        <label className="label text-xs font-black opacity-50 text-error">DANGER</label>
+                                        <input type="number" className="input input-bordered w-full font-mono font-bold text-error" value={formData.danger_threshold} onChange={e => setFormData({ ...formData, danger_threshold: e.target.value })} />
+                                    </div>
                                 </div>
                             </div>
-
-                            <div className="divider">Active Permissions</div>
-
-                            <div className="max-h-48 overflow-y-auto space-y-2 pr-2">
-                                {selectedDevice?.users?.length > 0 ? selectedDevice.users.map(u => (
-                                    <div key={u.id} className="flex items-center justify-between p-3 bg-base-200 rounded-xl">
-                                        <div>
-                                            <p className="text-sm font-black">{u.name}</p>
-                                            <p className="text-[10px] opacity-50 uppercase font-bold">{u.role?.name}</p>
-                                        </div>
-                                        <button className="btn btn-ghost btn-xs text-error" onClick={() => detachMutation.mutate({ deviceId: selectedDevice.id, userId: u.id })}>
-                                            <UserMinus size={14} />
-                                        </button>
-                                    </div>
-                                )) : <p className="text-center text-xs opacity-30 italic py-4">No specific users assigned.</p>}
-                            </div>
                         </div>
-
-                        <div className="modal-action mt-8">
-                            <button className="btn btn-ghost w-full font-bold" onClick={() => setIsAssignModalOpen(false)}>CLOSE</button>
+                        
+                        <div className="p-6 bg-base-200/50 flex justify-end gap-2">
+                            <button className="btn btn-ghost font-bold" onClick={() => { setIsCreateModalOpen(false); setIsEditModalOpen(false); }}>Cancel</button>
+                            <button className="btn btn-primary px-8 font-black italic shadow-lg shadow-primary/20" onClick={() => isEditModalOpen ? updateMutation.mutate(formData) : createMutation.mutate(formData)}>
+                                <Check size={18} /> SAVE ASSET
+                            </button>
                         </div>
                     </div>
                 </div>

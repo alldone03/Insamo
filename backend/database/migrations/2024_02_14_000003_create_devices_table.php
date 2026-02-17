@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->string('device_code')->unique();
             $table->string('name');
-            $table->enum('device_type', ['SIGMA', 'FLOWS', 'LANDSLIDE']);
+            $table->enum('device_type', ['SIGMA', 'FLOWS', 'LANDSLIDE', 'WILDFIRE']);
             $table->double('latitude');
             $table->double('longitude');
             $table->text('address');
