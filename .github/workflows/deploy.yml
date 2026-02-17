@@ -32,6 +32,8 @@ jobs:
 
             # Restart containers
             docker compose -f docker-compose.prod.yml up -d
+            docker compose -f docker-compose.prod.yml exec -T app php artisan jwt:secret
+            docker compose -f docker-compose.prod.yml exec -T app php artisan migrate --force 
 
             # Cleanup and optimization
             docker compose -f docker-compose.prod.yml exec -T app rm -rf /var/www/storage/framework/views/*
@@ -40,9 +42,9 @@ jobs:
             docker compose -f docker-compose.prod.yml exec -T app php artisan cache:clear
 
             # Database migration
-            docker compose -f docker-compose.prod.yml exec -T app php artisan migrate --force 
+            
 
             # Optional: Clear other caches
             docker compose -f docker-compose.prod.yml exec -T app php artisan config:cache
             docker compose -f docker-compose.prod.yml exec -T app php artisan view:cache
-            docker compose -f docker-compose.prod.yml exec -T app php artisan jwt:secret
+            

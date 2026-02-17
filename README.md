@@ -62,7 +62,7 @@ This project is a Disaster Monitoring System built with React (Frontend) and Lar
 4.  `docker compose -f docker-compose.prod.yml exec app php artisan cache:clear`
 5.  `docker compose -f docker-compose.prod.yml exec app php artisan jwt:secret`
 6.  `docker compose -f docker-compose.prod.yml run --rm app php artisan key:generate --show`
-7.  `docker compose -f docker-compose.prod.yml exec app php artisan migrate --seed --force`
+7.  `docker compose -f docker-compose.prod.yml exec app php artisan migrate --force`
 8.  `cp backend/.env .env`
 
 
