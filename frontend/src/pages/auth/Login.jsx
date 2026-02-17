@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../lib/auth_context";
 import { Mail, Lock, LogIn, Eye, EyeOff, AlertCircle } from "lucide-react";
-import
+import InsamoLogo from "../../assets/InsamoLogo.webp";
 
 
 export default function Login() {

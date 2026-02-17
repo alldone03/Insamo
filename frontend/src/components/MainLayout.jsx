@@ -2,7 +2,7 @@ import { Outlet, Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../lib/auth_context";
 import { LayoutDashboard, User, LogOut, Menu, Cpu, History, Settings, Sun, Moon } from "lucide-react";
 import { useState, useEffect } from "react";
-import InsamoLogo from "../assets/logoInsamo.webp";
+import InsamoLogo from "../assets/InsamoLogo.webp";
 import { getImageUrl } from "../lib/api";
 
 export default function MainLayout() {
