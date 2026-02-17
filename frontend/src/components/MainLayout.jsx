@@ -37,24 +37,27 @@ export default function MainLayout() {
             <input id="my-drawer-2" type="checkbox" className="drawer-toggle" />
             <div className="drawer-content flex flex-col h-screen bg-base-200">
                 {/* Topbar */}
-                <div className="navbar bg-base-100 shadow-sm px-4">
+                <div className="navbar bg-base-100 shadow-sm px-4 flex justify-between lg:items-center">
                     <div className="flex-none lg:hidden">
                         <label htmlFor="my-drawer-2" className="btn btn-square btn-ghost">
                             <Menu />
                         </label>
                     </div>
-                    <img src={InsamoLogo} alt="INSAMO Logo" className="w-12 h-12" />
-                    <div className="flex-1 justify-center lg:justify-start ml-2">
-                        <span className="text-4xl font-black tracking-widest text-primary">INSAMO</span>
+
+                    <div className="flex items-center justify-center w-full ">
+                        <img src={InsamoLogo} alt="INSAMO Logo" className="w-12 h-12" />
+                        <div className="ml-2">
+                            <span className="text-4xl font-black tracking-widest text-primary">INSAMO</span>
+                        </div>
                     </div>
 
                     <div className="flex-none gap-2">
                         <button className="btn btn-ghost btn-circle" onClick={toggleTheme}>
                             {theme === "light" ? <Moon size={20} /> : <Sun size={20} />}
                         </button>
-                        <button className="btn btn-ghost btn-circle">
+                        {/* <button className="btn btn-ghost btn-circle">
                             <Settings size={20} />
-                        </button>
+                        </button> */}
                     </div>
                 </div>
 
