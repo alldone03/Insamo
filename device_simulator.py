@@ -1,18 +1,19 @@
 #!/usr/bin/env python3
 """
-INSAMO Device Sensor Simulator (Random Walk)
-Simulates realistic time-series sensor data
+INSAMO Device Sensor Simulator (Parallel per Device)
+Each device runs independently every 0.5s
 """
 
 import requests
 import random
 import time
+import threading
 from datetime import datetime
 
 # ================= CONFIG =================
-API_BASE_URL = "http://localhost:8000/api"
-DEVICE_CODES = ["SIGMA-001", "FLOWS-001", "LANDSLIDE-001"]
-INTERVAL_SECONDS = 1
+API_BASE_URL = "https://apiapp.insamo.id/api"
+DEVICE_CODES = ["SIGMA-001", "FLOWS-001", "FLOWS-002", "FLOWS-003", "FLOWS-004", "FLOWS-005", "LANDSLIDE-001"]
+INTERVAL_SECONDS = 0.5
 # ==========================================
 
 
@@ -25,6 +26,34 @@ sensor_state = {
         "temperature": 28.0,
     },
     "FLOWS-001": {
+        "water_level": 25.0,
+        "wind_speed": 2.0,
+        "temperature": 27.0,
+        "rainfall_intensity": 0.0,
+        "humidity": 65.0,
+    },
+    "FLOWS-002": {
+        "water_level": 25.0,
+        "wind_speed": 2.0,
+        "temperature": 27.0,
+        "rainfall_intensity": 0.0,
+        "humidity": 65.0,
+    },
+    "FLOWS-003": {
+        "water_level": 25.0,
+        "wind_speed": 2.0,
+        "temperature": 27.0,
+        "rainfall_intensity": 0.0,
+        "humidity": 65.0,
+    },
+    "FLOWS-004": {
+        "water_level": 25.0,
+        "wind_speed": 2.0,
+        "temperature": 27.0,
+        "rainfall_intensity": 0.0,
+        "humidity": 65.0,
+    },
+    "FLOWS-005": {
         "water_level": 25.0,
         "wind_speed": 2.0,
         "temperature": 27.0,
@@ -49,51 +78,41 @@ def random_walk(value, step, min_val, max_val):
 
 
 # ============== GENERATORS =================
-def generate_sigma(device_code):
-    s = sensor_state[device_code]
-
+def generate_sigma(code):
+    s = sensor_state[code]
     s["tilt_x"] = random_walk(s["tilt_x"], 0.15, -10, 10)
     s["tilt_y"] = random_walk(s["tilt_y"], 0.15, -10, 10)
     s["magnitude"] = random_walk(s["magnitude"], 0.25, 0, 15)
     s["temperature"] = random_walk(s["temperature"], 0.1, 20, 40)
-
     return s
 
 
-def generate_flows(device_code):
-    s = sensor_state[device_code]
-
+def generate_flows(code):
+    s = sensor_state[code]
     s["water_level"] = random_walk(s["water_level"], 1.2, 0, 200)
     s["wind_speed"] = random_walk(s["wind_speed"], 0.4, 0, 60)
     s["temperature"] = random_walk(s["temperature"], 0.1, 15, 45)
     s["rainfall_intensity"] = random_walk(s["rainfall_intensity"], 0.3, 0, 30)
     s["humidity"] = random_walk(s["humidity"], 1.0, 30, 100)
-
     return s
 
 
-def generate_landslide(device_code):
-    s = sensor_state[device_code]
-
+def generate_landslide(code):
+    s = sensor_state[code]
     s["soil_moisture"] = random_walk(s["soil_moisture"], 1.0, 10, 90)
     s["slope_angle"] = random_walk(s["slope_angle"], 0.25, 0, 45)
 
-    score = (
-        s["soil_moisture"] * 0.6 +
-        s["slope_angle"] * 0.9
-    )
-
+    score = s["soil_moisture"] * 0.6 + s["slope_angle"] * 0.9
     s["landslide_score"] = int(max(0, min(score, 100)))
     s["current_status"] = "DANGER" if s["landslide_score"] >= 60 else "STABLE"
-
     return s
 # ==========================================
 
 
 # =============== API =======================
-def send_data(device_code, data):
+def send_data(code, data):
     payload = {
-        "device_code": device_code,
+        "device_code": code,
         "recorded_at": datetime.now().isoformat(),
         **data
     }
@@ -102,61 +121,45 @@ def send_data(device_code, data):
         r = requests.post(
             f"{API_BASE_URL}/sensor-readings",
             json=payload,
-            headers={"Content-Type": "application/json"},
             timeout=5
         )
-
-        if r.status_code in (200, 201):
-            print(f"✅ {device_code} sent")
-        else:
-            print(f"❌ {device_code} failed [{r.status_code}]")
-
+        print(f"✅ {code} [{r.status_code}] {datetime.now().strftime('%H:%M:%S.%f')[:-3]}")
     except Exception as e:
-        print(f"⚠️ {device_code} error: {e}")
+        print(f"⚠️ {code} error: {e}")
 # ==========================================
 
 
 # =============== CORE ======================
-def get_device_type(code):
-    if code.startswith("SIGMA"):
-        return "SIGMA"
-    if code.startswith("FLOWS"):
-        return "FLOWS"
-    if code.startswith("LANDSLIDE"):
-        return "LANDSLIDE"
-    return None
+def device_loop(code):
+    print(f"🧠 Device {code} started")
 
+    while True:
+        if code.startswith("SIGMA"):
+            data = generate_sigma(code)
+        elif code.startswith("FLOWS"):
+            data = generate_flows(code)
+        elif code.startswith("LANDSLIDE"):
+            data = generate_landslide(code)
+        else:
+            return
 
-def simulate_device(code):
-    dtype = get_device_type(code)
-
-    if dtype == "SIGMA":
-        data = generate_sigma(code)
-    elif dtype == "FLOWS":
-        data = generate_flows(code)
-    elif dtype == "LANDSLIDE":
-        data = generate_landslide(code)
-    else:
-        return
-
-    send_data(code, data)
+        send_data(code, data)
+        time.sleep(INTERVAL_SECONDS)
 
 
 def main():
-    print("🚀 INSAMO Random Walk Simulator Started\n")
+    print("🚀 INSAMO Parallel Simulator Started\n")
+
+    threads = []
+
+    for code in DEVICE_CODES:
+        t = threading.Thread(target=device_loop, args=(code,), daemon=True)
+        t.start()
+        threads.append(t)
 
     try:
-        i = 0
         while True:
-            i += 1
-            print(f"\n--- Iteration {i} --- {datetime.now().strftime('%H:%M:%S')}")
-
-            for code in DEVICE_CODES:
-                simulate_device(code)
-                time.sleep(0.3)
-
-            time.sleep(INTERVAL_SECONDS)
-
+            time.sleep(1)
     except KeyboardInterrupt:
         print("\n⛔ Simulator stopped")
 # ==========================================

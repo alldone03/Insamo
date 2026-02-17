@@ -1,0 +1,45 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          script: |
+            cd ~/Insamo
+            git pull origin main
+
+            # Setup environment file if not exists
+            if [ ! -f .env ]; then
+              cp .env.example .env
+            fi
+
+            # Restart containers
+            docker compose -f docker-compose.prod.yml up -d --build
+
+            # Cleanup and optimization
+            docker compose -f docker-compose.prod.yml exec -T app rm -rf /var/www/storage/framework/views/*
+            docker compose -f docker-compose.prod.yml exec -T app php artisan view:clear
+            docker compose -f docker-compose.prod.yml exec -T app php artisan config:clear
+            docker compose -f docker-compose.prod.yml exec -T app php artisan cache:clear
+
+            # Database migration
+            docker compose -f docker-compose.prod.yml exec -T app php artisan migrate --seed --force
+
+            # Optional: Clear other caches
+            docker compose -f docker-compose.prod.yml exec -T app php artisan config:cache
+            docker compose -f docker-compose.prod.yml exec -T app php artisan view:cache
