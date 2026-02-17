@@ -36,6 +36,8 @@ services:
     image: mysql:8.0
     container_name: insamo-db-prod
     restart: unless-stopped
+    ports:
+      - "${DB_PORT_EXTERNAL:-3306}:3306"
     environment:
       MYSQL_DATABASE: ${DB_DATABASE:-insamo_rw}
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-password}
