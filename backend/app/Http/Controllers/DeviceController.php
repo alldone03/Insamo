@@ -24,6 +24,11 @@ class DeviceController extends Controller
         return $query->get();
     }
 
+    public function publicIndex()
+    {
+        return Device::select('id', 'name', 'device_code', 'device_type', 'latitude', 'longitude', 'address')->get();
+    }
+
     public function store(Request $request)
     {
         $request->validate([

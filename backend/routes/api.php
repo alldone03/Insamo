@@ -20,6 +20,7 @@ Route::controller(AuthController::class)->group(function () {
 
 // Public endpoint for IoT devices to send sensor data
 Route::post('sensor-readings', [SensorReadingController::class, 'store']);
+Route::get('public-devices', [DeviceController::class, 'publicIndex']);
 
 Route::middleware('auth:api')->group(function () {
     Route::apiResource('roles', RoleController::class);
