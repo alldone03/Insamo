@@ -31,8 +31,8 @@ jobs:
             # docker compose down
 
             # Restart containers
-            docker compose -f docker-compose.prod.yml up -d --build && docker exec nginx-gateway nginx -s reload
-            docker compose -f docker-compose.prod.yml exec -T app php artisan jwt:secret
+            docker compose -f docker-compose.prod.yml up -d --build
+            # docker compose -f docker-compose.prod.yml exec -T app php artisan jwt:secret
             docker compose -f docker-compose.prod.yml exec -T app php artisan migrate --force 
 
             # Cleanup and optimization
@@ -48,6 +48,6 @@ jobs:
             docker compose -f docker-compose.prod.yml exec -T app php artisan config:cache
             docker compose -f docker-compose.prod.yml exec -T app php artisan view:cache
             docker compose -f docker-compose.prod.yml exec -T app php artisan storage:link
-            docker restart insamo-nginx-prod
+            docker restart insamo-nginx-prod && docker restart nginx-gateway
             # docker restart $(docker ps -q)
             
