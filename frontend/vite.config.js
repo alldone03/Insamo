@@ -15,10 +15,23 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: {
-          'vendor-three': ['three', '@react-three/fiber', '@react-three/drei'],
-          'vendor-ui': ['lucide-react', 'recharts'],
-          'vendor-maps': ['leaflet', 'react-leaflet'],
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            // Group heavy 3D related libraries
+            if (id.includes('three') || id.includes('@react-three')) {
+              return 'vendor-3d';
+            }
+            // Group mapping libraries
+            if (id.includes('leaflet')) {
+              return 'vendor-maps';
+            }
+            // Group UI libraries
+            if (id.includes('lucide-react') || id.includes('recharts')) {
+              return 'vendor-ui';
+            }
+            // Other vendor libraries
+            return 'vendor';
+          }
         }
       }
     },
