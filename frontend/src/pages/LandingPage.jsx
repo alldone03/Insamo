@@ -31,11 +31,13 @@ const LandingPage = () => {
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h8m-8 6h16" /></svg>
 
                         </div>
-                        <ul tabIndex={0} className="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52">
+                        <ul tabIndex={0} className="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-64 border border-base-200">
                             <li><a href="#features">Features</a></li>
                             <li><a href="#products">Products</a></li>
                             <li><a href="#demo">Live Demo</a></li>
-                            <li><a href="#contact">Contact</a></li>
+                            <div className="divider my-1"></div>
+                            <li><Link to="/login" className="flex items-center justify-between">Log In <ArrowRight size={14} /></Link></li>
+                            <li><Link to="/register" className="btn btn-primary btn-sm text-white mt-1">Get Started</Link></li>
                         </ul>
                     </div>
                     <Link to="/" className="btn btn-ghost hover:bg-transparent px-0">
@@ -51,10 +53,9 @@ const LandingPage = () => {
                         <li><a href="#features" className="hover:text-primary">Features</a></li>
                         <li><a href="#products" className="hover:text-primary">Products</a></li>
                         <li><a href="#demo" className="hover:text-primary">Live Demo</a></li>
-                        <li><a href="#contact" className="hover:text-primary">Contact</a></li>
                     </ul>
                 </div>
-                <div className="navbar-end space-x-2">
+                <div className="navbar-end space-x-2 hidden lg:flex">
                     <Link to="/login" className="btn btn-ghost">Log In</Link>
                     <Link to="/register" className="btn btn-primary text-white shadow-lg shadow-primary/30">Get Started</Link>
                 </div>
