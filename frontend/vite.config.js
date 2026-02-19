@@ -13,28 +13,6 @@ export default defineConfig({
     }
   },
   build: {
-    rollupOptions: {
-      output: {
-        manualChunks(id) {
-          if (id.includes('node_modules')) {
-            // Group heavy 3D related libraries
-            if (id.includes('three') || id.includes('@react-three')) {
-              return 'vendor-3d';
-            }
-            // Group mapping libraries
-            if (id.includes('leaflet')) {
-              return 'vendor-maps';
-            }
-            // Group UI libraries
-            if (id.includes('lucide-react') || id.includes('recharts')) {
-              return 'vendor-ui';
-            }
-            // Other vendor libraries
-            return 'vendor';
-          }
-        }
-      }
-    },
-    chunkSizeWarningLimit: 1000,
+    chunkSizeWarningLimit: 2000,
   }
 })
