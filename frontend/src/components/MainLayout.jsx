@@ -27,7 +27,7 @@ export default function MainLayout() {
     };
 
     const menuItems = [
-        { path: "/", label: "Dashboard", icon: <LayoutDashboard size={20} /> },
+        { path: "/home", label: "Dashboard", icon: <LayoutDashboard size={20} /> },
         { path: "/device", label: "Device Management", icon: <Cpu size={20} /> },
         { path: "/history", label: "History", icon: <History size={20} /> },
     ];
