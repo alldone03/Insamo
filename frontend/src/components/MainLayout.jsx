@@ -1,6 +1,6 @@
 import { Outlet, Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../lib/auth_context";
-import { LayoutDashboard, User, LogOut, Menu, Cpu, History, Settings, Sun, Moon } from "lucide-react";
+import { LayoutDashboard, User, LogOut, Menu, Cpu, History, Settings, Sun, Moon, BrainCircuit, Waves, Activity, Mountain, Flame, CloudSun } from "lucide-react";
 import { useState, useEffect } from "react";
 import InsamoLogo from "../assets/InsamoLogo.webp";
 import { getImageUrl } from "../lib/api";
@@ -26,11 +26,17 @@ export default function MainLayout() {
         navigate("/login");
     };
 
-    const menuItems = [
+const menuItems = [
         { path: "/", label: "Dashboard", icon: <LayoutDashboard size={20} /> },
         { path: "/device", label: "Device Management", icon: <Cpu size={20} /> },
+        { path: "/predict", label: "AI Prediction", icon: <BrainCircuit size={20} /> },
+        { path: "/weather", label: "Weather", icon: <CloudSun size={20} /> },
+        { path: "/flood", label: "Flood Monitor", icon: <Waves size={20} /> },
+        { path: "/earthquake", label: "Earthquake", icon: <Activity size={20} /> },
+        { path: "/landslide", label: "Landslide", icon: <Mountain size={20} /> },
+        { path: "/wildfire", label: "Wildfire", icon: <Flame size={20} /> },
         { path: "/history", label: "History", icon: <History size={20} /> },
-    ];
+    ]
 
     return (
         <div className="drawer lg:drawer-open">
