@@ -92,7 +92,7 @@ export default function Home() {
 
             <div className="relative card bg-base-100 shadow-2xl overflow-hidden h-[700px] border border-base-200">
                 {/* Map Legend Overlay */}
-                <div className="absolute top-4 right-4 z-[1000] bg-base-100/90 backdrop-blur-md p-4 rounded-2xl shadow-2xl border border-base-200 w-48 animate-in slide-in-from-right-4 duration-500">
+                <div className="absolute top-4 right-4 z-[99] bg-base-100/90 backdrop-blur-md p-4 rounded-2xl shadow-2xl border border-base-200 w-48 animate-in slide-in-from-right-4 duration-500">
                     <h4 className="text-[10px] font-black uppercase opacity-50 mb-3 flex items-center gap-2">
                         <Layers size={12} /> Map Legend
                     </h4>

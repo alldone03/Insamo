@@ -73,7 +73,7 @@ export default function MainLayout() {
                 </main>
             </div>
 
-            <div className="drawer-side h-full z-20 ">
+            <div className="drawer-side h-full z-100 ">
                 <label htmlFor="my-drawer-2" className="drawer-overlay"></label>
                 <div className="menu p-4 w-72 min-h-full bg-base-100 text-base-content flex flex-col shadow-xl">
                     <div className="px-4 py-6 mb-4">
