@@ -90,10 +90,10 @@ const LandingPage = () => {
                                 View Live Demo
                             </a>
                         </div>
-                        <div className="mt-12 flex flex-col items-center lg:items-start gap-6 animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-500">
+                        {/* <div className="mt-12 flex flex-col items-center lg:items-start gap-6 animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-500">
                             <span className="text-xs font-black uppercase tracking-[0.3em] opacity-40 text-center lg:text-left">Joint Collaboration by</span>
                             <div className="flex flex-col sm:flex-row items-center gap-8 grayscale-0 opacity-70 hover:grayscale-0 hover:opacity-100 transition-all duration-500">
-                                {/* ITS Logo/Name */}
+                                
                                 <div className="flex items-center gap-3">
                                     <img src={LogoITS} alt="Logo ITS" className="w-20" />
                                     <div className="flex flex-col leading-tight">
@@ -102,7 +102,7 @@ const LandingPage = () => {
                                     </div>
                                 </div>
                                 <div className="hidden sm:block w-px h-8 bg-base-content/10"></div>
-                                {/* MKPI Logo/Name */}
+                                
                                 <div className="flex items-center gap-3">
                                     <div className="w-12 h-12 bg-secondary/10 rounded-xl flex items-center justify-center font-black text-secondary text-2xl border border-secondary/20">MKPI</div>
                                     <div className="flex flex-col leading-tight">
@@ -111,13 +111,13 @@ const LandingPage = () => {
                                     </div>
                                 </div>
                             </div>
-                        </div>
+                        </div> */}
                     </div>
                 </div>
             </section>
 
             {/* Solution Snapshot */}
-            <section id="features" className="py-24 bg-base-200/50">
+            {/* <section id="features" className="py-24 bg-base-200/50">
                 <div className="max-w-7xl mx-auto px-4">
                     <div className="text-center mb-16">
                         <div className="badge badge-secondary badge-outline mb-4">Features</div>
@@ -143,7 +143,7 @@ const LandingPage = () => {
                         ))}
                     </div>
                 </div>
-            </section>
+            </section> */}
 
             {/* Product Carousel */}
             <section id="products" className="py-24 bg-base-100">
@@ -157,7 +157,7 @@ const LandingPage = () => {
             </section>
 
             {/* Key Benefits */}
-            <section id="benefits" className="py-24 relative overflow-hidden bg-base-200/30">
+            {/* <section id="benefits" className="py-24 relative overflow-hidden bg-base-200/30">
                 <div className="absolute top-0 right-0 w-1/3 h-full bg-gradient-to-l from-primary/5 to-transparent -z-10"></div>
                 <div className="max-w-7xl mx-auto px-4">
                     <div className="flex flex-col lg:flex-row items-center gap-16">
@@ -179,9 +179,9 @@ const LandingPage = () => {
                             <Link to="/register" className="btn btn-secondary shadow-lg">Learn More About Benefits</Link>
                         </div>
                         <div className="flex-1 relative w-full">
-                            {/* Using Map Demo as the "Benefit" visual or just keeping the phone mock */}
+                            
                             <div className="artboard phone-2 bg-black rounded-[3rem] border-8 border-gray-800 shadow-2xl mx-auto overflow-hidden relative">
-                                {/* Mockup Screen content */}
+                                
                                 <div className="absolute inset-0 bg-base-100 flex flex-col">
                                     <div className="bg-primary h-32 p-6 flex flex-col justify-end text-primary-content">
                                         <h4 className="font-bold text-2xl">My Devices</h4>
@@ -202,13 +202,13 @@ const LandingPage = () => {
                                         ))}
                                     </div>
                                 </div>
-                                {/* Top notch */}
+                                
                                 <div className="absolute top-0 left-1/2 -translate-x-1/2 h-6 w-32 bg-gray-800 rounded-b-2xl"></div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </section>
+            </section> */}
 
             {/* Product Visual / Demo (Map) */}
             <section id="demo" className="py-24 bg-base-100">
