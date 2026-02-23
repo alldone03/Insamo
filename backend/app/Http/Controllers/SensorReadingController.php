@@ -9,11 +9,21 @@ class SensorReadingController extends Controller
 {
     public function index(Request $request)
     {
-        $query = SensorReading::query();
+        $query = SensorReading::query()->with('classificationResults');
+
         if ($request->has('device_id')) {
             $query->where('device_id', $request->device_id);
         }
-        return $query->latest('recorded_at')->paginate(50);
+
+        if ($request->has('start_date')) {
+            $query->where('recorded_at', '>=', $request->start_date);
+        }
+
+        if ($request->has('end_date')) {
+            $query->where('recorded_at', '<=', $request->end_date);
+        }
+
+        return $query->latest('recorded_at')->paginate($request->get('per_page', 50));
     }
 
     public function store(Request $request)
@@ -34,7 +44,31 @@ class SensorReadingController extends Controller
         $data = $request->except('device_code');
         $data['device_id'] = $device->id;
 
-        return SensorReading::create($data);
+        $reading = SensorReading::create($data);
+
+        // Alert Logic for Flood (FLOWS)
+        if ($device->device_type === 'FLOWS' && isset($data['water_level'])) {
+            $settings = $device->settings;
+            if ($settings) {
+                $level = (float)$data['water_level'];
+                $status = 'NORMAL';
+                $threshold = $settings->initial_distance;
+
+                if ($level >= $settings->danger_threshold) {
+                    $status = 'DANGER';
+                    $threshold = $settings->danger_threshold;
+                } elseif ($level >= $settings->alert_threshold) {
+                    $status = 'ALERT';
+                    $threshold = $settings->alert_threshold;
+                }
+
+                if ($status !== 'NORMAL') {
+                    \App\Services\TelegramService::sendFloodAlert($device, $status, $level, $threshold);
+                }
+            }
+        }
+
+        return $reading;
     }
 
     public function show(SensorReading $sensorReading)

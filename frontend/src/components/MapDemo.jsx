@@ -1,19 +1,21 @@
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, useMap, LayersControl } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { Link } from "react-router-dom";
-import { Eye, Info, Layers } from "lucide-react";
+import { Eye, Info, Layers, Map as MapIcon } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../lib/api";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 // Dummy data for the landing page map (fallback if backend is empty)
 const DUMMY_DEVICES = [
-    { id: 'd1', name: "Weather Station Alpha", latitude: -6.2088, longitude: 106.8456, device_type: "SIGMA", device_code: "WS-001", address: "Jakarta Pusat" },
-    { id: 'd2', name: "Flood Sensor Beta", latitude: -6.9175, longitude: 107.6191, device_type: "FLOWS", device_code: "FS-002", address: "Bandung" },
-    { id: 'd3', name: "Landslide Monitor Gamma", latitude: -7.2575, longitude: 112.7521, device_type: "LANDSLIDE", device_code: "LM-003", address: "Surabaya" },
-    { id: 'd4', name: "Wildfire Detector Delta", latitude: -8.4095, longitude: 115.1889, device_type: "WILDFIRE", device_code: "WD-004", address: "Bali" },
+    { id: 'd1', name: "Weather Station Alpha", latitude: -6.2088, longitude: 106.8456, device_type: "SIGMA", device_code: "WS-001", address: "Jakarta Pusat", is_online: true },
+    { id: 'd2', name: "Flood Sensor Beta", latitude: -6.9175, longitude: 107.6191, device_type: "FLOWS", device_code: "FS-002", address: "Bandung", is_online: true },
+    { id: 'd3', name: "Landslide Monitor Gamma", latitude: -7.2575, longitude: 112.7521, device_type: "LANDSLIDE", device_code: "LM-003", address: "Surabaya", is_online: false },
+    { id: 'd4', name: "Wildfire Detector Delta", latitude: -8.4095, longitude: 115.1889, device_type: "WILDFIRE", device_code: "WD-004", address: "Bali", is_online: true },
 ];
+
+const { BaseLayer } = LayersControl;
 
 function SetBounds({ devices }) {
     const map = useMap();
@@ -27,11 +29,15 @@ function SetBounds({ devices }) {
 }
 
 
-const getCustomIcon = (type) => {
+const getCustomIcon = (type, is_online = true) => {
     let color = "#3b82f6"; // Default Blue (SIGMA)
-    if (type === 'FLOWS') color = "#06b6d4"; // Cyan
-    if (type === 'LANDSLIDE') color = "#f97316"; // Orange
-    if (type === 'WILDFIRE') color = "#ef4444"; // Red
+    if (!is_online) {
+        color = "#1a1a1a"; // Black (No Signal)
+    } else {
+        if (type === 'FLOWS') color = "#06b6d4"; // Cyan
+        if (type === 'LANDSLIDE') color = "#f97316"; // Orange
+        if (type === 'WILDFIRE') color = "#ef4444"; // Red
+    }
 
     return L.divIcon({
         className: "custom-div-icon",
@@ -83,9 +89,9 @@ const MapDemo = () => {
     }, [devices]);
 
     return (
-        <div className="relative card bg-base-100 shadow-2xl overflow-hidden h-[500px] border border-base-200">
+        <div className="relative card bg-base-100 shadow-2xl overflow-hidden h-[600px] border border-base-200 group">
             {/* Map Legend Overlay */}
-            <div className="absolute top-4 right-4 z-[400] bg-base-100/90 backdrop-blur-md p-4 rounded-2xl shadow-2xl border border-base-200 w-48 pointer-events-none">
+            <div className="absolute top-4 right-4 z-[400] bg-base-100/90 backdrop-blur-md p-4 rounded-2xl shadow-2xl border border-base-200 w-48 pointer-events-none transition-all duration-300 group-hover:scale-105">
                 <h4 className="text-[10px] font-black uppercase opacity-50 mb-3 flex items-center gap-2">
                     <Layers size={12} /> Live Network
                 </h4>
@@ -94,6 +100,7 @@ const MapDemo = () => {
                     <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-cyan-500"></div><span className="text-xs font-bold">FLOWS</span></div>
                     <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-orange-500"></div><span className="text-xs font-bold">LANDSLIDE</span></div>
                     <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-red-500"></div><span className="text-xs font-bold">WILDFIRE</span></div>
+                    <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-black"></div><span className="text-xs font-bold">NO SIGNAL</span></div>
                 </div>
             </div>
 
@@ -105,23 +112,41 @@ const MapDemo = () => {
                 scrollWheelZoom={false}
             >
                 <SetBounds devices={devices} />
-                <TileLayer
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                />
+
+                <LayersControl position="bottomleft">
+                    <BaseLayer checked name="OpenStreetMap">
+                        <TileLayer
+                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                        />
+                    </BaseLayer>
+                    <BaseLayer name="Satellite">
+                        <TileLayer
+                            url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+                            attribution='Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+                        />
+                    </BaseLayer>
+                    <BaseLayer name="Terrain">
+                        <TileLayer
+                            url="https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png"
+                            attribution='Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, <a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)'
+                        />
+                    </BaseLayer>
+                </LayersControl>
+
                 {devices.map((device) => (
                     <Marker
                         key={device.id}
                         position={[device.latitude, device.longitude]}
-                        icon={getCustomIcon(device.device_type)}
+                        icon={getCustomIcon(device.device_type, device.is_online !== false)}
                     >
                         <Popup className="custom-popup">
                             <div className="p-1 min-w-[200px]">
                                 <div className="flex items-center justify-between mb-2">
-                                    <span className={`badge badge-sm font-black italic ${device.device_type === 'SIGMA' ? 'badge-primary' :
-                                        device.device_type === 'FLOWS' ? 'badge-secondary' : 'badge-accent'
+                                    <span className={`badge badge-sm font-black italic ${device.is_online === false ? 'bg-black text-white' : (device.device_type === 'SIGMA' ? 'badge-primary' :
+                                        device.device_type === 'FLOWS' ? 'badge-secondary' : 'badge-accent')
                                         }`}>
-                                        {device.device_type}
+                                        {device.is_online === false ? 'OFFLINE' : device.device_type}
                                     </span>
                                     <span className="text-[10px] font-mono opacity-40 font-bold">{device.device_code}</span>
                                 </div>

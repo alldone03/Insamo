@@ -14,6 +14,7 @@ import Wildfire from './pages/Wildfire';
 import Weather from './pages/Weather';
 import History from "./pages/History";
 import Sensordata from "./pages/Sensordata";
+import SystemSettings from "./pages/SystemSettings";
 import LandingPage from "./pages/LandingPage";
 import MainLayout from "./components/MainLayout";
 import NotFound from "./pages/NotFound";
@@ -45,6 +46,7 @@ function App() {
         <Route path="/weather" element={<Weather />} />
         <Route path="/device/:id/data" element={<Sensordata />} />
         <Route path="/history" element={<History />} />
+        <Route path="/settings" element={<SystemSettings />} />
       </Route>
 
       <Route path="*" element={<NotFound />} />

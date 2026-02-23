@@ -21,6 +21,10 @@ Route::controller(AuthController::class)->group(function () {
 // Public endpoint for IoT devices to send sensor data
 Route::post('sensor-readings', [SensorReadingController::class, 'store']);
 Route::get('public-devices', [DeviceController::class, 'publicIndex']);
+Route::get('weather', [App\Http\Controllers\WeatherReadingController::class, 'index']);
+Route::get('weather/latest', [App\Http\Controllers\WeatherReadingController::class, 'latest']);
+Route::post('weather', [App\Http\Controllers\WeatherReadingController::class, 'store']);
+Route::post('telegram/webhook', [\App\Http\Controllers\TelegramLogController::class, 'webhook']);
 
 Route::middleware('auth:api')->group(function () {
     Route::apiResource('roles', RoleController::class);
@@ -36,4 +40,8 @@ Route::middleware('auth:api')->group(function () {
     Route::get('sensor-readings/{sensorReading}', [SensorReadingController::class, 'show']);
     
     Route::apiResource('classification-results', ClassificationResultController::class);
+
+    Route::get('system-settings', [\App\Http\Controllers\SystemSettingController::class, 'index']);
+    Route::post('system-settings/{key}', [\App\Http\Controllers\SystemSettingController::class, 'update']);
+    Route::get('telegram-logs', [\App\Http\Controllers\TelegramLogController::class, 'index']);
 });

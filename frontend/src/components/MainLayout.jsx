@@ -36,7 +36,11 @@ export default function MainLayout() {
         { path: "/wildfire", label: "Wildfire", icon: <Flame size={20} /> },
         { path: "/device", label: "Device Management", icon: <Cpu size={20} /> },
         { path: "/history", label: "History", icon: <History size={20} /> },
-    ]
+    ].filter(Boolean);
+
+    if (user?.role_id === 1) {
+        menuItems.push({ path: "/settings", label: "System Settings", icon: <Settings size={20} /> });
+    }
 
     return (
         <div className="drawer lg:drawer-open">

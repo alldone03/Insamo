@@ -42,6 +42,7 @@ class UserController extends Controller
             'password' => 'sometimes|required|min:6',
             'role_id' => 'nullable|exists:roles,id',
             'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'telegram_chat_id' => 'nullable|string'
         ]);
 
         $data = $request->except(['password', 'photo']);

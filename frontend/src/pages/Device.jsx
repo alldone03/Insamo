@@ -159,9 +159,10 @@ export default function Device() {
             queryClient.invalidateQueries(["devices"]);
             setTargetUserId("");
             showToast("Access granted successfully!", "success");
+            // Reload the selected device to show updated user list
             api.get("/devices").then(res => {
                 const refreshed = res.data.find(d => d.id === selectedDevice.id);
-                setSelectedDevice(refreshed);
+                if (refreshed) setSelectedDevice(refreshed);
             });
         }
     });
@@ -171,9 +172,10 @@ export default function Device() {
         onSuccess: () => {
             queryClient.invalidateQueries(["devices"]);
             showToast("Access revoked!", "warning");
+            // Reload the selected device to show updated user list
             api.get("/devices").then(res => {
                 const refreshed = res.data.find(d => d.id === selectedDevice.id);
-                setSelectedDevice(refreshed);
+                if (refreshed) setSelectedDevice(refreshed);
             });
         }
     });
@@ -485,6 +487,92 @@ export default function Device() {
                                         placeholder="Street, City, Province..."
                                     />
                                 </div>
+
+                                {/* User Assignment Section - Only show when editing an existing device */}
+                                {isEditModalOpen && isSuperAdmin && (
+                                    <div className="col-span-2 mt-4 p-4 rounded-xl border-2 border-base-300 bg-base-200/20">
+                                        <div className="flex items-center justify-between mb-4">
+                                            <div className="flex items-center gap-2 text-primary">
+                                                <UserPlus size={18} />
+                                                <h4 className="font-bold text-sm tracking-tight">USER ACCESS</h4>
+                                            </div>
+                                            <p className="text-[10px] font-bold opacity-50 uppercase">Manage who can view this asset</p>
+                                        </div>
+
+                                        <div className="flex gap-2">
+                                            <select
+                                                className="select select-bordered flex-1 font-bold text-sm"
+                                                value={targetUserId}
+                                                onChange={e => setTargetUserId(e.target.value)}
+                                            >
+                                                <option value="" disabled>Select user to assign...</option>
+                                                {allUsers?.map(u => (
+                                                    <option key={u.id} value={u.id}>
+                                                        {u.name} ({u.email})
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            <button
+                                                className="btn btn-primary"
+                                                disabled={!targetUserId || attachMutation.isPending}
+                                                onClick={() => attachMutation.mutate({ deviceId: selectedDevice?.id, userId: targetUserId })}
+                                            >
+                                                {attachMutation.isPending ? <span className="loading loading-spinner text-white" /> : 'ASSIGN'}
+                                            </button>
+                                        </div>
+
+                                        {selectedDevice?.users && selectedDevice.users.length > 0 && (
+                                            <div className="mt-4 space-y-2">
+                                                <p className="text-xs font-bold opacity-50 uppercase mb-2">Currently Assigned To</p>
+                                                {selectedDevice.users.map(u => (
+                                                    <div key={u.id} className="flex items-center justify-between bg-base-100 p-2 rounded-lg border border-base-200">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-black">
+                                                                {u.name?.charAt(0).toUpperCase()}
+                                                            </div>
+                                                            <div>
+                                                                <p className="font-bold text-xs">{u.name}</p>
+                                                                <p className="text-[10px] opacity-60">ID: {u.telegram_chat_id || 'Not Set'}</p>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex items-center gap-1">
+                                                            <button
+                                                                className="btn btn-xs btn-outline btn-primary"
+                                                                onClick={() => {
+                                                                    const chatId = prompt("Enter Telegram Chat ID for " + u.name, u.telegram_chat_id || "");
+                                                                    if (chatId !== null) {
+                                                                        api.put(`/users/${u.id}`, { telegram_chat_id: chatId })
+                                                                            .then(() => {
+                                                                                showToast("Telegram ID updated", "success");
+                                                                                api.get("/devices").then(res => {
+                                                                                    const refreshed = res.data.find(d => d.id === selectedDevice.id);
+                                                                                    if (refreshed) setSelectedDevice(refreshed);
+                                                                                });
+                                                                            });
+                                                                    }
+                                                                }}
+                                                            >
+                                                                SET ID
+                                                            </button>
+                                                            <button
+                                                                className="btn btn-xs btn-ghost text-error"
+                                                                onClick={() => detachMutation.mutate({ deviceId: selectedDevice.id, userId: u.id })}
+                                                                disabled={detachMutation.isPending}
+                                                            >
+                                                                <UserMinus size={14} />
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                        {(!selectedDevice?.users || selectedDevice.users.length === 0) && (
+                                            <div className="text-center py-4 bg-base-100/50 rounded-lg border border-dashed border-base-300 mt-4">
+                                                <p className="text-xs font-bold opacity-40">No users assigned yet</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
 
                                 <div className="col-span-2 divider text-xs font-black opacity-30 mt-4">CALIBRATION</div>
                                 <div className="form-control col-span-2 md:col-span-1">
