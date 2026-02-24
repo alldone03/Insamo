@@ -24,8 +24,8 @@ const LandingPage = () => {
     return (
         <div className="min-h-screen bg-base-100 font-sans text-base-content scroll-smooth">
             {/* Navbar */}
-            <div className="navbar bg-base-100/80 backdrop-blur-md fixed top-0 z-50 px-4 lg:px-12 border-b border-base-200">
-                <div className="navbar-start">
+            <div className="navbar bg-base-100/80 backdrop-blur-md fixed top-0 z-50 px-4 lg:px-56 border-b border-base-200 md:flex md:justify-between ">
+                <div className="navbar-start w-full md:w-auto flex justify-between md">
                     <div className="dropdown">
                         <div tabIndex={0} role="button" className="btn btn-ghost lg:hidden">
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h8m-8 6h16" /></svg>
@@ -37,25 +37,28 @@ const LandingPage = () => {
                             <li><a href="#demo">Live Demo</a></li>
                             <div className="divider my-1"></div>
                             <li><Link to="/login" className="flex items-center justify-between">Log In <ArrowRight size={14} /></Link></li>
-                            <li><Link to="/register" className="btn btn-primary btn-sm text-white mt-1">Get Started</Link></li>
+                            <li><Link to="/login" className="btn btn-primary btn-sm text-white mt-1">Get Started</Link></li>
                         </ul>
                     </div>
-                    <Link to="/" className="btn btn-ghost hover:bg-transparent px-0">
-                        <img src={InsamoLogo} alt="Insamo Logo" className="h-10 w-auto" />
-                        <span className="sr-only">Insamo</span>
-                        <div className='text-3xl font-black text-primary italic'>
-                            INSAMO
-                        </div>
-                    </Link>
+                    <div className='flex justify-center w-full md:w-auto'>
+
+                        <Link to="/" className="btn btn-ghost hover:bg-transparent px-0 flex items-center gap-2">
+                            <img src={InsamoLogo} alt="Insamo Logo" className="h-10 w-auto" />
+                            <span className="sr-only">Insamo</span>
+                            <div className='text-3xl font-black text-primary italic'>
+                                INSAMO
+                            </div>
+                        </Link>
+                    </div>
                 </div>
-                <div className="navbar-center hidden lg:flex">
+                <div className="navbar-center hidden lg:flex md:flex">
                     <ul className="menu menu-horizontal px-1 font-medium">
                         <li><a href="#features" className="hover:text-primary">Features</a></li>
                         <li><a href="#products" className="hover:text-primary">Products</a></li>
                         <li><a href="#demo" className="hover:text-primary">Live Demo</a></li>
                     </ul>
                 </div>
-                <div className="navbar-end space-x-2 hidden lg:flex">
+                <div className="navbar-end md:w-auto hidden lg:flex">
                     <Link to="/login" className="btn btn-ghost">Log In</Link>
                     <Link to="/register" className="btn btn-primary text-white shadow-lg shadow-primary/30">Get Started</Link>
                 </div>
@@ -76,14 +79,23 @@ const LandingPage = () => {
                         </div>
                     </div>
                     <div className="flex-1 text-center lg:text-left">
-                        <h1 className="text-5xl lg:text-7xl font-extrabold leading-tight mb-6">
-                            Intelligent <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">Smart</span> Monitoring
+                        <h1 className="text-5xl lg:text-7xl font-extrabold leading-tight mb-6 flex flex-col">
+                            <span>
+                                <span className="bg-primary bg-clip-text text-transparent">In</span>tegrated
+                            </span>
+                            <span>
+                                <span className="bg-primary bg-clip-text text-transparent">S</span>m
+                                <span className="bg-primary bg-clip-text text-transparent">a</span>rt
+                            </span>
+                            <span>
+                                <span className="bg-primary bg-clip-text text-transparent">Mo</span>nitoring
+                            </span>
                         </h1>
                         <p className="py-6 text-lg text-base-content/70 max-w-xl mx-auto lg:mx-0">
                             Transform your environmental data into actionable insights. Insamo provides real-time analytics, predictive maintenance alerts, and seamless IoT integration for modern industries.
                         </p>
                         <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-                            <Link to="/register" className="btn btn-primary btn-lg shadow-xl shadow-primary/30 hover:scale-105 transition-transform">
+                            <Link to="/login" className="btn btn-primary btn-lg shadow-xl shadow-primary/30 hover:scale-105 transition-transform">
                                 Get Started <ArrowRight size={20} />
                             </Link>
                             <a href="#demo" className="btn btn-outline btn-lg hover:bg-base-content hover:text-base-100">
@@ -222,7 +234,7 @@ const LandingPage = () => {
                     <MapDemo />
 
                     <div className="mt-8">
-                        <Link to="/register" className="btn btn-primary btn-lg shadow-xl shadow-primary/30">
+                        <Link to="/login" className="btn btn-primary btn-lg shadow-xl shadow-primary/30">
                             Access Full Dashboard
                         </Link>
                     </div>
@@ -232,7 +244,7 @@ const LandingPage = () => {
             {/* Footer */}
             <footer className="bg-base-300 text-base-content pt-20 pb-10">
                 <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
-                    <div className="col-span-1 md:col-span-2">
+                    <div className="col-span-1 md:col-span-2 ">
                         <Link to="/" className="text-3xl font-bold flex items-center gap-3 mb-6">
                             <img src={InsamoLogo} alt="Insamo" className="h-10 w-auto" />
                             <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Insamo</span>
@@ -256,7 +268,7 @@ const LandingPage = () => {
                             <li><a href="#" className="link link-hover">About us</a></li>
                             <li><a href="#" className="link link-hover">Contact</a></li>
                             <li><a href="#" className="link link-hover">Jobs</a></li>
-                            <li><a href="#" className="link link-hover">Press kit</a></li>
+                            {/* <li><a href="#" className="link link-hover">Press kit</a></li> */}
                         </ul>
                     </div>
                     <div>

@@ -54,8 +54,8 @@ export default function MainLayout() {
                         </label>
                     </div>
 
-                    <div className="flex items-center justify-center w-full ">
-                        <img src={InsamoLogo} alt="INSAMO Logo" className="w-12 h-12" />
+                    <div className="flex items-center justify-center w-full  ">
+                        <img src={InsamoLogo} alt="INSAMO Logo" className="w-12 h-12 dark:bg-white dark:rounded-lg p-1" />
                         <div className="ml-2">
                             <span className="text-4xl font-black tracking-widest text-primary">INSAMO</span>
                         </div>
@@ -81,7 +81,7 @@ export default function MainLayout() {
                 <label htmlFor="my-drawer-2" className="drawer-overlay"></label>
                 <div className="menu p-4 w-72 min-h-full bg-base-100 text-base-content flex flex-col shadow-xl">
                     <div className="px-4 py-6 mb-4">
-                        <img src={InsamoLogo} alt="INSAMO Logo" className="w-12 h-12" />
+                        <img src={InsamoLogo} alt="INSAMO Logo" className="w-12 h-12 dark:bg-white dark:rounded-lg p-1" />
                         <h1 className="text-3xl font-black text-primary italic">INSAMO</h1>
                         <p className="text-xs opacity-50 font-bold uppercase tracking-widest">Integrated Smart Monitoring</p>
                     </div>
@@ -113,7 +113,7 @@ export default function MainLayout() {
                                     <img
                                         src={getImageUrl(user?.photo_path) || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.name || "User"}`}
                                         alt="avatar"
-                                        className="w-full h-full object-cover"
+                                        className="w-full h-full object-cover dark:bg-white dark:rounded-lg p-1"
                                     />
                                 </div>
                             </div>

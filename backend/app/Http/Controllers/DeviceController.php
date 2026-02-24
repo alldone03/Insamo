@@ -26,7 +26,20 @@ class DeviceController extends Controller
 
     public function publicIndex()
     {
-        return Device::select('id', 'name', 'device_code', 'device_type', 'latitude', 'longitude', 'address')->get();
+        return Device::with(['sensorReadings' => function($q) {
+            $q->latest('recorded_at')->limit(1);
+        }])->get()->map(function($device) {
+            return [
+                'id' => $device->id,
+                'name' => $device->name,
+                'device_code' => $device->device_code,
+                'device_type' => $device->device_type,
+                'latitude' => $device->latitude,
+                'longitude' => $device->longitude,
+                'address' => $device->address,
+                'status' => $device->status,
+            ];
+        });
     }
 
     public function store(Request $request)

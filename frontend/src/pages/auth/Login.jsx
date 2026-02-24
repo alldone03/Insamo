@@ -35,7 +35,7 @@ export default function Login() {
                 <div className="card-body p-8">
                     <div className="text-center mb-6">
                         <div className="bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-primary">
-                            <img src={InsamoLogo} alt="INSAMO Logo" className="w-12 h-12" />
+                            <img src={InsamoLogo} alt="INSAMO Logo" className="w-12 h-12 dark:bg-white dark:rounded-lg p-1" />
                         </div>
                         <h2 className="text-3xl font-black italic">INSAMO</h2>
                         <p className="text-sm opacity-60 font-medium">Integrated Smart Monitoring</p>

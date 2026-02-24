@@ -1,11 +1,17 @@
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, useMap, LayersControl } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../lib/api";
 import L from "leaflet";
 import { Link } from "react-router-dom";
 import { Eye, Info, Layers, Map as MapIcon } from "lucide-react";
-import { useMemo, useEffect } from 'react';
+import { useMemo, useEffect, useState } from 'react';
+
+import banjier from "../assets/banjier.webp";
+import longsyor from "../assets/longsyor.webp";
+import apiapi from "../assets/apiapi.webp";
+import gempajir from "../assets/gempajir.webp";
+import logoInsamo from "../assets/logoInsamo.webp";
 
 // New component to handle dynamic bounds/zoom
 function SetBounds({ devices }) {
@@ -19,19 +25,36 @@ function SetBounds({ devices }) {
     return null;
 }
 
-// Custom marker function based on device type
-const getCustomIcon = (type) => {
+// Custom marker function based on device type and status
+const getCustomIcon = (type, status) => {
     let color = "#3b82f6"; // Default Blue (SIGMA)
-    if (type === 'FLOWS') color = "#06b6d4"; // Cyan
-    if (type === 'LANDSLIDE') color = "#f97316"; // Orange
-    if (type === 'WILDFIRE') color = "#ef4444"; // Red
+    let iconUrl = logoInsamo;
+
+    if (type === 'FLOWS') {
+        color = "#06b6d4";
+        iconUrl = banjier;
+    } else if (type === 'LANDSLIDE') {
+        color = "#f97316";
+        iconUrl = longsyor;
+    } else if (type === 'WILDFIRE') {
+        color = "#ef4444";
+        iconUrl = apiapi;
+    } else if (type === 'SIGMA') {
+        color = "#3b82f6";
+        iconUrl = gempajir;
+    }
+
+    // Change to black if offline or inactive
+    if (status === 'OFFLINE' || status === 'INACTIVE') {
+        color = "#1a1a1a";
+    }
 
     return L.divIcon({
         className: "custom-div-icon",
         html: `<div style="
             background-color: ${color};
-            width: 24px;
-            height: 24px;
+            width: 32px;
+            height: 32px;
             border-radius: 50% 50% 50% 0;
             transform: rotate(-45deg);
             border: 2px solid white;
@@ -41,16 +64,22 @@ const getCustomIcon = (type) => {
             justify-content: center;
         ">
             <div style="
-                width: 8px;
-                height: 8px;
+                width: 22px;
+                height: 22px;
                 background: white;
                 border-radius: 50%;
                 transform: rotate(45deg);
-            "></div>
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                overflow: hidden;
+            ">
+                <img src="${iconUrl}" style="width: 100%; height: 100%; object-fit: contain; background-color: ${color}; " alt="${type}" />
+            </div>
         </div>`,
-        iconSize: [24, 24],
-        iconAnchor: [12, 24],
-        popupAnchor: [0, -24]
+        iconSize: [32, 32],
+        iconAnchor: [16, 32],
+        popupAnchor: [0, -32]
     });
 };
 
@@ -97,10 +126,12 @@ export default function Home() {
                         <Layers size={12} /> Map Legend
                     </h4>
                     <div className="space-y-2">
-                        <LegendItem color="bg-blue-500" label="SIGMA" />
-                        <LegendItem color="bg-cyan-500" label="FLOWS" />
-                        <LegendItem color="bg-orange-500" label="LANDSLIDE" />
-                        <LegendItem color="bg-red-500" label="WILDFIRE" />
+                        <LegendItem color="bg-blue-500" label="SIGMA" icon={gempajir} />
+                        <LegendItem color="bg-cyan-500" label="FLOWS" icon={banjier} />
+                        <LegendItem color="bg-orange-500" label="LANDSLIDE" icon={longsyor} />
+                        <LegendItem color="bg-red-500" label="WILDFIRE" icon={apiapi} />
+                        <div className="divider my-1 opacity-10"></div>
+                        <LegendItem color="bg-black" label="OFFLINE / NO SIGNAL" icon={logoInsamo} />
                     </div>
                     <div className="divider my-2 opacity-10"></div>
                     <p className="text-[10px] italic opacity-40 font-medium leading-tight">Click on markers to see live details and analysis.</p>
@@ -113,24 +144,48 @@ export default function Home() {
                     className="z-0"
                 >
                     <SetBounds devices={devices} />
-                    <TileLayer
-                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                    />
+
+                    <LayersControl position="bottomleft">
+                        <LayersControl.BaseLayer checked name="Street View">
+                            <TileLayer
+                                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                            />
+                        </LayersControl.BaseLayer>
+                        <LayersControl.BaseLayer name="Satellite View">
+                            <TileLayer
+                                url="https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}"
+                                attribution='&copy; Google Maps'
+                            />
+                        </LayersControl.BaseLayer>
+                        <LayersControl.BaseLayer name="Terrain View">
+                            <TileLayer
+                                url="https://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}"
+                                attribution='&copy; Google Maps'
+                            />
+                        </LayersControl.BaseLayer>
+                    </LayersControl>
+
                     {devices?.map((device) => (
                         <Marker
                             key={device.id}
                             position={[device.latitude, device.longitude]}
-                            icon={getCustomIcon(device.device_type)}
+                            icon={getCustomIcon(device.device_type, device.status)}
                         >
                             <Popup className="custom-popup">
                                 <div className="p-1 min-w-[200px]">
                                     <div className="flex items-center justify-between mb-2">
-                                        <span className={`badge badge-sm font-black italic ${device.device_type === 'SIGMA' ? 'badge-primary' :
-                                            device.device_type === 'FLOWS' ? 'badge-secondary' : 'badge-accent'
-                                            }`}>
-                                            {device.device_type}
-                                        </span>
+                                        <div className="flex flex-col gap-1">
+                                            <span className={`badge badge-sm font-black italic ${device.device_type === 'SIGMA' ? 'badge-primary' :
+                                                device.device_type === 'FLOWS' ? 'badge-secondary' : 'badge-accent'
+                                                }`}>
+                                                {device.device_type}
+                                            </span>
+                                            <span className={`text-[10px] font-black italic px-2 py-0.5 rounded-full ${device.status === 'ACTIVE' ? 'bg-success/20 text-success' : 'bg-error/20 text-error'
+                                                }`}>
+                                                {device.status}
+                                            </span>
+                                        </div>
                                         <span className="text-[10px] font-mono opacity-40 font-bold">{device.device_code}</span>
                                     </div>
                                     <h3 className="font-black text-lg italic text-base-content leading-none mb-1 uppercase tracking-tighter">
@@ -156,11 +211,13 @@ export default function Home() {
     );
 }
 
-function LegendItem({ color, label }) {
+function LegendItem({ color, label, icon }) {
     return (
         <div className="flex items-center gap-2">
-            <div className={`w-3 h-3 rounded-full ${color} ring-2 ring-white shadow-sm`}></div>
-            <span className="text-xs font-black italic text-base-content/80 uppercase">{label}</span>
+            <div className={`w-6 h-6 rounded-full ${color} ring-2 ring-white shadow-sm flex items-center justify-center overflow-hidden p-0.5`}>
+                {icon && <img src={icon} className="w-full h-full object-contain brightness-0 invert" alt="" />}
+            </div>
+            <span className="text-[10px] font-black italic text-base-content/80 uppercase">{label}</span>
         </div>
     );
 }
