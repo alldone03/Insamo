@@ -4,12 +4,10 @@ WORKDIR /app
 
 COPY package.json yarn.lock ./
 
-RUN yarn install
+RUN npm install
 
-COPY . .
+# COPY . .
 
 EXPOSE 5173
 
-CMD ["yarn", "dev", "--host"]
-
-
+CMD ["npm","run", "dev", "--host", "0.0.0.0"]

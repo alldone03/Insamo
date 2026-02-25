@@ -10,9 +10,20 @@ services:
     working_dir: /var/www
     volumes:
       - ./backend:/var/www
+      - /var/www/vendor
     environment:
+      APP_ENV: local
+      APP_DEBUG: "true"
+      DB_CONNECTION: mysql
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_DATABASE: ${DB_DATABASE:-insamo_rw}
+      DB_USERNAME: ${DB_USERNAME:-insamo}
+      DB_PASSWORD: ${DB_PASSWORD:-password}
       FRONTEND_URL: http://localhost:5173
       APP_URL: http://localhost:8000
+    command: >
+      sh -c "chmod -R 777 storage bootstrap/cache && php-fpm"
     networks:
       - insamo-network
 
@@ -24,7 +35,7 @@ services:
       - "${DB_PORT_EXTERNAL:-3306}:3306"
     environment:
       MYSQL_DATABASE: ${DB_DATABASE:-insamo_rw}
-      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-password}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_password}
       MYSQL_PASSWORD: ${DB_PASSWORD:-password}
       MYSQL_USER: ${DB_USERNAME:-insamo}
       SERVICE_TAGS: dev
@@ -56,6 +67,8 @@ services:
     container_name: insamo-frontend
     environment:
       VITE_API_URL: http://localhost:8000/api
+      CHOKIDAR_USEPOLLING: "true"
+      WATCHPACK_POLLING: "true"
     ports:
       - "5173:5173"
     volumes:

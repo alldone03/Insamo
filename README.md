@@ -28,10 +28,15 @@ This project is a Disaster Monitoring System built with React (Frontend) and Lar
 
 3.  **Run with Docker Compose:**
     ```bash
-    docker-compose up -d --build
+    docker compose up -d --build
     ```
 
-4.  **Access the Application:**
+4.  **Database Migration & Seeding:**
+    ```bash
+    docker compose exec app php artisan migrate:fresh --seed
+    ```
+
+5.  **Access the Application:**
     -   Frontend: http://localhost:5173
     -   Backend API: http://localhost:8000
 

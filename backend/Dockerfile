@@ -20,8 +20,10 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Set working directory
 WORKDIR /var/www
 
-# Copy application code
-COPY . /var/www
+# Copy dependency files only
+COPY composer.json composer.lock ./
+
+# # COPY . /var/www
 
 # Ensure storage and bootstrap/cache directories exist and have correct permissions
 RUN mkdir -p /var/www/storage/framework/cache/data \
@@ -33,7 +35,7 @@ RUN mkdir -p /var/www/storage/framework/cache/data \
     && chmod -R 775 /var/www/storage /var/www/bootstrap/cache
 
 # Install dependencies (as root is fine during build, permissions are set after)
-RUN composer install --no-interaction --optimize-autoloader
+RUN composer install --no-interaction --optimize-autoloader --no-scripts
 
 EXPOSE 9000
 CMD ["php-fpm"]
