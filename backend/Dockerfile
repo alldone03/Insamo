@@ -20,21 +20,10 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Set working directory
 WORKDIR /var/www
 
-# Copy dependency files only
+# Copy dependency files only for faster layer caching
 COPY composer.json composer.lock ./
 
-# # COPY . /var/www
-
-# Ensure storage and bootstrap/cache directories exist and have correct permissions
-RUN mkdir -p /var/www/storage/framework/cache/data \
-    && mkdir -p /var/www/storage/framework/sessions \
-    && mkdir -p /var/www/storage/framework/views \
-    && mkdir -p /var/www/storage/logs \
-    && mkdir -p /var/www/bootstrap/cache \
-    && chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache \
-    && chmod -R 775 /var/www/storage /var/www/bootstrap/cache
-
-# Install dependencies (as root is fine during build, permissions are set after)
+# Install dependencies (no scripts to avoid Laravel errors without full code)
 RUN composer install --no-interaction --optimize-autoloader --no-scripts
 
 EXPOSE 9000
