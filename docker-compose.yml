@@ -1,30 +1,32 @@
 services:
   app:
     build:
-      context: ./backend
+      context: ./backend_2
       dockerfile: Dockerfile
-    image: insamo-backend
-    container_name: insamo-backend
+    image: insamo-backend-v2
+    container_name: insamo-backend-v2
     restart: unless-stopped
     working_dir: /var/www
     volumes:
-      - ./backend:/var/www
-      - /var/www/vendor
+      - ./backend_2:/var/www
+      - /var/www/node_modules # if they switch to nodeLinker: node-modules
+    ports:
+      - "3000:3000"
     environment:
+      APP_NAME: Insamo_v2
       APP_ENV: local
-      APP_DEBUG: "true"
-      DB_CONNECTION: mysql
+      APP_URL: http://localhost:3000
+      FRONTEND_URL: http://localhost:5173
       DB_HOST: db
       DB_PORT: 3306
-      DB_DATABASE: ${DB_DATABASE:-insamo_rw}
-      DB_USERNAME: ${DB_USERNAME:-insamo}
+      DB_NAME: ${DB_DATABASE:-insamo_rw}
+      DB_USER: ${DB_USERNAME:-insamo}
       DB_PASSWORD: ${DB_PASSWORD:-password}
-      FRONTEND_URL: http://localhost:5173
-      APP_URL: http://localhost:8000
-    command: >
-      sh -c "chmod -R 777 storage bootstrap/cache && php-fpm"
+      JWT_SECRET: ${JWT_SECRET:-secret_dev_key_here}
     networks:
       - insamo-network
+    depends_on:
+      - db
 
   db:
     image: mysql:8.0
@@ -44,20 +46,6 @@ services:
     networks:
       - insamo-network
 
-  nginx:
-    image: nginx:alpine
-    container_name: insamo-nginx
-    restart: unless-stopped
-    ports:
-      - "8000:80"
-    volumes:
-      - ./backend:/var/www
-      - ./docker/nginx/conf.d:/etc/nginx/conf.d
-    networks:
-      - insamo-network
-    depends_on:
-      - app
-
   frontend:
     build:
       context: ./frontend
@@ -65,7 +53,7 @@ services:
     image: insamo-frontend
     container_name: insamo-frontend
     environment:
-      VITE_API_URL: http://localhost:8000/api
+      VITE_API_URL: http://localhost:3000/api
       CHOKIDAR_USEPOLLING: "true"
       WATCHPACK_POLLING: "true"
     ports:
