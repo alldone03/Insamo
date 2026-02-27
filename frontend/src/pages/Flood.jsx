@@ -14,7 +14,7 @@ const Flood = () => {
       try {
         const res = await api.get('/devices');
         // Filter for flood devices (assumed FLOWS or similar)
-        const floodDevices = res.data.filter(d => d.device_type === 'FLOWS' || d.device_type === 'SIGMA');
+        const floodDevices = res.data.filter(d => d.device_type === 'FLOWS');
         setDevices(floodDevices);
       } catch (error) {
         console.error("Failed to fetch devices", error);
