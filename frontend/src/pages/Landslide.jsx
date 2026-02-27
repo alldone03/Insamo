@@ -15,7 +15,7 @@ const Landslide = () => {
       try {
         const res = await api.get('/devices');
         // Filter for landslide or just use all for demo if none strictly landslide
-        const landslideDevices = res.data.filter(d => d.device_type === 'LANDSLIDE' || d.device_type === 'SIGMA'); // Adjusted for demo
+        const landslideDevices = res.data.filter(d => d.device_type === 'LANDSLIDE'); // Adjusted for demo
         setDevices(landslideDevices);
       } catch (error) {
         console.error("Failed to fetch devices", error);

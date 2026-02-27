@@ -26,9 +26,9 @@ class DeviceController extends Controller
 
     public function publicIndex()
     {
-        return Device::with(['sensorReadings' => function($q) {
+        return Device::with(['sensorReadings' => function ($q) {
             $q->latest('recorded_at')->limit(1);
-        }])->get()->map(function($device) {
+        }])->get()->map(function ($device) {
             return [
                 'id' => $device->id,
                 'name' => $device->name,
@@ -37,7 +37,8 @@ class DeviceController extends Controller
                 'latitude' => $device->latitude,
                 'longitude' => $device->longitude,
                 'address' => $device->address,
-                'status' => $device->status,
+                'status' => "ACTIVE",
+                // 'status' => $device->status,
             ];
         });
     }
