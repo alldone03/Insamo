@@ -92,6 +92,7 @@ const MapDemo = () => {
         queryKey: ["public-devices"],
         queryFn: async () => {
             const res = await api.get("/public-devices");
+            console.log(res.data);
             return res.data;
         },
     });
