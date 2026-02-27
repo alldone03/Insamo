@@ -1,0 +1,36 @@
+# Production Dockerfile
+FROM node:22-alpine AS builder
+
+WORKDIR /var/www
+
+# Enable corepack for yarn v4
+RUN corepack enable
+
+# Copy package files
+COPY package.json yarn.lock ./
+
+# Install dependencies
+RUN yarn install --immutable
+
+# Copy application source
+COPY . .
+
+# Build the app to generate dist
+RUN yarn build
+
+FROM node:22-alpine
+
+WORKDIR /var/www
+
+# Copy from builder
+COPY --from=builder /var/www/dist ./dist
+COPY --from=builder /var/www/package.json ./
+COPY --from=builder /var/www/yarn.lock ./
+
+RUN corepack enable
+RUN yarn workspaces focus --production || yarn install --immutable
+
+EXPOSE 3000
+
+# Start command
+CMD ["yarn", "start"]

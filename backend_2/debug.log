@@ -1,0 +1,46 @@
+[dotenv@17.3.1] injecting env (12) from .env -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  suppress all logs with { quiet: true }
+Attempting to register user...
+Query: select `id`, `name`, `email`, `password`, `email_verified`, `image`, `created_at`, `updated_at`, `role_id`, `telegram_chat_id` from `users` where `users`.`email` = ? -- params: ["test-1772215437870@example.com"]
+Query: insert into `users` (`id`, `name`, `email`, `password`, `email_verified`, `image`, `created_at`, `updated_at`, `role_id`, `telegram_chat_id`) values (default, ?, ?, default, ?, default, ?, ?, default, default) -- params: ["Test user", "test-1772215437870@example.com", false, "2026-02-27 18:03:58.029", "2026-02-27 18:03:58.029"]
+Query: select `id`, `name`, `email`, `password`, `email_verified`, `image`, `created_at`, `updated_at`, `role_id`, `telegram_chat_id` from `users` order by `users`.`id` desc limit ? -- params: [1]
+Query: insert into `accounts` (`id`, `user_id`, `account_id`, `provider_id`, `access_token`, `refresh_token`, `expires_at`, `password`, `created_at`, `updated_at`) values (default, ?, ?, ?, default, default, default, ?, ?, ?) -- params: ["10", "10", "credential", "password123", "2026-02-27 18:03:58.043", "2026-02-27 18:03:58.043"]
+Registration failed with error: DrizzleQueryError: Failed query: insert into `accounts` (`id`, `user_id`, `account_id`, `provider_id`, `access_token`, `refresh_token`, `expires_at`, `password`, `created_at`, `updated_at`) values (default, ?, ?, ?, default, default, default, ?, ?, ?)
+params: 10,10,credential,password123,2026-02-27 18:03:58.043,2026-02-27 18:03:58.043
+    at MySql2PreparedQuery.queryWithCache (C:\Users\aldan\Desktop\Insamo_rw\backend_2\.yarn\__virtual__\drizzle-orm-virtual-26e35d02be\4\AppData\Local\Yarn\Berry\cache\drizzle-orm-npm-0.45.1-0b2c82c129-10c0.zip\node_modules\drizzle-orm\mysql-core\session.cjs:50:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async MySql2PreparedQuery.execute (C:\Users\aldan\Desktop\Insamo_rw\backend_2\.yarn\__virtual__\drizzle-orm-virtual-26e35d02be\4\AppData\Local\Yarn\Berry\cache\drizzle-orm-npm-0.45.1-0b2c82c129-10c0.zip\node_modules\drizzle-orm\mysql2\session.cjs:73:19)
+    at async withReturning (C:\Users\aldan\Desktop\Insamo_rw\backend_2\.yarn\__virtual__\better-auth-virtual-479e0ace14\4\AppData\Local\Yarn\Berry\cache\better-auth-npm-1.4.19-93b375ebc7-10c0.zip\node_modules\better-auth\dist\adapters\drizzle-adapter\drizzle-adapter.mjs:19:4)
+    at async Object.create (C:\Users\aldan\Desktop\Insamo_rw\backend_2\.yarn\__virtual__\better-auth-virtual-479e0ace14\4\AppData\Local\Yarn\Berry\cache\better-auth-npm-1.4.19-93b375ebc7-10c0.zip\node_modules\better-auth\dist\adapters\drizzle-adapter\drizzle-adapter.mjs:131:12)
+    at async Object.create (C:\Users\aldan\Desktop\Insamo_rw\backend_2\.yarn\__virtual__\@better-auth-core-virtual-ff9661d417\4\AppData\Local\Yarn\Berry\cache\@better-auth-core-npm-1.4.19-5550f994f3-10c0.zip\node_modules\@better-auth\core\dist\db\adapter\factory.mjs:414:16)
+    at async createWithHooks (C:\Users\aldan\Desktop\Insamo_rw\backend_2\.yarn\__virtual__\better-auth-virtual-479e0ace14\4\AppData\Local\Yarn\Berry\cache\better-auth-npm-1.4.19-93b375ebc7-10c0.zip\node_modules\better-auth\dist\db\with-hooks.mjs:21:69)
+    at async Object.linkAccount (C:\Users\aldan\Desktop\Insamo_rw\backend_2\.yarn\__virtual__\better-auth-virtual-479e0ace14\4\AppData\Local\Yarn\Berry\cache\better-auth-npm-1.4.19-93b375ebc7-10c0.zip\node_modules\better-auth\dist\db\internal-adapter.mjs:448:11)
+    at async <anonymous> (C:\Users\aldan\Desktop\Insamo_rw\backend_2\.yarn\__virtual__\better-auth-virtual-479e0ace14\4\AppData\Local\Yarn\Berry\cache\better-auth-npm-1.4.19-93b375ebc7-10c0.zip\node_modules\better-auth\dist\api\routes\sign-up.mjs:189:3)
+    at async internalHandler (C:\Users\aldan\Desktop\Insamo_rw\backend_2\.yarn\__virtual__\better-call-virtual-a8066f11d1\4\AppData\Local\Yarn\Berry\cache\better-call-npm-1.1.8-efc5cb1aa2-10c0.zip\node_modules\better-call\dist\endpoint.cjs:30:20) {
+  query: 'insert into `accounts` (`id`, `user_id`, `account_id`, `provider_id`, `access_token`, `refresh_token`, `expires_at`, `password`, `created_at`, `updated_at`) values (default, ?, ?, ?, default, default, default, ?, ?, ?)',
+  params: [
+    '10',
+    '10',
+    'credential',
+    'password123',
+    '2026-02-27 18:03:58.043',
+    '2026-02-27 18:03:58.043'
+  ],
+  cause: Error: Field 'id' doesn't have a default value
+      at PromisePool.query (C:\Users\aldan\Desktop\Insamo_rw\backend_2\.yarn\__virtual__\mysql2-virtual-ff18557c56\4\AppData\Local\Yarn\Berry\cache\mysql2-npm-3.18.2-42cbc33e63-10c0.zip\node_modules\mysql2\lib\promise\pool.js:36:22)
+      at C:\Users\aldan\Desktop\Insamo_rw\backend_2\.yarn\__virtual__\drizzle-orm-virtual-26e35d02be\4\AppData\Local\Yarn\Berry\cache\drizzle-orm-npm-0.45.1-0b2c82c129-10c0.zip\node_modules\drizzle-orm\mysql2\session.cjs:74:29
+      at MySql2PreparedQuery.queryWithCache (C:\Users\aldan\Desktop\Insamo_rw\backend_2\.yarn\__virtual__\drizzle-orm-virtual-26e35d02be\4\AppData\Local\Yarn\Berry\cache\drizzle-orm-npm-0.45.1-0b2c82c129-10c0.zip\node_modules\drizzle-orm\mysql-core\session.cjs:48:22)
+      at MySql2PreparedQuery.execute (C:\Users\aldan\Desktop\Insamo_rw\backend_2\.yarn\__virtual__\drizzle-orm-virtual-26e35d02be\4\AppData\Local\Yarn\Berry\cache\drizzle-orm-npm-0.45.1-0b2c82c129-10c0.zip\node_modules\drizzle-orm\mysql2\session.cjs:73:30)
+      at QueryPromise.execute (C:\Users\aldan\Desktop\Insamo_rw\backend_2\.yarn\__virtual__\drizzle-orm-virtual-26e35d02be\4\AppData\Local\Yarn\Berry\cache\drizzle-orm-npm-0.45.1-0b2c82c129-10c0.zip\node_modules\drizzle-orm\mysql-core\query-builders\insert.cjs:145:27)
+      at withReturning (C:\Users\aldan\Desktop\Insamo_rw\backend_2\.yarn\__virtual__\better-auth-virtual-479e0ace14\4\AppData\Local\Yarn\Berry\cache\better-auth-npm-1.4.19-93b375ebc7-10c0.zip\node_modules\better-auth\dist\adapters\drizzle-adapter\drizzle-adapter.mjs:19:18)
+      at Object.create (C:\Users\aldan\Desktop\Insamo_rw\backend_2\.yarn\__virtual__\better-auth-virtual-479e0ace14\4\AppData\Local\Yarn\Berry\cache\better-auth-npm-1.4.19-93b375ebc7-10c0.zip\node_modules\better-auth\dist\adapters\drizzle-adapter\drizzle-adapter.mjs:131:18)
+      at Object.create (C:\Users\aldan\Desktop\Insamo_rw\backend_2\.yarn\__virtual__\@better-auth-core-virtual-ff9661d417\4\AppData\Local\Yarn\Berry\cache\@better-auth-core-npm-1.4.19-5550f994f3-10c0.zip\node_modules\@better-auth\core\dist\db\adapter\factory.mjs:414:38)
+      at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+      at async createWithHooks (C:\Users\aldan\Desktop\Insamo_rw\backend_2\.yarn\__virtual__\better-auth-virtual-479e0ace14\4\AppData\Local\Yarn\Berry\cache\better-auth-npm-1.4.19-93b375ebc7-10c0.zip\node_modules\better-auth\dist\db\with-hooks.mjs:21:69) {
+    code: 'ER_NO_DEFAULT_FOR_FIELD',
+    errno: 1364,
+    sql: "insert into `accounts` (`id`, `user_id`, `account_id`, `provider_id`, `access_token`, `refresh_token`, `expires_at`, `password`, `created_at`, `updated_at`) values (default, '10', '10', 'credential', default, default, default, 'password123', '2026-02-27 18:03:58.043', '2026-02-27 18:03:58.043')",
+    sqlState: 'HY000',
+    sqlMessage: "Field 'id' doesn't have a default value"
+  }
+}
