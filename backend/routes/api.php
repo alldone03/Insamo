@@ -25,6 +25,8 @@ Route::get('weather', [App\Http\Controllers\WeatherReadingController::class, 'in
 Route::get('weather/latest', [App\Http\Controllers\WeatherReadingController::class, 'latest']);
 Route::post('weather', [App\Http\Controllers\WeatherReadingController::class, 'store']);
 Route::post('telegram/webhook', [\App\Http\Controllers\TelegramLogController::class, 'webhook']);
+Route::get('geo-proxy', [\App\Http\Controllers\GeoProxyController::class, 'proxy']);
+
 
 Route::middleware('auth:api')->group(function () {
     Route::apiResource('roles', RoleController::class);
