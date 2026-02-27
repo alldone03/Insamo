@@ -37,8 +37,8 @@ class DeviceController extends Controller
                 'latitude' => $device->latitude,
                 'longitude' => $device->longitude,
                 'address' => $device->address,
-                'status' => "ACTIVE",
-                // 'status' => $device->status,
+                // 'status' => "ACTIVE",
+                'status' => $device->status,
             ];
         });
     }

@@ -29,13 +29,13 @@ class Device extends Model
      */
     public function getStatusAttribute()
     {
-        $lastReading = $this->sensorReadings()->latest('recorded_at')->first();
-        if (!$lastReading) return 'INACTIVE';
+        // $lastReading = $this->sensorReadings()->latest('recorded_at')->first();
+        // if (!$lastReading) return 'INACTIVE';
         
-        $lastSync = \Carbon\Carbon::parse($lastReading->recorded_at);
-        if ($lastSync->diffInMinutes(now()) > 30) {
-            return 'OFFLINE';
-        }
+        // $lastSync = \Carbon\Carbon::parse($lastReading->recorded_at);
+        // if ($lastSync->diffInMinutes(now()) > 30) {
+        //     return 'OFFLINE';
+        // }
 
         return 'ACTIVE';
     }
