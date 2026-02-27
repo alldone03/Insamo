@@ -87,7 +87,7 @@ export default function Profile() {
                             <div className="avatar relative">
                                 <div className="w-24 h-24 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2 overflow-hidden bg-base-300">
                                     <img
-                                        src={previewImage || getImageUrl(user?.photo_path) || "https://ui-avatars.com/api/?name=" + (user?.name || "User")}
+                                        src={previewImage || getImageUrl(user?.image) || "https://ui-avatars.com/api/?name=" + (user?.name || "User")}
                                         alt="profile"
                                         className="w-full h-full object-cover"
                                     />

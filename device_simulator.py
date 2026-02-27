@@ -5,8 +5,8 @@ from datetime import datetime
 import json
 
 # Configuration
-API_URL = "http://app.insamo.id/api/sensor-readings"
-WEATHER_API_URL = "http://app.insamo.id/api/weather"
+API_URL = "http://localhost:3000/api/sensor-readings"
+WEATHER_API_URL = "http://localhost:3000/api/weather"
 DEVICES = [
     {"code": "SIGMA-001", "type": "SIGMA"},
     {"code": "FLOWS-001", "type": "FLOWS"},

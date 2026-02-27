@@ -17,7 +17,7 @@ const SystemSettings = () => {
     const [isUserModalOpen, setIsUserModalOpen] = useState(false);
     const [editingUser, setEditingUser] = useState(null);
     const [userFormData, setUserFormData] = useState({
-        name: "", email: "", password: "", role_id: 2, telegram_chat_id: ""
+        name: "", email: "", password: "", roleId: 2, telegram_chat_id: ""
     });
 
     const fetchData = async () => {
@@ -189,7 +189,7 @@ const SystemSettings = () => {
                         </h3>
                         <button className="btn btn-primary btn-sm rounded-xl" onClick={() => {
                             setEditingUser(null);
-                            setUserFormData({ name: "", email: "", password: "", role_id: 2, telegram_chat_id: "" });
+                            setUserFormData({ name: "", email: "", password: "", roleId: 2, telegram_chat_id: "" });
                             setIsUserModalOpen(true);
                         }}>
                             <UserPlus size={16} /> ADD USER
@@ -220,7 +220,7 @@ const SystemSettings = () => {
                                             </div>
                                         </td>
                                         <td>
-                                            <span className={`badge font-bold text-[10px] ${u.role_id === 1 ? 'badge-primary' : 'badge-ghost'}`}>
+                                            <span className={`badge font-bold text-[10px] ${u.roleId === 1 ? 'badge-primary' : 'badge-ghost'}`}>
                                                 {u.role?.name || 'User'}
                                             </span>
                                         </td>
@@ -237,7 +237,7 @@ const SystemSettings = () => {
                                                         name: u.name,
                                                         email: u.email,
                                                         password: "",
-                                                        role_id: u.role_id,
+                                                        roleId: u.roleId,
                                                         telegram_chat_id: u.telegram_chat_id || ""
                                                     });
                                                     setIsUserModalOpen(true);
@@ -351,8 +351,8 @@ const SystemSettings = () => {
                                 <label className="label"><span className="label-text font-black text-xs opacity-50">ROLE</span></label>
                                 <select
                                     className="select select-bordered font-bold"
-                                    value={userFormData.role_id}
-                                    onChange={e => setUserFormData({ ...userFormData, role_id: e.target.value })}
+                                    value={userFormData.roleId}
+                                    onChange={e => setUserFormData({ ...userFormData, roleId: e.target.value })}
                                 >
                                     <option value={1}>Super Admin</option>
                                     <option value={2}>User / Client</option>

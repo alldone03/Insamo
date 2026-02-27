@@ -22,9 +22,13 @@ api.interceptors.request.use(
     }
 );
 
-// Add a response interceptor to handle unauthenticated responses
+// Add a response interceptor to handle unauthenticated responses and unwrap data
 api.interceptors.response.use(
     (response) => {
+        // Automatically extract the actual data array/object if the API returned our custom format
+        if (response.data && response.data.success === true && response.data.data !== undefined) {
+            response.data = response.data.data;
+        }
         return response;
     },
     (error) => {
@@ -53,17 +57,22 @@ export const getImageUrl = (path) => {
     // Clean path (remove leading slashes)
     const cleanPath = path.replace(/^\//, "");
     
-    const apiUrl = import.meta.env.VITE_API_URL || "https://localhost:8000/api";
+    const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
     // Standardize: extract domain/base from API URL (strip /api or /api/)
     // We regex for /api with or without trailing slash
     let baseUrl = apiUrl.split(/\/api($|\/)/)[0].replace(/\/$/, "");
     
     // Force absolute if protocol is missing
     if (baseUrl && !baseUrl.startsWith('http') && !baseUrl.startsWith('/')) {
-        // Enforce HTTPS as per user requirement
-        baseUrl = `https://${baseUrl}`;
+        baseUrl = `http://${baseUrl}`;
     }
 
+    // Node.js backend path
+    if (cleanPath.startsWith('uploads/')) {
+        return `${baseUrl || ""}/${cleanPath}`;
+    }
+
+    // Legacy Laravel path
     const finalUrl = `${baseUrl || ""}/storage/${cleanPath}`;
     return finalUrl;
 };

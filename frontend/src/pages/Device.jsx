@@ -57,7 +57,7 @@ export default function Device() {
     const { user } = useAuth();
     const navigate = useNavigate();
     const queryClient = useQueryClient();
-    const isSuperAdmin = user?.role_id === 1;
+    const isSuperAdmin = user?.roleId === 1;
 
     // Toast State
     const [toast, setToast] = useState({ show: false, message: "", type: "success" });

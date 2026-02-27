@@ -3,11 +3,19 @@ import { Waves, ArrowLeft, Eye, AlertOctagon } from 'lucide-react';
 import GenericChart from '../components/GenericChart';
 import MiniMap from '../components/MiniMap';
 import { api, getImageUrl } from '../lib/api';
+import { io } from 'socket.io-client';
 
 const Flood = () => {
   const [devices, setDevices] = useState([]);
   const [selectedDevice, setSelectedDevice] = useState(null);
+  const selectedDeviceIdRef = React.useRef(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [chartData, setChartData] = useState([]);
+  const [latestReadings, setLatestReadings] = useState({});
+
+  useEffect(() => {
+    selectedDeviceIdRef.current = selectedDevice?.id;
+  }, [selectedDevice]);
 
   useEffect(() => {
     const fetchDevices = async () => {
@@ -25,28 +33,78 @@ const Flood = () => {
     fetchDevices();
   }, []);
 
-  // Simulated historical data for charts
-  const getSimulatedData = () => {
-    const data = [];
-    const now = new Date();
-    for (let i = 24; i >= 0; i--) {
-      const time = new Date(now.getTime() - i * 3600000);
-      data.push({
-        time: time.toISOString(),
-        water_level: 120 + Math.random() * 80, // cm
-        wind_speed: 5 + Math.random() * 20, // m/s
-        temperature: 25 + Math.random() * 5, // C
-        rainfall_intensity: Math.random() * 100, // %
+  useEffect(() => {
+    let backendUrl = "http://localhost:3000";
+    if (import.meta.env.VITE_API_URL) {
+      backendUrl = import.meta.env.VITE_API_URL.split('/api')[0];
+    }
+    const socket = io(backendUrl);
+
+    socket.on('new_sensor_reading', (payload) => {
+      if (payload.device_type === 'FLOWS') {
+        const { device_id, reading } = payload;
+
+        // Update latest reading map
+        setLatestReadings(prev => ({
+          ...prev,
+          [device_id]: reading
+        }));
+
+        setChartData(prevData => {
+          // Hanya tambahkan point jika data ini milik device yang sedang dilihat
+          if (selectedDeviceIdRef.current !== device_id) {
+            return prevData;
+          }
+
+          // Add the new point if not already added to chart
+          const newPoint = {
+            time: reading.recorded_at || new Date().toISOString(),
+            water_level: reading.water_level || 0,
+            wind_speed: reading.wind_speed || 0,
+            temperature: reading.temperature || 0,
+            rainfall_intensity: reading.rainfall_intensity || 0,
+          };
+          // Only keep last 24 items limit
+          return [...prevData, newPoint].slice(-24);
+        });
+      }
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (selectedDevice) {
+      api.get(`/sensor-readings?device_id=${selectedDevice.id}`).then(res => {
+        // Data usually comes with latest first, reverse to make chronological
+        const readings = res.data && Array.isArray(res.data) ? res.data : (res.data?.data || []);
+
+        const formattedData = readings.reverse().map(r => ({
+          time: r.recorded_at,
+          water_level: r.water_level || 0,
+          wind_speed: r.wind_speed || 0,
+          temperature: r.temperature || 0,
+          rainfall_intensity: r.rainfall_intensity || 0,
+        }));
+        setChartData(formattedData);
+      }).catch(err => {
+        console.error("Failed to fetch sensor readings", err);
       });
     }
-    return data;
-  };
-
-  const chartData = getSimulatedData();
+  }, [selectedDevice]);
 
   if (isLoading) {
     return <div className="flex justify-center items-center h-64"><span className="loading loading-spinner loading-lg text-info"></span></div>;
   }
+
+  const isDeviceOnline = (devId) => {
+    if (latestReadings[devId]) return true;
+    const dev = devices.find(d => d.id === devId);
+    if (dev && dev.sensor_readings && dev.sensor_readings.length > 0) return true;
+    return false;
+  };
 
   if (selectedDevice) {
     return (
@@ -75,11 +133,19 @@ const Flood = () => {
                 <div className="space-y-3">
                   <div className="flex justify-between border-b border-base-200 pb-2">
                     <span className="opacity-60 text-xs font-bold uppercase">Status</span>
-                    <span className="badge badge-success badge-sm font-bold">ONLINE</span>
+                    {isDeviceOnline(selectedDevice.id) ? (
+                      <span className="badge badge-success badge-sm font-bold">ONLINE</span>
+                    ) : (
+                      <span className="badge badge-error badge-sm font-bold">OFFLINE</span>
+                    )}
                   </div>
                   <div className="flex justify-between border-b border-base-200 pb-2">
                     <span className="opacity-60 text-xs font-bold uppercase">Signal</span>
-                    <span className="text-success text-xs font-bold">Excellent</span>
+                    {isDeviceOnline(selectedDevice.id) ? (
+                      <span className="text-success text-xs font-bold">Excellent</span>
+                    ) : (
+                      <span className="text-error text-xs font-bold">No Signal</span>
+                    )}
                   </div>
                   <div className="flex flex-col gap-1 border-b border-base-200 pb-2">
                     <span className="opacity-60 text-[10px] font-bold uppercase tracking-widest">Coordinates</span>
@@ -174,7 +240,11 @@ const Flood = () => {
                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
               />
               <div className="absolute top-2 right-2 flex gap-1">
-                <span className="badge badge-success font-bold shadow-sm">ONLINE</span>
+                {isDeviceOnline(device.id) ? (
+                  <span className="badge badge-success font-bold shadow-sm">ONLINE</span>
+                ) : (
+                  <span className="badge badge-error font-bold shadow-sm">OFFLINE</span>
+                )}
                 <span className="badge badge-info shadow-sm"><Waves size={12} /></span>
               </div>
             </figure>
@@ -183,8 +253,15 @@ const Flood = () => {
               <p className="text-xs font-mono opacity-50 line-clamp-1">{device.address || 'No location set'}</p>
 
               <div className="mt-4 pt-4 border-t border-base-200 grid grid-cols-2 gap-2 text-xs">
-                <div><span className="opacity-50">Status:</span> <strong className="text-warning">Siaga 2</strong></div>
-                <div><span className="opacity-50">Level:</span> <strong>180 cm</strong></div>
+                <div>
+                  <span className="opacity-50">Status: </span>
+                  {isDeviceOnline(device.id) ? (
+                    <strong className="text-success">Active</strong>
+                  ) : (
+                    <strong className="text-error">Inactive</strong>
+                  )}
+                </div>
+                <div><span className="opacity-50">Level:</span> <strong>{latestReadings[device.id]?.water_level ?? (device.sensor_readings?.[0]?.water_level ?? '-')} m</strong></div>
               </div>
 
               <div className="card-actions justify-end mt-4">

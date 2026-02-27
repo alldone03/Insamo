@@ -38,7 +38,7 @@ export default function MainLayout() {
         { path: "/history", label: "History", icon: <History size={20} /> },
     ].filter(Boolean);
 
-    if (user?.role_id === 1) {
+    if (user?.roleId === 1) {
         menuItems.push({ path: "/settings", label: "System Settings", icon: <Settings size={20} /> });
     }
 
@@ -111,7 +111,7 @@ export default function MainLayout() {
                             <div className="avatar">
                                 <div className="w-12 h-12 rounded-2xl shadow-md ring ring-primary ring-offset-base-100 ring-offset-2 overflow-hidden bg-base-300">
                                     <img
-                                        src={getImageUrl(user?.photo_path) || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.name || "User"}`}
+                                        src={getImageUrl(user?.image) || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.name || "User"}`}
                                         alt="avatar"
                                         className="w-full h-full object-cover dark:bg-white dark:rounded-lg p-1"
                                     />
