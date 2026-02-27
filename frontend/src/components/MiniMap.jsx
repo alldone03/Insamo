@@ -32,7 +32,7 @@ const MiniMap = ({ lat, lng, zoom = 13 }) => {
                 <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
                 <Marker position={position} icon={customIcon} />
             </MapContainer>
-            <div className="absolute inset-0 z-[400] bg-transparent cursor-default"></div>
+            <div className="absolute inset-0 z-[49] bg-transparent cursor-default"></div>
         </div>
     );
 };
