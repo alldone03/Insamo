@@ -120,22 +120,36 @@ export default function Home() {
             </div>
 
             <div className="relative card bg-base-100 shadow-2xl overflow-hidden h-[700px] border border-base-200">
-                {/* Map Legend Overlay */}
-                <div className="absolute top-4 right-4 z-[99] bg-base-100/90 backdrop-blur-md p-4 rounded-2xl shadow-2xl border border-base-200 w-48 animate-in slide-in-from-right-4 duration-500">
-                    <h4 className="text-[10px] font-black uppercase opacity-50 mb-3 flex items-center gap-2">
-                        <Layers size={12} /> Map Legend
-                    </h4>
-                    <div className="space-y-2">
-                        <LegendItem color="bg-blue-500" label="SIGMA" icon={gempajir} />
-                        <LegendItem color="bg-cyan-500" label="FLOWS" icon={banjier} />
-                        <LegendItem color="bg-orange-500" label="LANDSLIDE" icon={longsyor} />
-                        <LegendItem color="bg-red-500" label="WILDFIRE" icon={apiapi} />
-                        <div className="divider my-1 opacity-10"></div>
-                        <LegendItem color="bg-black" label="OFFLINE / NO SIGNAL" icon={logoInsamo} />
+                
+                {/* --- BAGIAN DROPDOWN LEGEND DAISYUI --- */}
+                <div className="dropdown dropdown-end absolute top-4 right-4 z-[1000]">
+                    <div 
+                        tabIndex={0} 
+                        role="button" 
+                        className="btn btn-sm bg-base-100/90 backdrop-blur-md shadow-xl border-base-200 gap-2 font-black italic text-xs animate-in slide-in-from-right-4 duration-500"
+                    >
+                        <Layers size={14} /> MAP LEGEND
                     </div>
-                    <div className="divider my-2 opacity-10"></div>
-                    <p className="text-[10px] italic opacity-40 font-medium leading-tight">Click on markers to see live details and analysis.</p>
+                    
+                    <div 
+                        tabIndex={0} 
+                        className="dropdown-content z-[1] menu mt-2 bg-base-100/90 backdrop-blur-md p-4 rounded-2xl shadow-2xl border border-base-200 w-52"
+                    >
+                        <div className="space-y-3">
+                            <LegendItem color="bg-blue-500" label="SIGMA" icon={gempajir} />
+                            <LegendItem color="bg-cyan-500" label="FLOWS" icon={banjier} />
+                            <LegendItem color="bg-orange-500" label="LANDSLIDE" icon={longsyor} />
+                            <LegendItem color="bg-red-500" label="WILDFIRE" icon={apiapi} />
+                            <div className="divider my-1 opacity-10"></div>
+                            <LegendItem color="bg-black" label="OFFLINE / NO SIGNAL" icon={logoInsamo} />
+                        </div>
+                        
+                        <p className="text-[10px] opacity-50 mt-4 italic font-medium leading-tight text-center">
+                            Click on markers to see live details and analysis.
+                        </p>
+                    </div>
                 </div>
+                {/* -------------------------------------- */}
 
                 <MapContainer
                     center={mapCenter}
@@ -197,7 +211,7 @@ export default function Home() {
                                     </div>
                                     <Link
                                         to={`/device/${device.id}/data`}
-                                        className="btn  text-white btn-sm w-full rounded-xl font-black italic shadow-lg shadow-primary/20"
+                                        className="btn text-white btn-sm w-full rounded-xl font-black italic shadow-lg shadow-primary/20"
                                     >
                                         <Eye size={14} /> VIEW DETAILS
                                     </Link>
@@ -213,11 +227,11 @@ export default function Home() {
 
 function LegendItem({ color, label, icon }) {
     return (
-        <div className="flex items-center gap-2">
-            <div className={`w-6 h-6 rounded-full ${color} ring-2 ring-white shadow-sm flex items-center justify-center overflow-hidden p-0.5`}>
-                {icon && <img src={icon} className="w-full h-full object-contain brightness-0 invert" alt="" />}
+        <div className="flex items-center gap-3">
+            <div className={`w-7 h-7 rounded-full ${color} ring-2 ring-white shadow-sm flex items-center justify-center overflow-hidden p-1`}>
+                {icon && <img src={icon} className="w-full h-full object-contain brightness-0 invert" alt={label} />}
             </div>
-            <span className="text-[10px] font-black italic text-base-content/80 uppercase">{label}</span>
+            <span className="text-xs font-black italic text-base-content/80 uppercase">{label}</span>
         </div>
     );
 }
