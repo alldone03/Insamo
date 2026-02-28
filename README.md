@@ -39,7 +39,9 @@ This project is a Disaster Monitoring System built with React (Frontend) and Lar
     -   **Backend 2 (Node.js):**
         ```bash
         docker compose exec app yarn db:init
-        docker compose exec app yarn db:push
+        docker compose exec app yarn db:generate # Create migration files
+        docker compose exec app yarn db:migrate  # Apply migrations (Prod-safe)
+        # OR use `yarn db:push` in development to sync schema directly
         docker compose exec app yarn db:seed
         ```
 
@@ -51,10 +53,16 @@ This project is a Disaster Monitoring System built with React (Frontend) and Lar
 
 1.  **Run with Production Compose:**
     ```bash
-    docker-compose -f docker-compose.prod.yml up -d --build
+    docker compose -f docker-compose.prod.yml up -d --build
     ```
 
-## Manual Setup (Without Docker)
+2.  **Database Initial Migration (Backend 2):**
+    ```bash
+    docker compose -f docker-compose.prod.yml exec app yarn prod:db:init
+    docker compose -f docker-compose.prod.yml exec app yarn prod:db:migrate
+    ```
+
+### Manual Setup (Without Docker)
 
 ### Backend 2 (Node.js/Express - New)
 

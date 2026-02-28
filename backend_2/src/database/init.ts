@@ -6,10 +6,10 @@ dotenv.config();
 
 async function init() {
   const host = process.env.DB_HOST;
-  const user = process.env.DB_USER;
+  const user = process.env.DB_USERNAME || process.env.DB_USER;
   const password = process.env.DB_PASSWORD;
   const port = Number(process.env.DB_PORT) || 3306;
-  const dbName = process.env.DB_NAME;
+  const dbName = process.env.DB_DATABASE || process.env.DB_NAME;
 
   if (!dbName) {
     console.error('ERROR: DB_NAME is not defined in environment variables');

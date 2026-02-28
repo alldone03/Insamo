@@ -34,8 +34,8 @@ jobs:
             docker compose -f docker-compose.prod.yml up -d --build
 
             # Database migration (Backend 2 - Node.js)
-            docker compose -f docker-compose.prod.yml exec -T app yarn db:init
-            docker compose -f docker-compose.prod.yml exec -T app yarn db:push
+            docker compose -f docker-compose.prod.yml exec -T app yarn prod:db:init
+            docker compose -f docker-compose.prod.yml exec -T app yarn prod:db:migrate
             
             # Restart Nginx Gateway (if it exists in the same context, otherwise handled by its own repo)
             docker restart nginx-gateway
