@@ -16,8 +16,8 @@ services:
       DB_HOST: db
       DB_PORT: 3306
       DB_NAME: ${DB_DATABASE:-insamo_rw}
-      DB_USER: root
-      DB_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      DB_USER: ${DB_USERNAME:-insamo}
+      DB_PASSWORD: ${DB_PASSWORD:-password}
     networks:
       - insamo-prod-network
       - web
