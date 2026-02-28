@@ -14,15 +14,19 @@ import apiapi from "../assets/apiapi.webp";
 import gempajir from "../assets/gempajir.webp";
 import logoInsamo from "../assets/logoInsamo.webp";
 
-// New component to handle dynamic bounds/zoom
+// New component to handle dynamic bounds/zoom (Only fits once to prevent jumping on data updates)
 function SetBounds({ devices }) {
     const map = useMap();
+    const [hasFit, setHasFit] = useState(false);
+
     useEffect(() => {
-        if (devices && devices.length > 0) {
+        if (devices && devices.length > 0 && !hasFit) {
             const bounds = L.latLngBounds(devices.map(d => [d.latitude, d.longitude]));
             map.fitBounds(bounds, { padding: [50, 50], maxZoom: 12 });
+            setHasFit(true);
         }
-    }, [devices, map]);
+    }, [devices?.length, map, hasFit]);
+
     return null;
 }
 
@@ -170,13 +174,13 @@ export default function Home() {
         };
     }, [queryClient]);
 
-    // Calculate dynamic center for initial view
+    // Calculate dynamic center for initial view (only re-computes if device count changes)
     const mapCenter = useMemo(() => {
         if (!devices || devices.length === 0) return [-6.2088, 106.8456]; // Default Jakarta
         const totalLat = devices.reduce((sum, d) => sum + parseFloat(d.latitude), 0);
         const totalLon = devices.reduce((sum, d) => sum + parseFloat(d.longitude), 0);
         return [totalLat / devices.length, totalLon / devices.length];
-    }, [devices]);
+    }, [devices?.length]);
 
     const [activeLayers, setActiveLayers] = useState({
         kab: false,
