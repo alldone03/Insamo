@@ -19,6 +19,7 @@ services:
       DB_USER: root
       DB_PASSWORD: ${MYSQL_ROOT_PASSWORD}
     networks:
+      - insamo-prod-network
       - web
     volumes:
       - backend_v2_uploads:/var/www/uploads
@@ -39,7 +40,7 @@ services:
     volumes:
       - dbdata-prod:/var/lib/mysql
     networks:
-      - web
+      - insamo-prod-network
 
   frontend:
     build:
@@ -51,7 +52,6 @@ services:
     container_name: insamo-frontend-prod
     restart: unless-stopped
     networks:
-      - insamo-prod-network
       - web
     depends_on:
       - app

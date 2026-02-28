@@ -32,9 +32,15 @@ This project is a Disaster Monitoring System built with React (Frontend) and Lar
     ```
 
 4.  **Database Migration & Seeding:**
-    ```bash
-    docker compose exec app php artisan migrate:fresh --seed
-    ```
+    -   **Backend 1 (Laravel):**
+        ```bash
+        docker compose exec app php artisan migrate:fresh --seed
+        ```
+    -   **Backend 2 (Node.js):**
+        ```bash
+        docker compose exec app yarn db:push
+        docker compose exec app yarn db:seed
+        ```
 
 5.  **Access the Application:**
     -   Frontend: http://localhost:5173
@@ -49,10 +55,17 @@ This project is a Disaster Monitoring System built with React (Frontend) and Lar
 
 ## Manual Setup (Without Docker)
 
-# MySQL Root (Hanya untuk akses internal docker)
+### Backend 2 (Node.js/Express - New)
 
+1.  `cd backend_2`
+2.  `yarn install`
+3.  `cp .env.example .env`
+4.  `yarn key:generate` (Generate JWT Secret)
+5.  `yarn db:push` (Migrate database schema)
+6.  `yarn db:seed` (Seed database)
+7.  `yarn dev` (Runs on http://localhost:3000)
 
-### Backend (Laravel)
+### Backend (Laravel - Legacy)
 
 1.  `cd backend`
 2.  `composer install`
