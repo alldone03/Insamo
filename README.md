@@ -49,6 +49,9 @@ This project is a Disaster Monitoring System built with React (Frontend) and Lar
 
 ## Manual Setup (Without Docker)
 
+# MySQL Root (Hanya untuk akses internal docker)
+
+
 ### Backend (Laravel)
 
 1.  `cd backend`

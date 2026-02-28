@@ -25,18 +25,6 @@ services:
     depends_on:
       - db
 
-  nginx-prod:
-    image: nginx:alpine
-    container_name: insamo-nginx-prod
-    restart: unless-stopped
-    volumes:
-      - ./backend:/var/www
-      - ./docker/nginx/conf.d:/etc/nginx/conf.d:ro
-    networks:
-      - web
-    depends_on:
-      - app
-
   db:
     image: mysql:8.0
     container_name: insamo-db-prod
