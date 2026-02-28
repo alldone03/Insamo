@@ -38,6 +38,7 @@ This project is a Disaster Monitoring System built with React (Frontend) and Lar
         ```
     -   **Backend 2 (Node.js):**
         ```bash
+        docker compose exec app yarn db:init
         docker compose exec app yarn db:push
         docker compose exec app yarn db:seed
         ```
@@ -61,9 +62,10 @@ This project is a Disaster Monitoring System built with React (Frontend) and Lar
 2.  `yarn install`
 3.  `cp .env.example .env`
 4.  `yarn key:generate` (Generate JWT Secret)
-5.  `yarn db:push` (Migrate database schema)
-6.  `yarn db:seed` (Seed database)
-7.  `yarn dev` (Runs on http://localhost:3000)
+5.  `yarn db:init` (Ensure database exists)
+6.  `yarn db:push` (Migrate database schema)
+7.  `yarn db:seed` (Seed database)
+8.  `yarn dev` (Runs on http://localhost:3000)
 
 ### Backend (Laravel - Legacy)
 
