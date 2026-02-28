@@ -34,7 +34,7 @@ const Weather = () => {
    const scrollContainerRef = useRef(null);
 
    // GANTI DENGAN API KEY OPENWEATHERMAP MILIKMU (Moved to .env)
-   const API_KEY = import.meta.env.VITE_WEATHER_API_KEY || 'your_api_key_here';
+   const API_KEY = import.meta.env.VITE_WEATHER_API_KEY || 'e04f2e96a08e807e28cde3851558cff6';
    const CITY = 'Surabaya';
 
    const fetchWeather = async () => {
