@@ -144,11 +144,10 @@ export default function Home() {
     });
 
     useEffect(() => {
-        let backendUrl = "http://localhost:3000";
-        if (import.meta.env.VITE_API_URL) {
-            backendUrl = import.meta.env.VITE_API_URL.split('/api')[0];
-        }
-        const socket = io(backendUrl);
+        const backendUrl = import.meta.env.VITE_API_URL
+            ? new URL(import.meta.env.VITE_API_URL).origin
+            : "http://localhost:3000";
+        const socket = io(backendUrl, { path: '/socket.io/', transports: ['websocket', 'polling'] });
 
         socket.on('new_sensor_reading', (payload) => {
             queryClient.setQueryData(["devices"], (oldData) => {
