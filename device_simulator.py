@@ -3,6 +3,7 @@ import random
 import time
 from datetime import datetime
 import json
+import math
 
 # Configuration
 # Use your production URL or localhost depending on where you run this
@@ -54,6 +55,9 @@ initial_state = {
     "magnitude": 0.1,
     "rainfall_intensity": 0.0,
     "device_tilt": 0.0,
+    "gyro_x": 45.0,
+    "gyro_y": 45.0,
+    "gyro_z": 45.0,
 }
 
 weather_state = {
@@ -103,14 +107,26 @@ def simulate():
                 })
             
             elif dtype == "LANDSLIDE":
-                state["soil_moisture"] = random_walk(state.get("soil_moisture", 30), 0, 100, 1.0)
-                state["device_tilt"] = random_walk(state.get("device_tilt", 0), -12, 12, 0.2)
+                t = time.time()
+                state["soil_moisture"] = 35.0 + 10.0 * math.sin(t * 0.1)
+                state["device_tilt"] = 1.5 * math.sin(t * 0.2)
+                state["gyro_x"] = 45.0 + 30.0 * math.sin(t * 0.5)
+                state["gyro_y"] = 45.0 + 30.0 * math.cos(t * 0.4)
+                state["gyro_z"] = 45.0 + 30.0 * math.sin(t * 0.3)
+                
+                state["vib_x"] = 0.08 * math.sin(t * 5.0)
+                state["vib_y"] = 0.08 * math.cos(t * 4.0)
+                state["vib_z"] = 9.81 + 0.15 * math.sin(t * 3.0)
+
                 payload.update({
                     "soil_moisture": state["soil_moisture"],
                     "device_tilt": state["device_tilt"],
-                    "vib_x": random_walk(state.get("vib_x", 0), -1, 1, 0.05),
-                    "vib_y": random_walk(state.get("vib_y", 0), -1, 1, 0.05),
-                    "vib_z": random_walk(state.get("vib_z", 9.81), 9, 10, 0.05),
+                    "vib_x": state["vib_x"],
+                    "vib_y": state["vib_y"],
+                    "vib_z": state["vib_z"],
+                    "gyro_x": state["gyro_x"],
+                    "gyro_y": state["gyro_y"],
+                    "gyro_z": state["gyro_z"],
                 })
 
             elif dtype == "SIGMA":
