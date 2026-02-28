@@ -8,7 +8,7 @@ services:
     restart: unless-stopped
     working_dir: /var/www
     env_file:
-      - ./backend_2/.env
+      - .env
     environment:
       APP_ENV: production
       FRONTEND_URL: ${FRONTEND_URL:-https://app.insamo.id}
