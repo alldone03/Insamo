@@ -48,6 +48,7 @@ services:
       dockerfile: Dockerfile.prod
       args:
         VITE_API_URL: ${VITE_API_URL:-https://apiapp.insamo.id/api}
+        VITE_WEATHER_API_KEY: ${VITE_WEATHER_API_KEY:-your_api_key_here}
     image: insamo-frontend:prod
     container_name: insamo-frontend-prod
     restart: unless-stopped
