@@ -18,13 +18,24 @@ services:
       DB_NAME: ${DB_DATABASE:-insamo_rw}
       DB_USER: root
       DB_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-    ports:
-      - "3000:3000"
     networks:
-      - insamo-prod-network
       - web
+    volumes:
+      - backend_v2_uploads:/var/www/uploads
     depends_on:
       - db
+
+  nginx-prod:
+    image: nginx:alpine
+    container_name: insamo-nginx-prod
+    restart: unless-stopped
+    volumes:
+      - ./backend:/var/www
+      - ./docker/nginx/conf.d:/etc/nginx/conf.d:ro
+    networks:
+      - web
+    depends_on:
+      - app
 
   db:
     image: mysql:8.0
@@ -40,7 +51,7 @@ services:
     volumes:
       - dbdata-prod:/var/lib/mysql
     networks:
-      - insamo-prod-network
+      - web
 
   frontend:
     build:
@@ -65,4 +76,6 @@ networks:
 
 volumes:
   dbdata-prod:
+    driver: local
+  backend_v2_uploads:
     driver: local

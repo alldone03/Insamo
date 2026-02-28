@@ -54,18 +54,28 @@ export default function Profile() {
             return;
         }
         setLoading(true);
-        // Note: Backend password update endpoint is not implemented yet in this context, 
-        // but we would call api.post('/change-password', ...) here.
-        // mimicking success for UI demo if no backend endpoint exist yet for change password
-        // or we can implement it in backend later.
-
-        // For now, let's just show a message that it's not implemented or simulate success
-        setTimeout(() => {
-            setLoading(false);
-            setMessage({ text: "Password update text simulated (endpoint needed)", type: "info" });
+        try {
+            await api.post('/change-password', {
+                password: password,
+                password_confirmation: confirmPassword
+            });
+            setMessage({ text: "Password updated successfully!", type: "success" });
             setPassword("");
             setConfirmPassword("");
-        }, 1000);
+        } catch (err) {
+            const errors = err.response?.data?.errors;
+            let errorMsg = err.response?.data?.message || "Failed to update password";
+
+            if (errors) {
+                const firstError = Object.values(errors)[0];
+                if (Array.isArray(firstError)) {
+                    errorMsg = firstError[0];
+                }
+            }
+            setMessage({ text: errorMsg, type: "error" });
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (

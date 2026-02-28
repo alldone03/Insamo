@@ -168,6 +168,39 @@ export class AuthController extends Controller {
       // We can just return success here.
       return this.sendResponse(res, null, 'Logged out successfully');
   }
+
+  async changePassword(req: Request, res: Response) {
+    try {
+      const { password, password_confirmation } = req.body;
+      const userId = (req as any).user?.id;
+
+      if (!userId) {
+        return this.sendError(res, 'Unauthorized', 401);
+      }
+
+      if (!password || password.length < 6) {
+        return this.sendError(res, 'Password must be at least 6 characters long', 400);
+      }
+
+      if (password !== password_confirmation) {
+        return this.sendError(res, 'Passwords do not match', 400);
+      }
+
+      const hashedPassword = await bcrypt.hash(password, 10);
+      
+      await db.update(users)
+        .set({ password: hashedPassword })
+        .where(eq(users.id, userId));
+
+      return res.status(200).json({
+        success: true,
+        message: 'Password changed successfully'
+      });
+    } catch (error: any) {
+      console.error('Change password error:', error);
+      return this.sendError(res, error.message || 'Failed to change password');
+    }
+  }
 }
 
 export default new AuthController();

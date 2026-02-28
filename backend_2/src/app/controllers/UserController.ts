@@ -20,7 +20,7 @@ export class UserController extends Controller {
                 email: users.email,
                 image: users.image,
                 roleId: users.roleId,
-                telegramChatId: users.telegramChatId,
+                telegram_chat_id: users.telegramChatId,
                 createdAt: users.createdAt,
             }).from(users);
 
@@ -39,7 +39,7 @@ export class UserController extends Controller {
                 return this.sendError(res, 'Forbidden: Only SuperAdmin can create users', 403);
             }
 
-            const { name, email, password, role_id, telegram_chat_id } = req.body;
+            const { name, email, password, role_id, roleId, telegram_chat_id, telegramChatId } = req.body;
 
             if (!name || !email || !password) {
                 return this.sendError(res, 'Name, email, and password are required', 400);
@@ -59,8 +59,8 @@ export class UserController extends Controller {
                 name,
                 email,
                 password: hashedPassword,
-                roleId: role_id ? Number(role_id) : null,
-                telegramChatId: telegram_chat_id || null,
+                roleId: (role_id || roleId) ? Number(role_id || roleId) : null,
+                telegramChatId: telegram_chat_id || telegramChatId || null,
             });
 
             const newUser = await db.query.users.findFirst({
@@ -68,8 +68,8 @@ export class UserController extends Controller {
             });
 
             if (newUser) {
-                const { password: _, ...userWithoutPassword } = newUser;
-                return this.sendResponse(res, userWithoutPassword, 'User created successfully', 201);
+                const { password: _, telegramChatId: tcid, ...userWithoutPassword } = newUser;
+                return this.sendResponse(res, { ...userWithoutPassword, telegram_chat_id: tcid }, 'User created successfully', 201);
             }
             return this.sendError(res, 'User created but could not retrieve', 500);
 
@@ -106,10 +106,11 @@ export class UserController extends Controller {
             .innerJoin(devices, eq(deviceUser.device_id, devices.id))
             .where(eq(deviceUser.user_id, Number(id)));
 
-            const { password: _, ...userWithoutPassword } = user;
+            const { password: _, telegramChatId: tcid, ...userWithoutPassword } = user;
             
             return this.sendResponse(res, {
                 ...userWithoutPassword,
+                telegram_chat_id: tcid,
                 devices: userDevices.map(ud => ud.device)
             }, 'User retrieved successfully');
         } catch (error: any) {
@@ -131,17 +132,17 @@ export class UserController extends Controller {
 
             const { _method, ...updateFields } = req.body;
             
-            const allowedFields = ['name', 'email', 'telegramChatId', 'telegram_chat_id', 'role_id'];
+            const allowedFields = ['name', 'email', 'telegramChatId', 'telegram_chat_id', 'role_id', 'roleId'];
             const dataToUpdate: any = {};
             
             Object.keys(updateFields).forEach(key => {
                 if (allowedFields.includes(key)) {
-                    if (key === 'telegram_chat_id') {
+                    if (key === 'telegram_chat_id' || key === 'telegramChatId') {
                          dataToUpdate['telegramChatId'] = updateFields[key];
-                    } else if (key === 'role_id' && currentUser.roleId === 1) {
+                    } else if ((key === 'role_id' || key === 'roleId') && currentUser.roleId === 1) {
                          // Only SuperAdmin can change roles
                          dataToUpdate['roleId'] = updateFields[key] ? Number(updateFields[key]) : null;
-                    } else if (key !== 'role_id') {
+                    } else if (key !== 'role_id' && key !== 'roleId' && key !== 'telegram_chat_id' && key !== 'telegramChatId') {
                          dataToUpdate[key] = updateFields[key];
                     }
                 }
@@ -170,8 +171,8 @@ export class UserController extends Controller {
             });
 
             if (updatedUser) {
-                 const { password: _, ...userWithoutPassword } = updatedUser;
-                 return this.sendResponse(res, userWithoutPassword, 'User updated successfully');
+                 const { password: _, telegramChatId: tcid, ...userWithoutPassword } = updatedUser;
+                 return this.sendResponse(res, { ...userWithoutPassword, telegram_chat_id: tcid }, 'User updated successfully');
             } else {
                  return this.sendError(res, 'User not found', 404);
             }

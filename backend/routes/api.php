@@ -46,4 +46,5 @@ Route::middleware('auth:api')->group(function () {
     Route::get('system-settings', [\App\Http\Controllers\SystemSettingController::class, 'index']);
     Route::post('system-settings/{key}', [\App\Http\Controllers\SystemSettingController::class, 'update']);
     Route::get('telegram-logs', [\App\Http\Controllers\TelegramLogController::class, 'index']);
+    Route::post('change-password', [AuthController::class, 'changePassword']);
 });

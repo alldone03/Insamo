@@ -49,6 +49,7 @@ router.use(authMiddleware);
 
 router.post('/logout', (req, res) => AuthController.logout(req, res));
 router.post('/me', (req, res) => AuthController.me(req, res));
+router.post('/change-password', (req, res) => AuthController.changePassword(req, res));
 
 router.get('/devices', (req, res) => DeviceController.index(req, res));
 router.post('/devices', uploadDeviceImage, (req, res) => DeviceController.store(req, res));
@@ -59,6 +60,8 @@ router.get('/users', (req, res) => UserController.index(req, res));
 router.post('/users', uploadUserImage, (req, res) => UserController.store(req, res));
 router.get('/users/:id', (req, res) => UserController.show(req, res));
 router.post('/users/:id', uploadUserImage, (req, res) => UserController.update(req, res));
+router.put('/users/:id', uploadUserImage, (req, res) => UserController.update(req, res));
+router.patch('/users/:id', uploadUserImage, (req, res) => UserController.update(req, res));
 router.delete('/users/:id', (req, res) => UserController.destroy(req, res));
 router.post('/users/:id/devices', (req, res) => UserController.attachDevice(req, res));
 router.delete('/users/:id/devices/:deviceId', (req, res) => UserController.detachDevice(req, res));
