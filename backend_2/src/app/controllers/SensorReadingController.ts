@@ -1,8 +1,8 @@
 import { Request, Response } from 'express';
 import { Controller } from './Controller';
 import { db } from '../../config/database';
-import { sensorReadings, devices, deviceSettings, classificationResults } from '../models/schema';
-import { eq, desc, and, gte, lte } from 'drizzle-orm';
+import { sensorReadings, devices, deviceSettings, classificationResults, deviceUser } from '../models/schema';
+import { eq, desc, and, gte, lte, inArray } from 'drizzle-orm';
 import { TelegramService } from '../services/TelegramService';
 import { io } from '../../index';
 
@@ -11,9 +11,32 @@ export class SensorReadingController extends Controller {
       try {
           const { device_id, start_date, end_date, per_page } = req.query;
           
-          let conditions = [];
-
-          if (device_id) {
+          let conditions: any[] = [];
+          const user = (req as any).user;
+          
+          if (user.roleId !== 1) {
+              if (device_id) {
+                  const access = await db.select().from(deviceUser)
+                      .where(and(eq(deviceUser.user_id, user.id), eq(deviceUser.device_id, Number(device_id))))
+                      .limit(1);
+                  if (!access.length) {
+                      return this.sendError(res, 'Access denied to this device sensor data', 403);
+                  }
+                  conditions.push(eq(sensorReadings.device_id, Number(device_id)));
+              } else {
+                  const userDevices = await db.select({ id: deviceUser.device_id }).from(deviceUser).where(eq(deviceUser.user_id, user.id));
+                  const deviceIds = userDevices.map(d => d.id).filter((id): id is number => id !== null);
+                  if (deviceIds.length > 0) {
+                      conditions.push(inArray(sensorReadings.device_id, deviceIds));
+                  } else {
+                      return this.sendResponse(res, {
+                          data: [],
+                          per_page: Number(per_page) || 50,
+                          current_page: 1
+                      }, 'No devices assigned');
+                  }
+              }
+          } else if (device_id) {
               conditions.push(eq(sensorReadings.device_id, Number(device_id)));
           }
 

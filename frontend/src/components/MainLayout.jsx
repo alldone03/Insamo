@@ -28,7 +28,7 @@ export default function MainLayout() {
 
     const menuItems = [
         { path: "/home", label: "Dashboard", icon: <LayoutDashboard size={20} /> },
-        { path: "/predict", label: "AI Prediction", icon: <BrainCircuit size={20} /> },
+        { path: "/predict", label: "AI Prediction", icon: <BrainCircuit size={20} />, badge: "DEV" },
         { path: "/weather", label: "Weather", icon: <CloudSun size={20} /> },
         { path: "/flood", label: "Flood Monitor", icon: <Waves size={20} /> },
         { path: "/earthquake", label: "Earthquake", icon: <Activity size={20} /> },
@@ -97,7 +97,10 @@ export default function MainLayout() {
                                         }`}
                                 >
                                     {item.icon}
-                                    {item.label}
+                                    <span className="flex-grow">{item.label}</span>
+                                    {item.badge && (
+                                        <span className="badge badge-accent badge-xs text-[8px] font-black">{item.badge}</span>
+                                    )}
                                 </Link>
                             </li>
                         ))}

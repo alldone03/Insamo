@@ -7,13 +7,11 @@ WORKDIR /var/www
 RUN corepack enable
 
 # Copy package files
-COPY package.json yarn.lock ./
+COPY package.json yarn.lock .yarnrc.yml ./
 
 # Install dependencies
 RUN yarn install
 
-# Copy application source
-COPY . .
 
 EXPOSE 3000
 

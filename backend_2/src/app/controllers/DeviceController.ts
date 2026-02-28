@@ -2,12 +2,33 @@ import { Request, Response } from 'express';
 import { Controller } from './Controller';
 import { db } from '../../config/database';
 import { devices, users, deviceUser, deviceSettings, sensorReadings } from '../models/schema';
-import { eq, desc } from 'drizzle-orm';
+import { eq, desc, and } from 'drizzle-orm';
 
 export class DeviceController extends Controller {
   async index(req: Request, res: Response) {
     try {
-      const allDevices = await db.select().from(devices);
+      const user = (req as any).user;
+      let allDevices: any[];
+
+      if (user.roleId === 1) {
+        allDevices = await db.select().from(devices);
+      } else {
+        allDevices = await db.select({
+          id: devices.id,
+          device_code: devices.device_code,
+          name: devices.name,
+          device_type: devices.device_type,
+          latitude: devices.latitude,
+          longitude: devices.longitude,
+          address: devices.address,
+          image: devices.image,
+          createdAt: devices.createdAt,
+          updatedAt: devices.updatedAt,
+        })
+        .from(devices)
+        .innerJoin(deviceUser, eq(devices.id, deviceUser.device_id))
+        .where(eq(deviceUser.user_id, user.id));
+      }
       
       // Fetch related data
       for (let i = 0; i < allDevices.length; i++) {
@@ -45,7 +66,7 @@ export class DeviceController extends Controller {
 
   async publicIndex(req: Request, res: Response) {
     try {
-      const publicDevices = await db.select().from(devices).where(eq(devices.is_public, true));
+      const publicDevices = await db.select().from(devices);
       return this.sendResponse(res, publicDevices, 'Public devices retrieved successfully');
     } catch (error: any) {
       return this.sendError(res, 'Failed to fetch public devices');
@@ -75,8 +96,20 @@ export class DeviceController extends Controller {
       }
 
       const [result] = await db.insert(devices).values(dataToInsert);
+      const insertedId = Number(result.insertId);
+
+      // Handle settings
+      const { initial_distance, alert_threshold, danger_threshold } = req.body;
+      if (initial_distance !== undefined || alert_threshold !== undefined || danger_threshold !== undefined) {
+          await db.insert(deviceSettings).values({
+              device_id: insertedId,
+              initial_distance: initial_distance ? parseFloat(initial_distance) : 10,
+              alert_threshold: alert_threshold ? parseFloat(alert_threshold) : 50,
+              danger_threshold: danger_threshold ? parseFloat(danger_threshold) : 80,
+          });
+      }
       
-      const newDevice = await db.select().from(devices).where(eq(devices.id, Number(result.insertId))).limit(1);
+      const newDevice = await db.select().from(devices).where(eq(devices.id, insertedId)).limit(1);
       
       return this.sendResponse(res, newDevice[0], 'Device created successfully', 201);
     } catch (error: any) {
@@ -88,8 +121,38 @@ export class DeviceController extends Controller {
   async show(req: Request, res: Response) {
     try {
       const { id } = req.params;
-      const deviceObj = await db.select().from(devices).where(eq(devices.id, Number(id))).limit(1);
-      if (!deviceObj.length) return this.sendError(res, 'Device not found', 404);
+      const user = (req as any).user;
+
+      let deviceQuery;
+      if (user.roleId === 1) {
+        deviceQuery = db.select().from(devices).where(eq(devices.id, Number(id))).limit(1);
+      } else {
+        // For non-superadmins, check if they have access to this specific device
+        deviceQuery = db.select({
+          id: devices.id,
+          device_code: devices.device_code,
+          name: devices.name,
+          device_type: devices.device_type,
+          latitude: devices.latitude,
+          longitude: devices.longitude,
+          address: devices.address,
+          image: devices.image,
+          createdAt: devices.createdAt,
+          updatedAt: devices.updatedAt,
+        })
+        .from(devices)
+        .innerJoin(deviceUser, eq(devices.id, deviceUser.device_id))
+        .where(
+          and(
+            eq(devices.id, Number(id)),
+            eq(deviceUser.user_id, user.id)
+          )
+        )
+        .limit(1);
+      }
+
+      const deviceObj = await deviceQuery;
+      if (!deviceObj.length) return this.sendError(res, 'Device not found or access denied', 404);
       
       const device = deviceObj[0] as any;
 
@@ -117,6 +180,7 @@ export class DeviceController extends Controller {
 
       return this.sendResponse(res, device, 'Device retrieved successfully');
     } catch (error: any) {
+      console.error('Show error:', error);
       return this.sendError(res, 'Failed to fetch device');
     }
   }
@@ -161,6 +225,31 @@ export class DeviceController extends Controller {
       await db.update(devices)
           .set(dataToUpdate)
           .where(eq(devices.id, Number(id)));
+
+      // Handle settings update
+      const { initial_distance, alert_threshold, danger_threshold } = req.body;
+      if (initial_distance !== undefined || alert_threshold !== undefined || danger_threshold !== undefined) {
+          const existingSettings = await db.select().from(deviceSettings)
+              .where(eq(deviceSettings.device_id, Number(id))).limit(1);
+
+          const settingsData: any = {};
+          if (initial_distance !== undefined) settingsData.initial_distance = parseFloat(initial_distance);
+          if (alert_threshold !== undefined) settingsData.alert_threshold = parseFloat(alert_threshold);
+          if (danger_threshold !== undefined) settingsData.danger_threshold = parseFloat(danger_threshold);
+
+          if (existingSettings.length > 0) {
+              await db.update(deviceSettings)
+                  .set(settingsData)
+                  .where(eq(deviceSettings.device_id, Number(id)));
+          } else {
+              await db.insert(deviceSettings).values({
+                  device_id: Number(id),
+                  initial_distance: parseFloat(initial_distance) || 10,
+                  alert_threshold: parseFloat(alert_threshold) || 50,
+                  danger_threshold: parseFloat(danger_threshold) || 80,
+              });
+          }
+      }
           
       const updatedDevice = await db.select().from(devices).where(eq(devices.id, Number(id))).limit(1);
 

@@ -3,11 +3,25 @@ import { Activity, ArrowLeft, Eye } from 'lucide-react';
 import GenericChart from '../components/GenericChart';
 import MiniMap from '../components/MiniMap';
 import { api, getImageUrl } from '../lib/api';
+import { io } from 'socket.io-client';
 
 const Earthquake = () => {
   const [devices, setDevices] = useState([]);
   const [selectedDevice, setSelectedDevice] = useState(null);
+  const selectedDeviceIdRef = React.useRef(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [chartData, setChartData] = useState([]);
+  const [latestReadings, setLatestReadings] = useState({});
+  const [currentTime, setCurrentTime] = useState(Date.now());
+
+  useEffect(() => {
+    const interval = setInterval(() => setCurrentTime(Date.now()), 10000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    selectedDeviceIdRef.current = selectedDevice?.id;
+  }, [selectedDevice]);
 
   useEffect(() => {
     const fetchDevices = async () => {
@@ -25,24 +39,80 @@ const Earthquake = () => {
     fetchDevices();
   }, []);
 
-  // Simulated historical data for charts
-  const getSimulatedData = () => {
-    const data = [];
-    const now = new Date();
-    for (let i = 24; i >= 0; i--) {
-      const time = new Date(now.getTime() - i * 3600000);
-      data.push({
-        time: time.toISOString(),
-        x: Math.random() * 0.1 - 0.05,
-        y: Math.random() * 0.1 - 0.05,
-        z: 9.8 + (Math.random() * 0.05 - 0.025),
-        tilt: Math.random() * 5,
+  useEffect(() => {
+    let backendUrl = "http://localhost:3000";
+    if (import.meta.env.VITE_API_URL) {
+      backendUrl = import.meta.env.VITE_API_URL.split('/api')[0];
+    }
+    const socket = io(backendUrl);
+
+    socket.on('new_sensor_reading', (payload) => {
+      if (payload.device_type === 'SIGMA') {
+        const { device_id, reading } = payload;
+
+        const storedReading = { ...reading, recorded_at: reading.recorded_at || new Date().toISOString() };
+        setLatestReadings(prev => ({
+          ...prev,
+          [device_id]: storedReading
+        }));
+
+        setChartData(prevData => {
+          if (selectedDeviceIdRef.current !== device_id) {
+            return prevData;
+          }
+
+          const newPoint = {
+            time: reading.recorded_at || new Date().toISOString(),
+            x: reading.vib_x || reading.tilt_x || 0, // Fallback if schema differs
+            y: reading.vib_y || reading.tilt_y || 0,
+            z: reading.vib_z || reading.tilt_z || 0,
+            tilt: reading.device_tilt || reading.magnitude || 0,
+          };
+
+          return [...prevData, newPoint].slice(-24);
+        });
+      }
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (selectedDevice) {
+      api.get(`/sensor-readings?device_id=${selectedDevice.id}`).then(res => {
+        const readings = res.data && Array.isArray(res.data) ? res.data : (res.data?.data || []);
+
+        const formattedData = readings.reverse().map(r => ({
+          time: r.recorded_at,
+          x: r.vib_x || r.tilt_x || 0,
+          y: r.vib_y || r.tilt_y || 0,
+          z: r.vib_z || r.tilt_z || 0,
+          tilt: r.device_tilt || r.magnitude || 0,
+        }));
+        setChartData(formattedData);
+      }).catch(err => {
+        console.error("Failed to fetch sensor readings", err);
       });
     }
-    return data;
-  };
+  }, [selectedDevice]);
 
-  const chartData = getSimulatedData();
+  const isDeviceOnline = (devId) => {
+    const isRecent = (timestamp) => {
+      if (!timestamp) return false;
+      return (currentTime - new Date(timestamp).getTime()) <= 60000;
+    };
+
+    if (latestReadings[devId]) {
+      return isRecent(latestReadings[devId].recorded_at);
+    }
+    const dev = devices.find(d => d.id === devId);
+    if (dev && dev.sensor_readings && dev.sensor_readings.length > 0) {
+      return isRecent(dev.sensor_readings[0].recorded_at);
+    }
+    return false;
+  };
 
   if (isLoading) {
     return <div className="flex justify-center items-center h-64"><span className="loading loading-spinner loading-lg text-error"></span></div>;
@@ -75,7 +145,11 @@ const Earthquake = () => {
                 <div className="space-y-3">
                   <div className="flex justify-between border-b border-base-200 pb-2">
                     <span className="opacity-60 text-xs font-bold uppercase">Status</span>
-                    <span className="badge badge-success badge-sm font-bold">ONLINE</span>
+                    {isDeviceOnline(selectedDevice.id) ? (
+                      <span className="badge badge-success badge-sm font-bold">ONLINE</span>
+                    ) : (
+                      <span className="badge badge-error badge-sm font-bold">OFFLINE</span>
+                    )}
                   </div>
                   <div className="flex justify-between border-b border-base-200 pb-2">
                     <span className="opacity-60 text-xs font-bold uppercase">Vibration</span>
@@ -127,16 +201,40 @@ const Earthquake = () => {
             color="error"
           />
 
-          {/* Device Tilt Chart */}
-          <GenericChart
-            title="Device Tilt (°)"
-            data={chartData}
-            lines={[
-              { key: 'tilt', name: 'Tilt', color: 'hsl(30, 90%, 50%)' }
-            ]}
-            yAxisLabel="Degrees"
-            color="warning"
-          />
+          {/* XYZ Status Card */}
+          <div className="card bg-base-100 shadow-xl border border-base-200">
+            <div className="card-body">
+              <div className="text-sm opacity-50 font-bold mb-4">
+                Terakhir diperbarui: {
+                  new Date(latestReadings[selectedDevice.id]?.recorded_at || new Date().toISOString())
+                    .toLocaleString('id-ID', {
+                      day: 'numeric', month: 'long', year: 'numeric',
+                      hour: '2-digit', minute: '2-digit', second: '2-digit'
+                    }).replace(/\./g, '.')
+                } WIB
+              </div>
+              <div className="grid grid-cols-1 gap-4">
+                <div className="bg-base-200 p-4 rounded-xl flex flex-col items-center">
+                  <span className="opacity-50 font-bold text-xs uppercase mb-1">X-Axis</span>
+                  <span className="text-2xl font-black text-error">
+                    {latestReadings[selectedDevice.id]?.vib_x ?? selectedDevice.sensor_readings?.[0]?.vib_x ?? latestReadings[selectedDevice.id]?.tilt_x ?? selectedDevice.sensor_readings?.[0]?.tilt_x ?? 0}
+                  </span>
+                </div>
+                <div className="bg-base-200 p-4 rounded-xl flex flex-col items-center">
+                  <span className="opacity-50 font-bold text-xs uppercase mb-1">Y-Axis</span>
+                  <span className="text-2xl font-black text-secondary">
+                    {latestReadings[selectedDevice.id]?.vib_y ?? selectedDevice.sensor_readings?.[0]?.vib_y ?? latestReadings[selectedDevice.id]?.tilt_y ?? selectedDevice.sensor_readings?.[0]?.tilt_y ?? 0}
+                  </span>
+                </div>
+                <div className="bg-base-200 p-4 rounded-xl flex flex-col items-center">
+                  <span className="opacity-50 font-bold text-xs uppercase mb-1">Z-Axis</span>
+                  <span className="text-2xl font-black text-primary">
+                    {latestReadings[selectedDevice.id]?.vib_z ?? selectedDevice.sensor_readings?.[0]?.vib_z ?? latestReadings[selectedDevice.id]?.tilt_z ?? selectedDevice.sensor_readings?.[0]?.tilt_z ?? 0}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -160,7 +258,11 @@ const Earthquake = () => {
                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
               />
               <div className="absolute top-2 right-2 flex gap-1">
-                <span className="badge badge-success font-bold shadow-sm">ONLINE</span>
+                {isDeviceOnline(device.id) ? (
+                  <span className="badge badge-success font-bold shadow-sm">ONLINE</span>
+                ) : (
+                  <span className="badge badge-error font-bold shadow-sm">OFFLINE</span>
+                )}
                 <span className="badge badge-error shadow-sm"><Activity size={12} /></span>
               </div>
             </figure>
@@ -168,9 +270,15 @@ const Earthquake = () => {
               <h2 className="card-title text-lg font-black">{device.name}</h2>
               <p className="text-xs font-mono opacity-50 line-clamp-1">{device.address || 'No location set'}</p>
 
-              <div className="mt-4 pt-4 border-t border-base-200 grid grid-cols-2 gap-2 text-xs">
-                <div><span className="opacity-50">Risk Level:</span> <strong className="text-success">LOW</strong></div>
-                <div><span className="opacity-50">Magnitude:</span> <strong>0.02 SR</strong></div>
+              <div className="mt-4 pt-4 border-t border-base-200 flex flex-col gap-2 text-xs">
+                <div className="flex justify-between">
+                  <span className="opacity-50">Risk Level:</span> <strong className="text-success">LOW</strong>
+                </div>
+                <div className="flex justify-between bg-base-200 p-2 rounded-lg mt-1 font-mono text-[10px]">
+                  <div><span className="opacity-50">X:</span> <strong className="text-error">{parseFloat(latestReadings[device.id]?.vib_x ?? device.sensor_readings?.[0]?.vib_x ?? latestReadings[device.id]?.tilt_x ?? device.sensor_readings?.[0]?.tilt_x ?? 0).toFixed(3)}</strong></div>
+                  <div><span className="opacity-50">Y:</span> <strong className="text-secondary">{parseFloat(latestReadings[device.id]?.vib_y ?? device.sensor_readings?.[0]?.vib_y ?? latestReadings[device.id]?.tilt_y ?? device.sensor_readings?.[0]?.tilt_y ?? 0).toFixed(3)}</strong></div>
+                  <div><span className="opacity-50">Z:</span> <strong className="text-primary">{parseFloat(latestReadings[device.id]?.vib_z ?? device.sensor_readings?.[0]?.vib_z ?? latestReadings[device.id]?.tilt_z ?? device.sensor_readings?.[0]?.tilt_z ?? 0).toFixed(3)}</strong></div>
+                </div>
               </div>
 
               <div className="card-actions justify-end mt-4">

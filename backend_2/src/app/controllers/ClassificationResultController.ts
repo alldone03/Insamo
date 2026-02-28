@@ -1,22 +1,48 @@
 import { Request, Response } from 'express';
 import { Controller } from './Controller';
 import { db } from '../../config/database';
-import { classificationResults } from '../models/schema';
-import { eq, desc } from 'drizzle-orm';
+import { classificationResults, deviceUser } from '../models/schema';
+import { eq, desc, and, inArray } from 'drizzle-orm';
 
 export class ClassificationResultController extends Controller {
   async index(req: Request, res: Response) {
     try {
       const { device_id } = req.query;
-      let query = db.select().from(classificationResults);
+      const user = (req as any).user;
+      
+      let conditions: any[] = [];
 
-      if (device_id) {
-        query = query.where(eq(classificationResults.device_id, Number(device_id))) as any;
+      if (user.roleId !== 1) {
+          if (device_id) {
+              const access = await db.select().from(deviceUser)
+                  .where(and(eq(deviceUser.user_id, user.id), eq(deviceUser.device_id, Number(device_id))))
+                  .limit(1);
+              if (!access.length) {
+                  return this.sendError(res, 'Access denied to this device data', 403);
+              }
+              conditions.push(eq(classificationResults.device_id, Number(device_id)));
+          } else {
+              const userDevices = await db.select({ id: deviceUser.device_id }).from(deviceUser).where(eq(deviceUser.user_id, user.id));
+              const deviceIds = userDevices.map(d => d.id).filter((id): id is number => id !== null);
+              if (deviceIds.length > 0) {
+                  conditions.push(inArray(classificationResults.device_id, deviceIds));
+              } else {
+                  return this.sendResponse(res, [], 'No devices assigned');
+              }
+          }
+      } else if (device_id) {
+          conditions.push(eq(classificationResults.device_id, Number(device_id)));
       }
 
-      const results = await query.orderBy(desc(classificationResults.created_at)).limit(50);
+      const results = await db.select()
+        .from(classificationResults)
+        .where(conditions.length > 0 ? and(...conditions) : undefined)
+        .orderBy(desc(classificationResults.created_at))
+        .limit(50);
+
       return this.sendResponse(res, results, 'Classification results retrieved successfully');
     } catch (error: any) {
+      console.error('Classification Index Error:', error);
       return this.sendError(res, 'Failed to fetch classification results');
     }
   }

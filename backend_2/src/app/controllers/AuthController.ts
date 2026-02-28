@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { Controller } from './Controller';
 import { db } from '../../config/database';
-import { users } from '../models/schema';
+import { users, roles } from '../models/schema';
 import { eq } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
@@ -37,25 +37,33 @@ export class AuthController extends Controller {
         name,
       });
 
-      // Fetch the created user
-      const newUser = await db.query.users.findFirst({
-        where: eq(users.id, Number(result.insertId))
-      });
+      // Fetch the created user with role
+      const newUser = await db.select({
+        id: users.id,
+        name: users.name,
+        email: users.email,
+        roleId: users.roleId,
+        role: roles.name,
+      })
+      .from(users)
+      .leftJoin(roles, eq(users.roleId, roles.id))
+      .where(eq(users.id, Number(result.insertId)))
+      .limit(1);
 
-      if (!newUser) throw new Error('Failed to retrieve newly created user');
+      if (!newUser.length) throw new Error('Failed to retrieve newly created user');
+      const user = newUser[0];
 
       // Generate JWT for the new user
       const token = jwt.sign(
-        { id: newUser.id, email: newUser.email, name: newUser.name },
+        { id: user.id, email: user.email, name: user.name, role: user.role, roleId: user.roleId },
         JWT_SECRET,
         { expiresIn: JWT_EXPIRES_IN }
       );
 
-      const { password: _, ...userWithoutPassword } = newUser;
       return res.status(201).json({
         success: true,
         message: 'User registered successfully',
-        user: userWithoutPassword,
+        user: user,
         authorisation: {
           token,
           type: 'bearer'
@@ -91,8 +99,22 @@ export class AuthController extends Controller {
       }
 
       // Generate JWT
+      // Fetch role name for JWT
+      const userWithRole = await db.select({
+        id: users.id,
+        name: users.name,
+        email: users.email,
+        role: roles.name
+      })
+      .from(users)
+      .leftJoin(roles, eq(users.roleId, roles.id))
+      .where(eq(users.id, user.id))
+      .limit(1);
+
+      const roleName = userWithRole[0]?.role;
+
       const token = jwt.sign(
-        { id: user.id, email: user.email, name: user.name },
+        { id: user.id, email: user.email, name: user.name, role: roleName, roleId: user.roleId },
         JWT_SECRET,
         { expiresIn: JWT_EXPIRES_IN }
       );
@@ -102,7 +124,7 @@ export class AuthController extends Controller {
       return res.status(200).json({
         success: true,
         message: 'Login successful',
-        user: userWithoutPassword,
+        user: { ...userWithoutPassword, role: roleName },
         authorisation: {
           token,
           type: 'bearer'

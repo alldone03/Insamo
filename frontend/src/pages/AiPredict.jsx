@@ -6,8 +6,13 @@ const AiPredict = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">AI Prediction Engine</h2>
-        <div className="badge badge-primary gap-2 p-3">
-          <BrainCircuit size={16} /> Model V.2.1 Active
+        <div className="flex gap-2">
+          <div className="badge badge-warning badge-outline gap-2 font-black italic text-[10px] uppercase p-3">
+            <AlertTriangle size={14} /> Under Development
+          </div>
+          <div className="badge badge-primary gap-2 p-3">
+            <BrainCircuit size={16} /> Model V.2.1 Active
+          </div>
         </div>
       </div>
 
@@ -16,7 +21,7 @@ const AiPredict = () => {
         <div className="card bg-base-100 shadow-xl">
           <div className="card-body items-center text-center">
             <h3 className="card-title">Confidence Score</h3>
-            <div className="radial-progress text-primary font-bold text-xl my-4" style={{"--value":87, "--size": "8rem"}} role="progressbar">
+            <div className="radial-progress text-primary font-bold text-xl my-4" style={{ "--value": 87, "--size": "8rem" }} role="progressbar">
               87.5%
             </div>
             <p className="opacity-70">Probability of event occurrence</p>

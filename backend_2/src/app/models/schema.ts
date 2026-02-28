@@ -33,27 +33,27 @@ export const sessions = mysqlTable('sessions', {
   updatedAt: timestamp('updated_at').defaultNow().onUpdateNow(),
 });
 
-// export const accounts = mysqlTable('accounts', {
-//   id: varchar('id', { length: 255 }).primaryKey(),
-//   userId: bigint('user_id', { mode: 'number', unsigned: true }).references(() => users.id),
-//   accountId: varchar('account_id', { length: 255 }).notNull(),
-//   providerId: varchar('provider_id', { length: 255 }).notNull(),
-//   accessToken: text('access_token'),
-//   refreshToken: text('refresh_token'),
-//   expiresAt: timestamp('expires_at'),
-//   password: text('password'),
-//   createdAt: timestamp('created_at').defaultNow(),
-//   updatedAt: timestamp('updated_at').defaultNow().onUpdateNow(),
-// });
+export const accounts = mysqlTable('accounts', {
+  id: varchar('id', { length: 255 }).primaryKey(),
+  userId: bigint('user_id', { mode: 'number', unsigned: true }).references(() => users.id),
+  accountId: varchar('account_id', { length: 255 }).notNull(),
+  providerId: varchar('provider_id', { length: 255 }).notNull(),
+  accessToken: text('access_token'),
+  refreshToken: text('refresh_token'),
+  expiresAt: timestamp('expires_at'),
+  password: text('password'),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow().onUpdateNow(),
+});
 
-// export const verifications = mysqlTable('verifications', {
-//     id: varchar('id', { length: 255 }).primaryKey(),
-//     identifier: text('identifier').notNull(),
-//     value: text('value').notNull(),
-//     expiresAt: timestamp('expires_at').notNull(),
-//     createdAt: timestamp('created_at').defaultNow(),
-//     updatedAt: timestamp('updated_at').defaultNow().onUpdateNow(),
-// });
+export const verifications = mysqlTable('verifications', {
+    id: varchar('id', { length: 255 }).primaryKey(),
+    identifier: text('identifier').notNull(),
+    value: text('value').notNull(),
+    expiresAt: timestamp('expires_at').notNull(),
+    createdAt: timestamp('created_at').defaultNow(),
+    updatedAt: timestamp('updated_at').defaultNow().onUpdateNow(),
+});
 
 // 3. Devices
 export const devices = mysqlTable('devices', {

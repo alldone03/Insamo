@@ -6,6 +6,8 @@ import ClassificationResultController from '../app/controllers/ClassificationRes
 import WeatherReadingController from '../app/controllers/WeatherReadingController';
 import { uploadUserImage, uploadDeviceImage } from '../app/controllers/UploadController';
 import UserController from '../app/controllers/UserController';
+import SystemSettingController from '../app/controllers/SystemSettingController';
+import TelegramLogController from '../app/controllers/TelegramLogController';
 import jwt from 'jsonwebtoken';
 
 const router = Router();
@@ -40,6 +42,7 @@ router.get('/public-devices', (req, res) => DeviceController.publicIndex(req, re
 router.get('/weather', (req, res) => WeatherReadingController.index(req, res));
 router.get('/weather/latest', (req, res) => WeatherReadingController.latest(req, res));
 router.post('/weather', (req, res) => WeatherReadingController.store(req, res));
+router.post('/telegram/webhook', (req, res) => TelegramLogController.webhook(req, res));
 
 // Protected routes
 router.use(authMiddleware);
@@ -66,5 +69,16 @@ router.get('/sensor-readings/:id', (req, res) => SensorReadingController.show(re
 router.get('/classification-results', (req, res) => ClassificationResultController.index(req, res));
 router.post('/classification-results', (req, res) => ClassificationResultController.store(req, res));
 router.get('/classification-results/:id', (req, res) => ClassificationResultController.show(req, res));
+
+// System Settings
+router.get('/system-settings', (req, res) => SystemSettingController.index(req, res));
+router.post('/system-settings/get-many', (req, res) => SystemSettingController.getMany(req, res));
+router.post('/system-settings/:key', (req, res) => SystemSettingController.update(req, res));
+
+// Telegram Logs
+router.get('/telegram-logs', (req, res) => TelegramLogController.index(req, res));
+router.post('/telegram-logs/set-webhook', (req, res) => TelegramLogController.setWebhook(req, res));
+router.post('/telegram-logs/send-test', (req, res) => TelegramLogController.sendTest(req, res));
+router.delete('/telegram-logs/:id', (req, res) => TelegramLogController.destroy(req, res));
 
 export default router;

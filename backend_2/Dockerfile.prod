@@ -7,7 +7,7 @@ WORKDIR /var/www
 RUN corepack enable
 
 # Copy package files
-COPY package.json yarn.lock ./
+COPY package.json yarn.lock .yarnrc.yml ./
 
 # Install dependencies
 RUN yarn install --immutable
@@ -26,6 +26,7 @@ WORKDIR /var/www
 COPY --from=builder /var/www/dist ./dist
 COPY --from=builder /var/www/package.json ./
 COPY --from=builder /var/www/yarn.lock ./
+COPY --from=builder /var/www/.yarnrc.yml ./
 
 RUN corepack enable
 RUN yarn workspaces focus --production || yarn install --immutable

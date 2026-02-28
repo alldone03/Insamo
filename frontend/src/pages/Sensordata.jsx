@@ -1,5 +1,7 @@
+import { useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { io } from "socket.io-client";
 import { api, getImageUrl } from "../lib/api";
 import {
     LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -7,10 +9,12 @@ import {
 } from 'recharts';
 import { Activity, ArrowLeft, Thermometer, Droplets, Wind, Waves, Move, Zap, TrendingUp, AlertTriangle } from "lucide-react";
 import InsamoLogo from "../assets/InsamoLogo.webp";
+import GenericChart from "../components/GenericChart";
 
 export default function Sensordata() {
     const { id } = useParams();
     const navigate = useNavigate();
+    const queryClient = useQueryClient();
 
     const { data: device, isLoading: isLoadingDevice } = useQuery({
         queryKey: ["device", id],
@@ -18,8 +22,32 @@ export default function Sensordata() {
             const res = await api.get(`/devices/${id}`);
             return res.data;
         },
-        refetchInterval: 5000, // Update charts every 5 seconds
     });
+
+    useEffect(() => {
+        let backendUrl = "http://localhost:3000";
+        if (import.meta.env.VITE_API_URL) {
+            backendUrl = import.meta.env.VITE_API_URL.split('/api')[0];
+        }
+        const socket = io(backendUrl);
+
+        socket.on('new_sensor_reading', (payload) => {
+            if (String(payload.device_id) === String(id)) {
+                queryClient.setQueryData(["device", id], (oldData) => {
+                    if (!oldData) return oldData;
+
+                    return {
+                        ...oldData,
+                        sensor_readings: [payload.reading, ...(oldData.sensor_readings || [])]
+                    };
+                });
+            }
+        });
+
+        return () => {
+            socket.disconnect();
+        };
+    }, [id, queryClient]);
 
     // Assume the backend returns sensorReadings along with the device or we fetch it separately
     // The previous DeviceController.php show() method does load('sensorReadings')
@@ -40,7 +68,19 @@ export default function Sensordata() {
     // Format readings with datetime
     const formattedReadings = readings.map(r => ({
         ...r,
-        datetime: formatDateTime(r.recorded_at)
+        time: r.recorded_at,
+        datetime: formatDateTime(r.recorded_at),
+        x: r.vib_x || r.tilt_x || 0,
+        y: r.vib_y || r.tilt_y || 0,
+        z: r.vib_z || r.tilt_z || 0,
+        tilt: r.device_tilt || r.magnitude || 0,
+        soil_moisture: r.soil_moisture || 0,
+        vib_x: r.vib_x || 0,
+        vib_y: r.vib_y || 0,
+        vib_z: r.vib_z || 0,
+        gyro_x: r.gyro_x || 0,
+        gyro_y: r.gyro_y || 0,
+        gyro_z: r.gyro_z || 0,
     })).reverse();
 
     if (isLoadingDevice) return <div className="flex justify-center p-20"><span className="loading loading-spinner loading-lg text-primary"></span></div>;
@@ -52,140 +92,134 @@ export default function Sensordata() {
             case 'SIGMA':
                 return (
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <ChartCard title="Tilt Stability (X & Y)" icon={<Move className="text-primary" />}>
-                            <ResponsiveContainer width="100%" height={300}>
-                                <AreaChart data={formattedReadings}>
-                                    <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
-                                    <XAxis
-                                        dataKey="datetime"
-                                        angle={-45}
-                                        textAnchor="end"
-                                        height={80}
-                                        tick={{ fontSize: 10 }}
-                                    />
-                                    <YAxis />
-                                    <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }} />
-                                    <Legend />
-                                    <Area type="monotone" dataKey="tilt_x" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.1} strokeWidth={3} isAnimationActive={false} />
-                                    <Area type="monotone" dataKey="tilt_y" stroke="#8b5cf6" fill="#8b5cf6" fillOpacity={0.1} strokeWidth={3} isAnimationActive={false} />
-                                </AreaChart>
-                            </ResponsiveContainer>
-                        </ChartCard>
-                        <ChartCard title="Magnitude Analysis" icon={<Zap className="text-accent" />}>
-                            <ResponsiveContainer width="100%" height={300}>
-                                <LineChart data={formattedReadings}>
-                                    <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
-                                    <XAxis
-                                        dataKey="datetime"
-                                        angle={-45}
-                                        textAnchor="end"
-                                        height={80}
-                                        tick={{ fontSize: 10 }}
-                                    />
-                                    <YAxis />
-                                    <Tooltip contentStyle={{ borderRadius: '16px' }} />
-                                    <Legend />
-                                    <Line type="stepAfter" dataKey="magnitude" stroke="#f59e0b" strokeWidth={3} dot={false} isAnimationActive={false} />
-                                </LineChart>
-                            </ResponsiveContainer>
-                        </ChartCard>
+                        <GenericChart
+                            title="Vibration Chart (m/s²)"
+                            data={formattedReadings}
+                            lines={[
+                                { key: 'x', name: 'X-Axis', color: 'hsl(0, 80%, 60%)' },
+                                { key: 'y', name: 'Y-Axis', color: 'hsl(120, 60%, 50%)' },
+                                { key: 'z', name: 'Z-Axis', color: 'hsl(240, 80%, 60%)' }
+                            ]}
+                            yAxisLabel="m/s²"
+                            color="error"
+                        />
+                        <div className="card bg-base-100 shadow-xl border border-base-200">
+                            <div className="card-body">
+                                <h3 className="card-title text-sm opacity-50 font-black uppercase tracking-widest flex items-center gap-2 mb-4">
+                                    <Activity className="text-error" size={16} /> Latest Readings
+                                </h3>
+                                <div className="grid grid-cols-1 gap-4">
+                                    <div className="bg-base-200 p-4 rounded-xl flex flex-col items-center">
+                                        <span className="opacity-50 font-bold text-xs uppercase mb-1">X-Axis</span>
+                                        <span className="text-2xl font-black text-error">
+                                            {parseFloat(formattedReadings[formattedReadings.length - 1]?.x ?? 0).toFixed(3)}
+                                        </span>
+                                    </div>
+                                    <div className="bg-base-200 p-4 rounded-xl flex flex-col items-center">
+                                        <span className="opacity-50 font-bold text-xs uppercase mb-1">Y-Axis</span>
+                                        <span className="text-2xl font-black text-secondary">
+                                            {parseFloat(formattedReadings[formattedReadings.length - 1]?.y ?? 0).toFixed(3)}
+                                        </span>
+                                    </div>
+                                    <div className="bg-base-200 p-4 rounded-xl flex flex-col items-center">
+                                        <span className="opacity-50 font-bold text-xs uppercase mb-1">Z-Axis</span>
+                                        <span className="text-2xl font-black text-primary">
+                                            {parseFloat(formattedReadings[formattedReadings.length - 1]?.z ?? 0).toFixed(3)}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 );
             case 'FLOWS':
                 return (
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <ChartCard title="Water Level & Wind Speed" icon={<Waves className="text-secondary" />}>
-                            <ResponsiveContainer width="100%" height={300}>
-                                <LineChart data={formattedReadings}>
-                                    <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
-                                    <XAxis
-                                        dataKey="datetime"
-                                        angle={-45}
-                                        textAnchor="end"
-                                        height={80}
-                                        tick={{ fontSize: 10 }}
-                                    />
-                                    <YAxis yAxisId="left" />
-                                    <YAxis yAxisId="right" orientation="right" />
-                                    <Tooltip contentStyle={{ borderRadius: '16px' }} />
-                                    <Legend />
-                                    <Line yAxisId="left" type="monotone" dataKey="water_level" stroke="#0ea5e9" strokeWidth={3} dot={false} isAnimationActive={false} />
-                                    <Line yAxisId="right" type="monotone" dataKey="wind_speed" stroke="#64748b" strokeWidth={2} dot={false} strokeDasharray="5 5" isAnimationActive={false} />
-                                </LineChart>
-                            </ResponsiveContainer>
-                        </ChartCard>
-                        <ChartCard title="Ambient Temperature" icon={<Thermometer className="text-error" />}>
-                            <ResponsiveContainer width="100%" height={300}>
-                                <AreaChart data={formattedReadings}>
-                                    <defs>
-                                        <linearGradient id="colorTemp" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3} />
-                                            <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
-                                        </linearGradient>
-                                    </defs>
-                                    <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
-                                    <XAxis
-                                        dataKey="datetime"
-                                        angle={-45}
-                                        textAnchor="end"
-                                        height={80}
-                                        tick={{ fontSize: 10 }}
-                                    />
-                                    <YAxis domain={['dataMin - 5', 'dataMax + 5']} />
-                                    <Tooltip contentStyle={{ borderRadius: '16px' }} />
-                                    <Area type="monotone" dataKey="temperature" stroke="#ef4444" fillOpacity={1} fill="url(#colorTemp)" strokeWidth={3} isAnimationActive={false} />
-                                </AreaChart>
-                            </ResponsiveContainer>
-                        </ChartCard>
-                        <ChartCard title="Rainfall Intensity" icon={<Droplets className="text-primary" />}>
-                            <ResponsiveContainer width="100%" height={300}>
-                                <BarChart data={formattedReadings}>
-                                    <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
-                                    <XAxis
-                                        dataKey="datetime"
-                                        angle={-45}
-                                        textAnchor="end"
-                                        height={80}
-                                        tick={{ fontSize: 10 }}
-                                    />
-                                    <YAxis />
-                                    <Tooltip contentStyle={{ borderRadius: '16px' }} />
-                                    <Bar dataKey="rainfall_intensity" fill="#3b82f6" radius={[4, 4, 0, 0]} isAnimationActive={false} />
-                                </BarChart>
-                            </ResponsiveContainer>
-                        </ChartCard>
+                        <GenericChart
+                            title="Water Level (m)"
+                            data={formattedReadings}
+                            lines={[{ key: 'water_level', name: 'Level', color: 'hsl(210, 80%, 50%)' }]}
+                            yAxisLabel="Meters"
+                            color="info"
+                        />
+                        <GenericChart
+                            title="Wind Speed (m/s)"
+                            data={formattedReadings}
+                            lines={[{ key: 'wind_speed', name: 'Speed', color: 'hsl(180, 50%, 60%)' }]}
+                            yAxisLabel="m/s"
+                            color="accent"
+                        />
+                        <GenericChart
+                            title="Temperature (°C)"
+                            data={formattedReadings}
+                            lines={[{ key: 'temperature', name: 'Temp', color: 'hsl(10, 80%, 60%)' }]}
+                            yAxisLabel="°C"
+                            color="error"
+                        />
+                        <GenericChart
+                            title="Rainfall Intensity (%)"
+                            data={formattedReadings}
+                            lines={[{ key: 'rainfall_intensity', name: 'Rainfall', color: 'hsl(230, 80%, 60%)' }]}
+                            yAxisLabel="%"
+                            color="primary"
+                        />
                     </div>
                 );
             case 'LANDSLIDE':
                 return (
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <ChartCard title="Landslide Risk Score" icon={<TrendingUp className="text-warning" />}>
-                            <ResponsiveContainer width="100%" height={300}>
-                                <BarChart data={formattedReadings}>
-                                    <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
-                                    <XAxis
-                                        dataKey="datetime"
-                                        angle={-45}
-                                        textAnchor="end"
-                                        height={80}
-                                        tick={{ fontSize: 10 }}
-                                    />
-                                    <YAxis domain={[0, 100]} />
-                                    <Tooltip contentStyle={{ borderRadius: '16px' }} />
-                                    <Bar dataKey="landslide_score" fill="#f97316" radius={[4, 4, 0, 0]} isAnimationActive={false} />
-                                </BarChart>
-                            </ResponsiveContainer>
-                        </ChartCard>
-                        <div className="card bg-base-100 shadow-xl border border-base-200">
+                        <GenericChart
+                            title="Soil Moisture (%)"
+                            data={formattedReadings}
+                            lines={[{ key: 'soil_moisture', name: 'Moisture', color: 'hsl(200, 80%, 50%)' }]}
+                            yAxisLabel="%"
+                            color="info"
+                        />
+                        <GenericChart
+                            title="Ground Vibration (m/s²)"
+                            data={formattedReadings}
+                            lines={[
+                                { key: 'vib_x', name: 'X-Axis', color: 'hsl(0, 80%, 60%)' },
+                                { key: 'vib_y', name: 'Y-Axis', color: 'hsl(120, 60%, 50%)' },
+                                { key: 'vib_z', name: 'Z-Axis', color: 'hsl(240, 80%, 60%)' }
+                            ]}
+                            yAxisLabel="m/s²"
+                            color="error"
+                        />
+                        <GenericChart
+                            title="Slope Angle (°)"
+                            data={formattedReadings}
+                            lines={[
+                                { key: 'gyro_x', name: 'Gyro X', color: 'hsl(30, 90%, 50%)' },
+                                { key: 'gyro_y', name: 'Gyro Y', color: 'hsl(280, 70%, 60%)' },
+                                { key: 'gyro_z', name: 'Gyro Z', color: 'hsl(180, 60%, 40%)' }
+                            ]}
+                            yAxisLabel="Degrees"
+                            color="warning"
+                        />
+                        <div className="card bg-base-100 shadow-xl border-t-4 border-warning/50">
                             <div className="card-body">
-                                <h3 className="card-title text-sm opacity-50 font-black uppercase tracking-widest flex items-center gap-2">
-                                    <AlertTriangle className="text-error" size={16} /> Current Status
-                                </h3>
-                                <div className="flex flex-col items-center justify-center flex-grow py-8">
-                                    <div className={`text-5xl font-black italic mb-2 ${formattedReadings[formattedReadings.length - 1]?.landslide_status === 'DANGER' ? 'text-error' : 'text-success'}`}>
-                                        {formattedReadings[formattedReadings.length - 1]?.landslide_status || 'STABLE'}
+                                <h3 className="card-title text-sm font-black italic mb-4">3D Slope Visualization</h3>
+                                <div className="flex justify-center items-center h-64 bg-base-200 rounded-xl overflow-hidden perspective-[1000px]">
+                                    <div
+                                        className="relative w-40 h-40 transition-transform duration-500 ease-out"
+                                        style={{
+                                            transform: `rotateX(${formattedReadings[formattedReadings.length - 1]?.gyro_x ?? 50}deg) rotateY(${formattedReadings[formattedReadings.length - 1]?.gyro_y ?? -30}deg) rotateZ(${formattedReadings[formattedReadings.length - 1]?.gyro_z ?? 0}deg)`,
+                                            transformStyle: 'preserve-3d'
+                                        }}
+                                    >
+                                        <div className="absolute w-full h-full bg-warning rounded-2xl flex items-center justify-center font-black italic text-white text-xl shadow-[inset_0_0_20px_rgba(0,0,0,0.2)] border-2 border-white/20" style={{ transform: 'translateZ(16px)' }}>Landslide</div>
+                                        <div className="absolute w-full h-full bg-warning rounded-2xl border-2 border-white/20" style={{ transform: 'rotateY(180deg) translateZ(16px)' }}></div>
+                                        <div className="absolute w-8 h-[calc(100%-28px)] bg-warning brightness-90" style={{ left: '50%', top: '14px', marginLeft: '-16px', transform: 'rotateY(-90deg) translateZ(80px)' }}></div>
+                                        <div className="absolute w-8 h-[calc(100%-28px)] bg-warning brightness-90" style={{ left: '50%', top: '14px', marginLeft: '-16px', transform: 'rotateY(90deg) translateZ(80px)' }}></div>
+                                        <div className="absolute w-[calc(100%-28px)] h-8 bg-warning brightness-110" style={{ top: '50%', left: '14px', marginTop: '-16px', transform: 'rotateX(90deg) translateZ(80px)' }}></div>
+                                        <div className="absolute w-[calc(100%-28px)] h-8 bg-error brightness-75" style={{ top: '50%', left: '14px', marginTop: '-16px', transform: 'rotateX(-90deg) translateZ(80px)' }}></div>
                                     </div>
-                                    <p className="text-xs opacity-50 font-bold">LATEST ANALYTICS REPORT</p>
+                                </div>
+                                <div className="flex justify-center gap-4 mt-4 text-xs font-mono opacity-70 font-bold">
+                                    <span className="text-error">X: {(formattedReadings[formattedReadings.length - 1]?.gyro_x ?? 0).toFixed(1)}°</span>
+                                    <span className="text-secondary">Y: {(formattedReadings[formattedReadings.length - 1]?.gyro_y ?? 0).toFixed(1)}°</span>
+                                    <span className="text-primary">Z: {(formattedReadings[formattedReadings.length - 1]?.gyro_z ?? 0).toFixed(1)}°</span>
                                 </div>
                             </div>
                         </div>

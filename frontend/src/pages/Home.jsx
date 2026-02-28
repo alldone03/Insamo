@@ -1,7 +1,8 @@
 import { MapContainer, TileLayer, Marker, Popup, useMap, LayersControl, GeoJSON } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-import { useQuery } from "@tanstack/react-query";
-import { api } from "../lib/api";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { api, getImageUrl } from "../lib/api";
+import { io } from "socket.io-client";
 import L from "leaflet";
 import { Link } from "react-router-dom";
 import { Eye, Info, Layers, Map as MapIcon } from "lucide-react";
@@ -133,14 +134,42 @@ const getCustomIcon = (type, status) => {
 };
 
 export default function Home() {
+    const queryClient = useQueryClient();
     const { data: devices, isLoading } = useQuery({
         queryKey: ["devices"],
         queryFn: async () => {
             const res = await api.get("/devices");
             return res.data;
-        },
-        refetchInterval: 10000 // Poll every 10s for map updates
+        }
     });
+
+    useEffect(() => {
+        let backendUrl = "http://localhost:3000";
+        if (import.meta.env.VITE_API_URL) {
+            backendUrl = import.meta.env.VITE_API_URL.split('/api')[0];
+        }
+        const socket = io(backendUrl);
+
+        socket.on('new_sensor_reading', (payload) => {
+            queryClient.setQueryData(["devices"], (oldData) => {
+                if (!oldData) return oldData;
+                return oldData.map(device => {
+                    if (String(device.id) === String(payload.device_id)) {
+                        return {
+                            ...device,
+                            status: 'ACTIVE',
+                            updatedAt: new Date().toISOString()
+                        };
+                    }
+                    return device;
+                });
+            });
+        });
+
+        return () => {
+            socket.disconnect();
+        };
+    }, [queryClient]);
 
     // Calculate dynamic center for initial view
     const mapCenter = useMemo(() => {
@@ -356,33 +385,49 @@ export default function Home() {
                             icon={getCustomIcon(device.device_type, device.status)}
                         >
                             <Popup className="custom-popup">
-                                <div className="p-1 min-w-[200px]">
-                                    <div className="flex items-center justify-between mb-2">
-                                        <div className="flex flex-col gap-1">
-                                            <span className={`badge badge-sm font-black italic ${device.device_type === 'SIGMA' ? 'badge-primary' :
-                                                device.device_type === 'FLOWS' ? 'badge-secondary' : 'badge-accent'
-                                                }`}>
-                                                {device.device_type}
-                                            </span>
-                                            <span className={`text-[10px] font-black italic px-2 py-0.5 rounded-full ${device.status === 'ACTIVE' ? 'bg-success/20 text-success' : 'bg-error/20 text-error'
-                                                }`}>
-                                                {device.status}
-                                            </span>
-                                        </div>
-                                        <span className="text-[10px] font-mono opacity-40 font-bold">{device.device_code}</span>
-                                    </div>
-                                    <h3 className="font-black text-lg italic text-base-content leading-none mb-1 uppercase tracking-tighter">
+                                <div className="p-1 min-w-[220px]">
+                                    <h3 className="font-black text-lg italic text-base-content leading-none mb-3 uppercase tracking-tighter">
                                         {device.name}
                                     </h3>
-                                    <div className="text-[11px] opacity-60 flex items-start gap-1 mb-4 italic">
-                                        <Info size={12} className="shrink-0 mt-0.5" />
-                                        {device.address}
+
+                                    <div className="w-full h-32 rounded-xl bg-base-200 mb-4 overflow-hidden border border-base-300 shadow-inner">
+                                        {device.image ? (
+                                            <img src={getImageUrl(device.image)} alt={device.name} className="w-full h-full object-cover" />
+                                        ) : (
+                                            <img src={logoInsamo} alt="Insamo Logo" className="w-full h-full object-contain p-4 bg-white dark:bg-white" />
+                                        )}
                                     </div>
+
+                                    <div className="text-xs space-y-2 mb-5">
+                                        <div className="flex items-start">
+                                            <span className="font-bold opacity-60 w-16 shrink-0">Lokasi:</span>
+                                            <span className="opacity-90 font-medium leading-tight">{device.address || '-'}</span>
+                                        </div>
+                                        <div className="flex items-center">
+                                            <span className="font-bold opacity-60 w-16 shrink-0">Tipe:</span>
+                                            <span className="badge badge-sm badge-neutral font-bold">{device.device_type || '-'}</span>
+                                        </div>
+                                        <div className="flex items-center">
+                                            <span className="font-bold opacity-60 w-16 shrink-0">Status:</span>
+                                            <span className={`font-black ${device.status === 'ACTIVE' ? 'text-success' : 'text-error'}`}>
+                                                {device.status || 'LOST'}
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center">
+                                            <span className="font-bold opacity-60 w-16 shrink-0">Update:</span>
+                                            <span className="opacity-90 font-mono text-[10px]">
+                                                {device.updatedAt
+                                                    ? new Date(device.updatedAt).toLocaleString('id-ID', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' }).replace(/\./g, ':')
+                                                    : '2026-02-13 19:46:31'}
+                                            </span>
+                                        </div>
+                                    </div>
+
                                     <Link
                                         to={`/device/${device.id}/data`}
-                                        className="btn text-white btn-sm w-full rounded-xl font-black italic shadow-lg shadow-primary/20"
+                                        className="btn  text-white btn-sm w-full rounded-xl font-black italic shadow-lg shadow-primary/20 flex gap-2"
                                     >
-                                        <Eye size={14} /> VIEW DETAILS
+                                        <span>🔍</span> Lihat Detail
                                     </Link>
                                 </div>
                             </Popup>

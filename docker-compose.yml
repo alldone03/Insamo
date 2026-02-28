@@ -9,7 +9,10 @@ services:
     working_dir: /var/www
     volumes:
       - ./backend_2:/var/www
-      - /var/www/node_modules # if they switch to nodeLinker: node-modules
+      - backend_node_modules:/var/www/node_modules
+      - backend_yarn:/var/www/.yarn
+      - /var/www/.pnp.cjs
+      - /var/www/.pnp.loader.mjs
     ports:
       - "3000:3000"
     environment:
@@ -72,4 +75,5 @@ networks:
 
 volumes:
   dbdata:
-    driver: local
+  backend_node_modules:
+  backend_yarn:

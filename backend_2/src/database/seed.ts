@@ -3,6 +3,7 @@ import mysql from 'mysql2/promise';
 import * as schema from '../app/models/schema';
 import dotenv from 'dotenv';
 import { hashSync } from 'bcryptjs';
+import { sql } from 'drizzle-orm';
 import { auth } from '../config/auth';
 
 dotenv.config();
@@ -27,7 +28,7 @@ async function run() {
             { name: 'SuperAdmin' },
             { name: 'Admin' },
             { name: 'User' },
-        ]).onDuplicateKeyUpdate({ set: { id: mysql.raw('id') } }); // simplified ignore
+        ]).onDuplicateKeyUpdate({ set: { id: sql`id` } }); // simplified ignore
 
         const allRoles = await db.select().from(schema.roles);
         const superAdminRole = allRoles.find(r => r.name === 'SuperAdmin');
@@ -47,7 +48,7 @@ async function run() {
             { id: 1, name: 'Super Admin', email: 'superadmin@example.com', password: hashedPassword, roleId: superAdminRole?.id, emailVerified: true },
             { id: 2, name: 'Admin User', email: 'admin@example.com', password: hashedPassword, roleId: adminRole?.id, emailVerified: true },
             { id: 3, name: 'Regular User', email: 'user@example.com', password: hashedPassword, roleId: userRole?.id, emailVerified: true },
-        ]).onDuplicateKeyUpdate({ set: { password: mysql.raw('VALUES(password)') } });
+        ]).onDuplicateKeyUpdate({ set: { password: sql`VALUES(password)` } });
 
         // Seed Better Auth accounts so credential login works
         // await db.insert(schema.accounts).values([
@@ -62,7 +63,7 @@ async function run() {
         await db.insert(schema.systemSettings).values([
             { key: 'telegram_bot_token', value: 'YOUR_BOT_TOKEN' },
             { key: 'flood_alert_template', value: "🚨 *FLOOD ALERT* 🚨\nDevice: {device_name}\nStatus: {status}\nWater Level: {water_level}m\nThreshold: {threshold}m\nLocation: {location}" },
-        ]).onDuplicateKeyUpdate({ set: { value: mysql.raw('VALUES(value)') } });
+        ]).onDuplicateKeyUpdate({ set: { value: sql`VALUES(value)` } });
 
         // 4. Seed Devices
         console.log('Seeding Devices...');
@@ -72,7 +73,7 @@ async function run() {
             { device_code: 'FLOWS-002', name: 'Bandung Basin Monitor', device_type: 'FLOWS', latitude: -6.917464, longitude: 107.619125, address: 'Bandung, Indonesia' },
             { device_code: 'LANDSLIDE-001', name: 'Puncak Pass Monitor', device_type: 'LANDSLIDE', latitude: -6.702400, longitude: 106.993000, address: 'Bogor Regancy' },
             { device_code: 'WILDFIRE-001', name: 'Kalimantan Forest Node', device_type: 'WILDFIRE', latitude: -1.269160, longitude: 116.825264, address: 'Balikpapan Surrounding' },
-        ]).onDuplicateKeyUpdate({ set: { name: mysql.raw('VALUES(name)') } });
+        ]).onDuplicateKeyUpdate({ set: { name: sql`VALUES(name)` } });
 
         // 5. Seed Device Settings
         console.log('Seeding Device Settings...');

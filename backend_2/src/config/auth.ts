@@ -17,31 +17,11 @@ export const auth = betterAuth({
             verification: schema.verifications
         }
     }),
-    advanced: {
-        database: {
-            generateId: (options: any) => {
-                if (options.model === "user") {
-                    return false; // Let database auto-increment
-                }
-                return generateId(); 
-            },
-        },
-    },
     emailAndPassword: {
         enabled: true,
-        password: {
-            hash: async (password: string) => password,
-            verify: async (password: string, hash: string) => {
-                console.log('Plain text verify:', { password, hash, match: password === hash });
-                return password === hash;
-            },
-        },
     },
     plugins: [
-        jwt({
-            jwt: {
-                secret: process.env.JWT_SECRET || "fallback_secret",
-            },
-        }),
+        jwt()
     ],
+    secret: process.env.JWT_SECRET || "fallback_secret",
 });

@@ -574,23 +574,27 @@ export default function Device() {
                                     </div>
                                 )}
 
-                                <div className="col-span-2 divider text-xs font-black opacity-30 mt-4">CALIBRATION</div>
-                                <div className="form-control col-span-2 md:col-span-1">
-                                    <label className="label text-xs font-black opacity-50">INITIAL DISTANCE (CM)</label>
-                                    <input type="number" className="input input-bordered font-mono font-bold" value={formData.initial_distance} onChange={e => setFormData({ ...formData, initial_distance: e.target.value })} />
-                                </div>
-                                <div className="form-control col-span-1 md:col-span-1">
-                                    <div className="flex gap-2">
-                                        <div>
-                                            <label className="label text-xs font-black opacity-50 text-warning">ALERT</label>
-                                            <input type="number" className="input input-bordered w-full font-mono font-bold text-warning" value={formData.alert_threshold} onChange={e => setFormData({ ...formData, alert_threshold: e.target.value })} />
+                                {formData.device_type === 'FLOWS' && (
+                                    <>
+                                        <div className="col-span-2 divider text-xs font-black opacity-30 mt-4">CALIBRATION (FLOWS)</div>
+                                        <div className="form-control col-span-2 md:col-span-1">
+                                            <label className="label text-xs font-black opacity-50">INITIAL DISTANCE (CM)</label>
+                                            <input type="number" className="input input-bordered font-mono font-bold" value={formData.initial_distance} onChange={e => setFormData({ ...formData, initial_distance: e.target.value })} />
                                         </div>
-                                        <div>
-                                            <label className="label text-xs font-black opacity-50 text-error">DANGER</label>
-                                            <input type="number" className="input input-bordered w-full font-mono font-bold text-error" value={formData.danger_threshold} onChange={e => setFormData({ ...formData, danger_threshold: e.target.value })} />
+                                        <div className="form-control col-span-1 md:col-span-1">
+                                            <div className="flex gap-2">
+                                                <div>
+                                                    <label className="label text-xs font-black opacity-50 text-warning">ALERT</label>
+                                                    <input type="number" className="input input-bordered w-full font-mono font-bold text-warning" value={formData.alert_threshold} onChange={e => setFormData({ ...formData, alert_threshold: e.target.value })} />
+                                                </div>
+                                                <div>
+                                                    <label className="label text-xs font-black opacity-50 text-error">DANGER</label>
+                                                    <input type="number" className="input input-bordered w-full font-mono font-bold text-error" value={formData.danger_threshold} onChange={e => setFormData({ ...formData, danger_threshold: e.target.value })} />
+                                                </div>
+                                            </div>
                                         </div>
-                                    </div>
-                                </div>
+                                    </>
+                                )}
                             </div>
 
                             <div className="p-6 bg-base-200/50 flex justify-end gap-2">

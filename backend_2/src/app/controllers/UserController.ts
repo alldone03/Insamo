@@ -9,6 +9,11 @@ export class UserController extends Controller {
     // GET /api/users
     async index(req: Request, res: Response) {
         try {
+            const user = (req as any).user;
+            if (user.roleId !== 1) {
+                return this.sendError(res, 'Forbidden: Only SuperAdmin can list users', 403);
+            }
+
             const allUsers = await db.select({
                 id: users.id,
                 name: users.name,
@@ -29,6 +34,11 @@ export class UserController extends Controller {
     // POST /api/users
     async store(req: Request, res: Response) {
         try {
+            const user = (req as any).user;
+            if (user.roleId !== 1) {
+                return this.sendError(res, 'Forbidden: Only SuperAdmin can create users', 403);
+            }
+
             const { name, email, password, role_id, telegram_chat_id } = req.body;
 
             if (!name || !email || !password) {
@@ -73,6 +83,13 @@ export class UserController extends Controller {
     async show(req: Request, res: Response) {
         try {
             const { id } = req.params;
+            const currentUser = (req as any).user;
+
+            // Only allow SuperAdmin or the user themselves to see their profile
+            if (currentUser.roleId !== 1 && currentUser.id !== Number(id)) {
+                return this.sendError(res, 'Forbidden: Access denied', 403);
+            }
+
             const user = await db.query.users.findFirst({
                 where: eq(users.id, Number(id))
             });
@@ -105,6 +122,13 @@ export class UserController extends Controller {
     async update(req: any, res: Response) {
         try {
             const { id } = req.params;
+            const currentUser = (req as any).user;
+
+            // Only allow SuperAdmin or the user themselves to update their profile
+            if (currentUser.roleId !== 1 && currentUser.id !== Number(id)) {
+                return this.sendError(res, 'Forbidden: Access denied', 403);
+            }
+
             const { _method, ...updateFields } = req.body;
             
             const allowedFields = ['name', 'email', 'telegramChatId', 'telegram_chat_id', 'role_id'];
@@ -114,9 +138,10 @@ export class UserController extends Controller {
                 if (allowedFields.includes(key)) {
                     if (key === 'telegram_chat_id') {
                          dataToUpdate['telegramChatId'] = updateFields[key];
-                    } else if (key === 'role_id') {
+                    } else if (key === 'role_id' && currentUser.roleId === 1) {
+                         // Only SuperAdmin can change roles
                          dataToUpdate['roleId'] = updateFields[key] ? Number(updateFields[key]) : null;
-                    } else {
+                    } else if (key !== 'role_id') {
                          dataToUpdate[key] = updateFields[key];
                     }
                 }
@@ -159,6 +184,11 @@ export class UserController extends Controller {
     // DELETE /api/users/:id
     async destroy(req: Request, res: Response) {
         try {
+            const user = (req as any).user;
+            if (user.roleId !== 1) {
+                return this.sendError(res, 'Forbidden: Only SuperAdmin can delete users', 403);
+            }
+
             const { id } = req.params;
             await db.delete(users).where(eq(users.id, Number(id)));
             return res.status(204).send();
@@ -171,6 +201,11 @@ export class UserController extends Controller {
     // POST /api/users/:id/devices
     async attachDevice(req: Request, res: Response) {
          try {
+             const user = (req as any).user;
+             if (user.roleId !== 1) {
+                 return this.sendError(res, 'Forbidden: Only SuperAdmin can manage device assignments', 403);
+             }
+
              const { id } = req.params;
              const { device_id } = req.body;
 
@@ -202,6 +237,11 @@ export class UserController extends Controller {
     // DELETE /api/users/:id/devices/:deviceId
     async detachDevice(req: Request, res: Response) {
          try {
+             const user = (req as any).user;
+             if (user.roleId !== 1) {
+                 return this.sendError(res, 'Forbidden: Only SuperAdmin can manage device assignments', 403);
+             }
+
              const { id, deviceId } = req.params;
 
              await db.delete(deviceUser)

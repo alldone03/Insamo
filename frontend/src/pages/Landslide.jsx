@@ -3,11 +3,25 @@ import { Mountain, ArrowLeft, Thermometer, Wind, Eye } from 'lucide-react';
 import GenericChart from '../components/GenericChart';
 import MiniMap from '../components/MiniMap';
 import { api, getImageUrl } from '../lib/api';
+import { io } from 'socket.io-client';
 
 const Landslide = () => {
   const [devices, setDevices] = useState([]);
   const [selectedDevice, setSelectedDevice] = useState(null);
+  const selectedDeviceIdRef = React.useRef(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [chartData, setChartData] = useState([]);
+  const [latestReadings, setLatestReadings] = useState({});
+  const [currentTime, setCurrentTime] = useState(Date.now());
+
+  useEffect(() => {
+    const interval = setInterval(() => setCurrentTime(Date.now()), 10000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    selectedDeviceIdRef.current = selectedDevice?.id;
+  }, [selectedDevice]);
 
   useEffect(() => {
     // Fetch Landslide devices
@@ -26,27 +40,86 @@ const Landslide = () => {
     fetchDevices();
   }, []);
 
-  // Simulated historical data for charts
-  const getSimulatedData = () => {
-    const data = [];
-    const now = new Date();
-    for (let i = 24; i >= 0; i--) {
-      const time = new Date(now.getTime() - i * 3600000); // Past 24 hours
-      data.push({
-        time: time.toISOString(),
-        soil_moisture: 30 + Math.random() * 20, // 30-50%
-        ax: Math.random() * 0.5 - 0.25,
-        ay: Math.random() * 0.5 - 0.25,
-        az: 9.8 + (Math.random() * 0.2 - 0.1),
-        gyrox: Math.random() * 2 - 1,
-        gyroy: Math.random() * 2 - 1,
-        gyroz: Math.random() * 2 - 1,
+  useEffect(() => {
+    let backendUrl = "http://localhost:3000";
+    if (import.meta.env.VITE_API_URL) {
+      backendUrl = import.meta.env.VITE_API_URL.split('/api')[0];
+    }
+    const socket = io(backendUrl);
+
+    socket.on('new_sensor_reading', (payload) => {
+      if (payload.device_type === 'LANDSLIDE') {
+        const { device_id, reading } = payload;
+
+        const storedReading = { ...reading, recorded_at: reading.recorded_at || new Date().toISOString() };
+        setLatestReadings(prev => ({
+          ...prev,
+          [device_id]: storedReading
+        }));
+
+        setChartData(prevData => {
+          if (selectedDeviceIdRef.current !== device_id) {
+            return prevData;
+          }
+
+          const newPoint = {
+            time: reading.recorded_at || new Date().toISOString(),
+            soil_moisture: reading.soil_moisture || 0,
+            vib_x: reading.vib_x || 0,
+            vib_y: reading.vib_y || 0,
+            vib_z: reading.vib_z || 0,
+            gyro_x: reading.gyro_x || 0,
+            gyro_y: reading.gyro_y || 0,
+            gyro_z: reading.gyro_z || 0,
+          };
+
+          return [...prevData, newPoint].slice(-24);
+        });
+      }
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (selectedDevice) {
+      api.get(`/sensor-readings?device_id=${selectedDevice.id}`).then(res => {
+        const readings = res.data && Array.isArray(res.data) ? res.data : (res.data?.data || []);
+
+        const formattedData = readings.reverse().map(r => ({
+          time: r.recorded_at,
+          soil_moisture: r.soil_moisture || 0,
+          vib_x: r.vib_x || 0,
+          vib_y: r.vib_y || 0,
+          vib_z: r.vib_z || 0,
+          gyro_x: r.gyro_x || 0,
+          gyro_y: r.gyro_y || 0,
+          gyro_z: r.gyro_z || 0,
+        }));
+        setChartData(formattedData);
+      }).catch(err => {
+        console.error("Failed to fetch sensor readings", err);
       });
     }
-    return data;
-  };
+  }, [selectedDevice]);
 
-  const chartData = getSimulatedData();
+  const isDeviceOnline = (devId) => {
+    const isRecent = (timestamp) => {
+      if (!timestamp) return false;
+      return (currentTime - new Date(timestamp).getTime()) <= 60000;
+    };
+
+    if (latestReadings[devId]) {
+      return isRecent(latestReadings[devId].recorded_at);
+    }
+    const dev = devices.find(d => d.id === devId);
+    if (dev && dev.sensor_readings && dev.sensor_readings.length > 0) {
+      return isRecent(dev.sensor_readings[0].recorded_at);
+    }
+    return false;
+  };
 
   if (isLoading) {
     return <div className="flex justify-center items-center h-64"><span className="loading loading-spinner loading-lg text-warning"></span></div>;
@@ -80,11 +153,17 @@ const Landslide = () => {
                 <div className="space-y-3">
                   <div className="flex justify-between border-b border-base-200 pb-2">
                     <span className="opacity-60 text-xs font-bold uppercase">Status</span>
-                    <span className="badge badge-success badge-sm font-bold">ONLINE</span>
+                    {isDeviceOnline(selectedDevice.id) ? (
+                      <span className="badge badge-success badge-sm font-bold">ONLINE</span>
+                    ) : (
+                      <span className="badge badge-error badge-sm font-bold">OFFLINE</span>
+                    )}
                   </div>
                   <div className="flex justify-between border-b border-base-200 pb-2">
                     <span className="opacity-60 text-xs font-bold uppercase">Slope</span>
-                    <span className="text-warning text-xs font-bold italic">STABLE</span>
+                    <span className={`text-xs font-bold italic ${latestReadings[selectedDevice.id]?.landslide_status === 'DANGER' ? 'text-error' : 'text-warning'}`}>
+                      {latestReadings[selectedDevice.id]?.landslide_status || (selectedDevice.sensor_readings?.[0]?.landslide_status || 'STABLE')}
+                    </span>
                   </div>
                   <div className="flex flex-col gap-1 border-b border-base-200 pb-2">
                     <span className="opacity-60 text-[10px] font-bold uppercase tracking-widest">Coordinates</span>
@@ -134,9 +213,9 @@ const Landslide = () => {
             title="Ground Vibration (m/s²)"
             data={chartData}
             lines={[
-              { key: 'ax', name: 'X-Axis', color: 'hsl(0, 80%, 60%)' },
-              { key: 'ay', name: 'Y-Axis', color: 'hsl(120, 60%, 50%)' },
-              { key: 'az', name: 'Z-Axis', color: 'hsl(240, 80%, 60%)' }
+              { key: 'vib_x', name: 'X-Axis', color: 'hsl(0, 80%, 60%)' },
+              { key: 'vib_y', name: 'Y-Axis', color: 'hsl(120, 60%, 50%)' },
+              { key: 'vib_z', name: 'Z-Axis', color: 'hsl(240, 80%, 60%)' }
             ]}
             yAxisLabel="m/s²"
             color="error"
@@ -147,13 +226,48 @@ const Landslide = () => {
             title="Slope Angle (°)"
             data={chartData}
             lines={[
-              { key: 'gyrox', name: 'Gyro X', color: 'hsl(30, 90%, 50%)' },
-              { key: 'gyroy', name: 'Gyro Y', color: 'hsl(280, 70%, 60%)' },
-              { key: 'gyroz', name: 'Gyro Z', color: 'hsl(180, 60%, 40%)' }
+              { key: 'gyro_x', name: 'Gyro X', color: 'hsl(30, 90%, 50%)' },
+              { key: 'gyro_y', name: 'Gyro Y', color: 'hsl(280, 70%, 60%)' },
+              { key: 'gyro_z', name: 'Gyro Z', color: 'hsl(180, 60%, 40%)' }
             ]}
             yAxisLabel="Degrees"
             color="warning"
           />
+          {/* 3D Box Visualization */}
+          <div className="card bg-base-100 shadow-xl border-t-4 border-warning/50">
+            <div className="card-body">
+              <h3 className="card-title text-sm font-black italic mb-4">3D Slope Visualization</h3>
+              <div className="flex justify-center items-center h-64 bg-base-200 rounded-xl overflow-hidden perspective-[1000px]">
+                <div
+                  className="relative w-40 h-40 transition-transform duration-500 ease-out"
+                  style={{
+                    transform: `rotateX(${latestReadings[selectedDevice.id]?.gyro_x ?? selectedDevice.sensor_readings?.[0]?.gyro_x ?? 50}deg) rotateY(${latestReadings[selectedDevice.id]?.gyro_y ?? selectedDevice.sensor_readings?.[0]?.gyro_y ?? -30}deg) rotateZ(${latestReadings[selectedDevice.id]?.gyro_z ?? selectedDevice.sensor_readings?.[0]?.gyro_z ?? 0}deg)`,
+                    transformStyle: 'preserve-3d'
+                  }}
+                >
+                  {/* Front Face */}
+                  <div className="absolute w-full h-full bg-warning rounded-2xl flex items-center justify-center font-black italic text-white text-xl shadow-[inset_0_0_20px_rgba(0,0,0,0.2)] border-2 border-white/20" style={{ transform: 'translateZ(16px)' }}>
+                    Landslide
+                  </div>
+                  {/* Back Face */}
+                  <div className="absolute w-full h-full bg-warning rounded-2xl border-2 border-white/20" style={{ transform: 'rotateY(180deg) translateZ(16px)' }}></div>
+                  {/* Left Face */}
+                  <div className="absolute w-8 h-[calc(100%-28px)] bg-warning brightness-90" style={{ left: '50%', top: '14px', marginLeft: '-16px', transform: 'rotateY(-90deg) translateZ(80px)' }}></div>
+                  {/* Right Face */}
+                  <div className="absolute w-8 h-[calc(100%-28px)] bg-warning brightness-90" style={{ left: '50%', top: '14px', marginLeft: '-16px', transform: 'rotateY(90deg) translateZ(80px)' }}></div>
+                  {/* Top Face */}
+                  <div className="absolute w-[calc(100%-28px)] h-8 bg-warning brightness-110" style={{ top: '50%', left: '14px', marginTop: '-16px', transform: 'rotateX(90deg) translateZ(80px)' }}></div>
+                  {/* Bottom Face */}
+                  <div className="absolute w-[calc(100%-28px)] h-8 bg-error brightness-75" style={{ top: '50%', left: '14px', marginTop: '-16px', transform: 'rotateX(-90deg) translateZ(80px)' }}></div>
+                </div>
+              </div>
+              <div className="flex justify-center gap-4 mt-4 text-xs font-mono opacity-70 font-bold">
+                <span className="text-error">X: {(latestReadings[selectedDevice.id]?.gyro_x ?? selectedDevice.sensor_readings?.[0]?.gyro_x ?? 0).toFixed(1)}°</span>
+                <span className="text-secondary">Y: {(latestReadings[selectedDevice.id]?.gyro_y ?? selectedDevice.sensor_readings?.[0]?.gyro_y ?? 0).toFixed(1)}°</span>
+                <span className="text-primary">Z: {(latestReadings[selectedDevice.id]?.gyro_z ?? selectedDevice.sensor_readings?.[0]?.gyro_z ?? 0).toFixed(1)}°</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -177,7 +291,11 @@ const Landslide = () => {
                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
               />
               <div className="absolute top-2 right-2 flex gap-1">
-                <span className="badge badge-success font-bold shadow-sm">ONLINE</span>
+                {isDeviceOnline(device.id) ? (
+                  <span className="badge badge-success font-bold shadow-sm">ONLINE</span>
+                ) : (
+                  <span className="badge badge-error font-bold shadow-sm">OFFLINE</span>
+                )}
                 <span className="badge badge-warning shadow-sm"><Mountain size={12} /></span>
               </div>
             </figure>
@@ -186,8 +304,13 @@ const Landslide = () => {
               <p className="text-xs font-mono opacity-50 line-clamp-1">{device.address || 'No location set'}</p>
 
               <div className="mt-4 pt-4 border-t border-base-200 grid grid-cols-2 gap-2 text-xs">
-                <div><span className="opacity-50">Risk Level:</span> <strong className="text-success">LOW</strong></div>
-                <div><span className="opacity-50">Moisture:</span> <strong>45%</strong></div>
+                <div>
+                  <span className="opacity-50">Risk Level:</span>{" "}
+                  <strong className={` ${latestReadings[device.id]?.landslide_status === 'DANGER' ? 'text-error' : 'text-success'}`}>
+                    {latestReadings[device.id]?.landslide_status || (device.sensor_readings?.[0]?.landslide_status || 'LOW')}
+                  </strong>
+                </div>
+                <div><span className="opacity-50">Moisture:</span> <strong>{(latestReadings[device.id]?.soil_moisture ?? device.sensor_readings?.[0]?.soil_moisture) !== undefined ? Number(latestReadings[device.id]?.soil_moisture ?? device.sensor_readings?.[0]?.soil_moisture).toFixed(2) : '-'} %</strong></div>
               </div>
 
               <div className="card-actions justify-end mt-4">
