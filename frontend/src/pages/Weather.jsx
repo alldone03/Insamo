@@ -1,103 +1,286 @@
-import React, { useState, useEffect } from 'react';
-import { CloudSun, CloudRain, Sun, Wind, Droplets, Thermometer, Gauge } from 'lucide-react';
-import { api } from '../lib/api';
+import React, { useState, useEffect, useRef } from 'react';
+import { Thermometer, Droplets, Gauge, Wind, ChevronLeft, ChevronRight, Maximize } from 'lucide-react';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+
+// Mock data untuk grafik
+const generateMockChartData = () => {
+   const data = [];
+   const times = ['10:00', '13:00', '16:00', '19:00', '22:00', '01:00', '04:00', '07:00'];
+   times.forEach((time) => {
+      data.push({
+         time,
+         temperature: 25 + Math.random() * 5,
+         humidity: 60 + Math.random() * 20,
+         pressure: 1005 + Math.random() * 10,
+         windSpeed: 2 + Math.random() * 8,
+      });
+   });
+   return data;
+};
+
+const chartData = generateMockChartData();
 
 const Weather = () => {
-   const [weather, setWeather] = useState(null);
+   const [currentWeather, setCurrentWeather] = useState({
+      temperature: 0,
+      humidity: 0,
+      pressure: 0,
+      wind_speed: 0,
+      lastUpdated: '',
+   });
    const [loading, setLoading] = useState(true);
+   
+   // Ref untuk fitur scroll horizontal pada kartu
+   const scrollContainerRef = useRef(null);
 
-   const fetchLatestWeather = async () => {
+   // GANTI DENGAN API KEY OPENWEATHERMAP MILIKMU
+   const API_KEY = 'e04f2e96a08e807e28cde3851558cff6'; 
+   const CITY = 'Surabaya'; 
+
+   const fetchWeather = async () => {
       try {
-         const response = await api.get('/weather/latest');
-         setWeather(response.data);
+         const response = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${CITY}&appid=${API_KEY}&units=metric`);
+         const data = await response.json();
+         
+         if (response.ok) {
+            const now = new Date();
+            const formattedDate = `${now.toLocaleString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}, ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+
+            setCurrentWeather({
+               temperature: data.main.temp,
+               humidity: data.main.humidity,
+               pressure: data.main.pressure,
+               wind_speed: data.wind.speed * 3.6, // m/s ke km/h
+               lastUpdated: formattedDate,
+            });
+         } else {
+            console.error("Error from API:", data.message);
+         }
       } catch (error) {
-         console.error("Error fetching weather:", error);
+         console.error("Failed to fetch weather:", error);
       } finally {
          setLoading(false);
       }
    };
 
    useEffect(() => {
-      fetchLatestWeather();
-      const interval = setInterval(fetchLatestWeather, 10000); // Update every 10s
+      fetchWeather();
+      const interval = setInterval(fetchWeather, 600000); // 10 menit
       return () => clearInterval(interval);
    }, []);
 
-   if (loading && !weather) {
+   // Fungsi untuk scroll horizontal menggunakan tombol
+   const scroll = (direction) => {
+      if (scrollContainerRef.current) {
+         const scrollAmount = direction === 'left' ? -300 : 300;
+         scrollContainerRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+      }
+   };
+
+   if (loading) {
       return (
          <div className="flex justify-center items-center h-64">
-            <span className="loading loading-spinner loading-lg text-primary"></span>
+            <span className="loading loading-spinner loading-lg text-blue-500"></span>
          </div>
       );
    }
 
    return (
-      <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-         <div className="card bg-gradient-to-br from-blue-600 to-indigo-400 text-white shadow-2xl border-none">
-            <div className="card-body p-8">
-               <div className="flex flex-col md:flex-row justify-between items-center gap-8">
-                  <div className="text-center md:text-left">
-                     <div className="flex items-center gap-2 mb-1">
-                        <Sun className="text-yellow-400" size={20} />
-                        <h2 className="text-3xl font-black italic tracking-tighter">SURABAYA, ID</h2>
-                     </div>
-                     <p className="opacity-75 font-medium">{new Date().toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
+      <div className="p-4 md:p-6 bg-[#A8D1DF] min-h-screen font-sans overflow-x-hidden">
+         <h1 className="text-2xl md:text-3xl font-extrabold text-black mb-4 md:mb-6">Weather</h1>
 
-                     <div className="flex items-center gap-6 mt-6 justify-center md:justify-start">
-                        <span className="text-8xl font-black italic tracking-tighter">
-                           {weather?.temperature?.toFixed(1) || '--'}° <span className="text-3xl align-top">C</span>
-                        </span>
-                        <div className="text-sm border-l border-white/30 pl-6 h-full flex flex-col justify-center">
-                           <p className="font-bold opacity-60 uppercase tracking-widest text-[10px]">Condition</p>
-                           <p className="text-xl font-black italic uppercase italic">Clear Skies</p>
-                           <p className="text-xs opacity-75">H:{((weather?.temperature || 0) + 2).toFixed(0)}° L:{((weather?.temperature || 0) - 2).toFixed(0)}°</p>
-                        </div>
+         {/* --- TOP CARDS SECTION --- */}
+         {/* Tambahkan class group untuk memunculkan tombol panah hanya saat kursor mendekat (di desktop) */}
+         <div className="relative flex items-center mb-6 md:mb-8 group">
+            
+            {/* Tombol Kiri (Disembunyikan di Mobile) */}
+            <button 
+               onClick={() => scroll('left')}
+               className="hidden md:flex absolute left-0 z-10 -ml-4 bg-white rounded-full p-2 shadow hover:bg-gray-100 opacity-0 group-hover:opacity-100 transition-opacity"
+            >
+               <ChevronLeft size={24} className="text-gray-600" />
+            </button>
+            
+            {/* Container Kartu: 
+                - overflow-x-auto untuk scroll horizontal 
+                - snap-x agar scroll-nya pas berhenti di setiap kartu (seperti carousel)
+                - menyembunyikan scrollbar bawaan browser
+            */}
+            <div 
+               ref={scrollContainerRef}
+               className="flex w-full gap-4 overflow-x-auto snap-x snap-mandatory scroll-smooth pb-4 pt-2 -mt-2 px-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']"
+            >
+               
+               {/* Temperature Card */}
+               <div className="snap-center shrink-0 w-[85%] sm:w-auto sm:flex-1 sm:min-w-[200px] bg-[#67D4E1] rounded-xl p-4 md:p-5 text-slate-800 shadow-md relative transition-transform hover:scale-[1.02]">
+                  <h3 className="text-base md:text-lg font-bold">Temperature</h3>
+                  <p className="text-[10px] md:text-xs mb-3 md:mb-4 opacity-80">Average temperature is:</p>
+                  <div className="flex justify-between items-end">
+                     <Thermometer size={40} className="opacity-70 md:w-12 md:h-12" />
+                     <div className="text-right">
+                        <p className="text-3xl lg:text-4xl font-black">{currentWeather.temperature.toFixed(1)}°C</p>
+                        <p className="text-[9px] mt-1 md:mt-2 opacity-70">Last updated: {currentWeather.lastUpdated}</p>
                      </div>
-                  </div>
-                  <div className="relative">
-                     <Sun size={120} className="text-yellow-400 animate-pulse" />
-                     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 scale-150 blur-3xl opacity-30 bg-white w-full h-full rounded-full"></div>
                   </div>
                </div>
 
-               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-12 bg-white/10 p-6 rounded-3xl backdrop-blur-md border border-white/20">
-                  <div className="flex flex-col items-center gap-2 p-2 border-r border-white/10 last:border-0">
-                     <Thermometer size={24} className="text-white" />
-                     <div className="text-center">
-                        <p className="text-[10px] font-bold opacity-60 uppercase tracking-widest">Temperature</p>
-                        <p className="text-xl font-black italic">{weather?.temperature?.toFixed(1)}°C</p>
-                        <p className="text-[9px] opacity-70">Average temperature is: {((weather?.temperature || 0) - 0.5).toFixed(1)}°C</p>
+               {/* Humidity Card */}
+               <div className="snap-center shrink-0 w-[85%] sm:w-auto sm:flex-1 sm:min-w-[200px] bg-[#4DE3DD] rounded-xl p-4 md:p-5 text-slate-800 shadow-md relative transition-transform hover:scale-[1.02]">
+                  <h3 className="text-base md:text-lg font-bold">Humidity</h3>
+                  <p className="text-[10px] md:text-xs mb-3 md:mb-4 opacity-80">Average air humidity is:</p>
+                  <div className="flex justify-between items-end">
+                     <Droplets size={40} className="opacity-70 md:w-12 md:h-12" />
+                     <div className="text-right">
+                        <p className="text-3xl lg:text-4xl font-black">{currentWeather.humidity}%</p>
+                        <p className="text-[9px] mt-1 md:mt-2 opacity-70">Last updated: {currentWeather.lastUpdated}</p>
                      </div>
                   </div>
+               </div>
 
-                  <div className="flex flex-col items-center gap-2 p-2 border-r border-white/10 last:border-0">
-                     <Droplets size={24} className="text-cyan-300" />
-                     <div className="text-center">
-                        <p className="text-[10px] font-bold opacity-60 uppercase tracking-widest">Humidity</p>
-                        <p className="text-xl font-black italic">{weather?.humidity?.toFixed(0)}%</p>
-                        <p className="text-[9px] opacity-70">Average air humidity is: {((weather?.humidity || 0) - 5).toFixed(0)}%</p>
+               {/* Air Pressure Card */}
+               <div className="snap-center shrink-0 w-[85%] sm:w-auto sm:flex-1 sm:min-w-[200px] bg-[#F7D046] rounded-xl p-4 md:p-5 text-slate-800 shadow-md relative transition-transform hover:scale-[1.02]">
+                  <h3 className="text-base md:text-lg font-bold">Air Pressure</h3>
+                  <p className="text-[10px] md:text-xs mb-3 md:mb-4 opacity-80">Average air pressure is:</p>
+                  <div className="flex justify-between items-end">
+                     <Gauge size={40} className="opacity-70 md:w-12 md:h-12" />
+                     <div className="text-right">
+                        <p className="text-3xl lg:text-4xl font-black">{currentWeather.pressure}hPa</p>
+                        <p className="text-[9px] mt-1 md:mt-2 opacity-70">Last updated: {currentWeather.lastUpdated}</p>
                      </div>
                   </div>
+               </div>
 
-                  <div className="flex flex-col items-center gap-2 p-2 border-r border-white/10 last:border-0">
-                     <Gauge size={24} className="text-orange-300" />
-                     <div className="text-center">
-                        <p className="text-[10px] font-bold opacity-60 uppercase tracking-widest">Air Pressure</p>
-                        <p className="text-xl font-black italic">{weather?.pressure?.toFixed(0)}hPa</p>
-                        <p className="text-[9px] opacity-70">Average air pressure is: {weather?.pressure?.toFixed(0)}hPa</p>
+               {/* Wind Speed Card */}
+               <div className="snap-center shrink-0 w-[85%] sm:w-auto sm:flex-1 sm:min-w-[200px] bg-[#C5E1A5] rounded-xl p-4 md:p-5 text-slate-800 shadow-md relative transition-transform hover:scale-[1.02]">
+                  <h3 className="text-base md:text-lg font-bold">Wind Speed</h3>
+                  <p className="text-[10px] md:text-xs mb-3 md:mb-4 opacity-80">Average wind speed is:</p>
+                  <div className="flex justify-between items-end">
+                     <Wind size={40} className="opacity-70 md:w-12 md:h-12" />
+                     <div className="text-right">
+                        <p className="text-3xl lg:text-4xl font-black">{currentWeather.wind_speed.toFixed(1)}<span className="text-base lg:text-2xl font-bold">km/h</span></p>
+                        <p className="text-[9px] mt-1 md:mt-2 opacity-70">Last updated: {currentWeather.lastUpdated}</p>
                      </div>
                   </div>
+               </div>
 
-                  <div className="flex flex-col items-center gap-2 p-2 border-r border-white/10 last:border-0">
-                     <Wind size={24} className="text-emerald-300" />
-                     <div className="text-center">
-                        <p className="text-[10px] font-bold opacity-60 uppercase tracking-widest">Wind Speed</p>
-                        <p className="text-xl font-black italic">{weather?.wind_speed?.toFixed(1)}km/h</p>
-                        <p className="text-[9px] opacity-70 tracking-tight">Last updated: {weather?.recorded_at ? new Date(weather.recorded_at).toLocaleString('en-US', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '---'}</p>
-                     </div>
-                  </div>
+            </div>
+
+            {/* Tombol Kanan (Disembunyikan di Mobile) */}
+            <button 
+               onClick={() => scroll('right')}
+               className="hidden md:flex absolute right-0 z-10 -mr-4 bg-white rounded-full p-2 shadow hover:bg-gray-100 opacity-0 group-hover:opacity-100 transition-opacity"
+            >
+               <ChevronRight size={24} className="text-gray-600" />
+            </button>
+         </div>
+
+         {/* --- CHARTS SECTION --- */}
+         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+            
+            {/* Temperature Chart */}
+            <div className="bg-white rounded-xl shadow-md p-4">
+               <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-sm md:text-base font-bold text-gray-800">Temperature Chart</h3>
+                  <Maximize size={18} className="text-gray-400 cursor-pointer hover:text-gray-600" />
+               </div>
+               <div className="h-56 md:h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                     <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                        <defs>
+                           <linearGradient id="colorTemp" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#FF8FA3" stopOpacity={0.8}/>
+                              <stop offset="95%" stopColor="#FF8FA3" stopOpacity={0.2}/>
+                           </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
+                        <XAxis dataKey="time" tick={{fontSize: 10}} md={{fontSize: 12}} tickLine={false} axisLine={false} />
+                        <YAxis tick={{fontSize: 10}} md={{fontSize: 12}} tickLine={false} axisLine={false} />
+                        <Tooltip />
+                        <Legend verticalAlign="top" height={36} iconType="square" formatter={() => <span className="text-xs md:text-sm font-semibold text-gray-700">Temperature (°C)</span>} />
+                        <Area type="monotone" dataKey="temperature" stroke="#FF8FA3" strokeWidth={3} fillOpacity={1} fill="url(#colorTemp)" />
+                     </AreaChart>
+                  </ResponsiveContainer>
                </div>
             </div>
+
+            {/* Humidity Chart */}
+            <div className="bg-white rounded-xl shadow-md p-4">
+               <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-sm md:text-base font-bold text-gray-800">Humidity Chart</h3>
+                  <Maximize size={18} className="text-gray-400 cursor-pointer hover:text-gray-600" />
+               </div>
+               <div className="h-56 md:h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                     <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                        <defs>
+                           <linearGradient id="colorHumid" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#60A5FA" stopOpacity={0.8}/>
+                              <stop offset="95%" stopColor="#60A5FA" stopOpacity={0.2}/>
+                           </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
+                        <XAxis dataKey="time" tick={{fontSize: 10}} md={{fontSize: 12}} tickLine={false} axisLine={false} />
+                        <YAxis tick={{fontSize: 10}} md={{fontSize: 12}} tickLine={false} axisLine={false} />
+                        <Tooltip />
+                        <Legend verticalAlign="top" height={36} iconType="square" formatter={() => <span className="text-xs md:text-sm font-semibold text-gray-700">Humidity (%)</span>} />
+                        <Area type="stepAfter" dataKey="humidity" stroke="#60A5FA" strokeWidth={3} fillOpacity={1} fill="url(#colorHumid)" />
+                     </AreaChart>
+                  </ResponsiveContainer>
+               </div>
+            </div>
+
+            {/* Air Pressure Chart */}
+            <div className="bg-white rounded-xl shadow-md p-4">
+               <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-sm md:text-base font-bold text-gray-800">Air Pressure Chart</h3>
+                  <Maximize size={18} className="text-gray-400 cursor-pointer hover:text-gray-600" />
+               </div>
+               <div className="h-56 md:h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                     <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                        <defs>
+                           <linearGradient id="colorPress" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#6EE7B7" stopOpacity={0.8}/>
+                              <stop offset="95%" stopColor="#6EE7B7" stopOpacity={0.2}/>
+                           </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
+                        <XAxis dataKey="time" tick={{fontSize: 10}} md={{fontSize: 12}} tickLine={false} axisLine={false} />
+                        <YAxis domain={[900, 1100]} tick={{fontSize: 10}} md={{fontSize: 12}} tickLine={false} axisLine={false} />
+                        <Tooltip />
+                        <Legend verticalAlign="top" height={36} iconType="square" formatter={() => <span className="text-xs md:text-sm font-semibold text-gray-700">pressures (hPa)</span>} />
+                        <Area type="monotone" dataKey="pressure" stroke="#6EE7B7" strokeWidth={3} fillOpacity={1} fill="url(#colorPress)" />
+                     </AreaChart>
+                  </ResponsiveContainer>
+               </div>
+            </div>
+
+            {/* Wind Speed Chart */}
+            <div className="bg-white rounded-xl shadow-md p-4">
+               <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-sm md:text-base font-bold text-gray-800">Wind Speed Chart</h3>
+                  <Maximize size={18} className="text-gray-400 cursor-pointer hover:text-gray-600" />
+               </div>
+               <div className="h-56 md:h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                     <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                        <defs>
+                           <linearGradient id="colorWind" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#FCD34D" stopOpacity={0.8}/>
+                              <stop offset="95%" stopColor="#FCD34D" stopOpacity={0.2}/>
+                           </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
+                        <XAxis dataKey="time" tick={{fontSize: 10}} md={{fontSize: 12}} tickLine={false} axisLine={false} />
+                        <YAxis tick={{fontSize: 10}} md={{fontSize: 12}} tickLine={false} axisLine={false} />
+                        <Tooltip />
+                        <Legend verticalAlign="top" height={36} iconType="square" formatter={() => <span className="text-xs md:text-sm font-semibold text-gray-700">wind speed (km/h)</span>} />
+                        <Area type="stepBefore" dataKey="windSpeed" stroke="#FCD34D" strokeWidth={3} fillOpacity={1} fill="url(#colorWind)" />
+                     </AreaChart>
+                  </ResponsiveContainer>
+               </div>
+            </div>
+
          </div>
       </div>
    );
