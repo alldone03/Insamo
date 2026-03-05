@@ -268,6 +268,24 @@ export class DeviceController extends Controller {
       return this.sendError(res, 'Failed to update device');
     }
   }
+
+  async destroy(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const user = (req as any).user;
+
+      if (user.roleId !== 1) {
+        return this.sendError(res, 'Unauthorized: Only SuperAdmin can delete devices', 403);
+      }
+
+      await db.delete(devices).where(eq(devices.id, Number(id)));
+
+      return this.sendResponse(res, null, 'Device deleted successfully');
+    } catch (error: any) {
+      console.error('Delete Device Error:', error);
+      return this.sendError(res, 'Failed to delete device');
+    }
+  }
 }
 
 export default new DeviceController();

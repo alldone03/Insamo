@@ -1,5 +1,5 @@
 {
-  "name": "backend_2",
+  "name": "backend",
   "scripts": {
     "dev": "ts-node-dev --poll --respawn --transpile-only src/index.ts",
     "db:init": "tsx src/database/init.ts",

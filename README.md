@@ -64,9 +64,9 @@ This project is a Disaster Monitoring System built with React (Frontend) and Lar
 
 ### Manual Setup (Without Docker)
 
-### Backend 2 (Node.js/Express - New)
+### Backend (Node.js/Express - New)
 
-1.  `cd backend_2`
+1.  `cd backend`
 2.  `yarn install`
 3.  `cp .env.example .env`
 4.  `yarn key:generate` (Generate JWT Secret)

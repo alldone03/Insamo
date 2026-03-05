@@ -36,7 +36,7 @@ Menjalankan migrasi untuk memperbarui skema database sesuai dengan model terbaru
 ```bash
 # Melalui SSH langsung (menggunakan Node v24)
 export PATH="/home/aldan/.nvm/versions/node/v24.14.0/bin:$PATH"
-cd ~/Insamo/backend_2
+cd ~/Insamo/backend
 npx tsx src/database/migrate.ts
 ```
 
@@ -44,7 +44,7 @@ npx tsx src/database/migrate.ts
 Menjalankan seeder utama untuk data master (Roles, Users, Initial Devices).
 
 ```bash
-cd ~/Insamo/backend_2
+cd ~/Insamo/backend
 npx tsx src/database/seed.ts
 ```
 
@@ -52,7 +52,7 @@ npx tsx src/database/seed.ts
 Menjalankan seeder khusus untuk 20 perangkat di area Jawa Timur.
 
 ```bash
-cd ~/Insamo/backend_2
+cd ~/Insamo/backend
 npx tsx src/database/seedEastJava.ts
 ```
 
@@ -70,6 +70,6 @@ python3 device_simulator.py
 
 ## 5. Troubleshooting
 
-- **Cek Log Backend:** `docker logs -f insamo-backend-v2-prod`
+- **Cek Log Backend:** `docker logs -f insamo-backend-prod`
 - **Cek Log Database:** `docker logs -f insamo-db-prod`
 - **Restart Service:** `docker-compose -f docker-compose.prod.yml restart app`

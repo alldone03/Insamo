@@ -1,10 +1,10 @@
 services:
   app:
     build:
-      context: ./backend_2
+      context: ./backend
       dockerfile: Dockerfile.prod
-    image: insamo-backend-v2:prod
-    container_name: insamo-backend-v2-prod
+    image: insamo-backend:prod
+    container_name: insamo-backend-prod
     restart: unless-stopped
     working_dir: /var/www
     env_file:
@@ -22,7 +22,7 @@ services:
       - insamo-prod-network
       - web
     volumes:
-      - backend_v2_uploads:/var/www/uploads
+      - backend_uploads:/var/www/uploads
     depends_on:
       - db
 
@@ -66,5 +66,5 @@ networks:
 volumes:
   dbdata-prod:
     driver: local
-  backend_v2_uploads:
+  backend_uploads:
     driver: local

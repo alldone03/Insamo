@@ -1,14 +1,14 @@
 services:
   app:
     build:
-      context: ./backend_2
+      context: ./backend
       dockerfile: Dockerfile
-    image: insamo-backend-v2
-    container_name: insamo-backend-v2
+    image: insamo-backend
+    container_name: insamo-backend
     restart: unless-stopped
     working_dir: /var/www
     volumes:
-      - ./backend_2:/var/www
+      - ./backend:/var/www
       - backend_node_modules:/var/www/node_modules
       - backend_yarn:/var/www/.yarn
       - /var/www/.pnp.cjs

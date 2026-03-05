@@ -55,6 +55,7 @@ router.get('/devices', (req, res) => DeviceController.index(req, res));
 router.post('/devices', uploadDeviceImage, (req, res) => DeviceController.store(req, res));
 router.get('/devices/:id', (req, res) => DeviceController.show(req, res));
 router.post('/devices/:id', uploadDeviceImage, (req, res) => DeviceController.update(req, res));
+router.delete('/devices/:id', (req, res) => DeviceController.destroy(req, res));
 
 router.get('/users', (req, res) => UserController.index(req, res));
 router.post('/users', uploadUserImage, (req, res) => UserController.store(req, res));
