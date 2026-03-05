@@ -22,7 +22,7 @@ services:
       - insamo-prod-network
       - web
     volumes:
-      - backend_uploads:/var/www/uploads
+      - ./backend/uploads:/var/www/uploads
     depends_on:
       - db
 
@@ -65,6 +65,4 @@ networks:
 
 volumes:
   dbdata-prod:
-    driver: local
-  backend_uploads:
     driver: local
