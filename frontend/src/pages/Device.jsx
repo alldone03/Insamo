@@ -67,9 +67,11 @@ export default function Device() {
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
     // Form and Selection States
     const [selectedDevice, setSelectedDevice] = useState(null);
+    const [deleteConfirmCode, setDeleteConfirmCode] = useState("");
     const [previewImage, setPreviewImage] = useState(null);
     const [targetUserId, setTargetUserId] = useState("");
     const [formData, setFormData] = useState({
@@ -343,23 +345,35 @@ export default function Device() {
                                                         <Eye size={12} />
                                                     </button>
                                                     {isSuperAdmin && (
-                                                        <button
-                                                            onClick={() => {
-                                                                setSelectedDevice(device);
-                                                                setFormData({
-                                                                    ...device,
-                                                                    image: null, // Don't pre-fill with path string for file input
-                                                                    initial_distance: device.settings?.initial_distance || 10,
-                                                                    alert_threshold: device.settings?.alert_threshold || 50,
-                                                                    danger_threshold: device.settings?.danger_threshold || 80
-                                                                });
-                                                                setPreviewImage(getImageUrl(device.image));
-                                                                setIsEditModalOpen(true);
-                                                            }}
-                                                            className="btn btn-xs btn-ghost"
-                                                        >
-                                                            <Edit2 size={12} />
-                                                        </button>
+                                                        <>
+                                                            <button
+                                                                onClick={() => {
+                                                                    setSelectedDevice(device);
+                                                                    setFormData({
+                                                                        ...device,
+                                                                        image: null, // Don't pre-fill with path string for file input
+                                                                        initial_distance: device.settings?.initial_distance || 10,
+                                                                        alert_threshold: device.settings?.alert_threshold || 50,
+                                                                        danger_threshold: device.settings?.danger_threshold || 80
+                                                                    });
+                                                                    setPreviewImage(getImageUrl(device.image));
+                                                                    setIsEditModalOpen(true);
+                                                                }}
+                                                                className="btn btn-xs btn-ghost"
+                                                            >
+                                                                <Edit2 size={12} />
+                                                            </button>
+                                                            <button
+                                                                onClick={() => {
+                                                                    setSelectedDevice(device);
+                                                                    setDeleteConfirmCode("");
+                                                                    setIsDeleteModalOpen(true);
+                                                                }}
+                                                                className="btn btn-xs btn-ghost text-error"
+                                                            >
+                                                                <Trash2 size={12} />
+                                                            </button>
+                                                        </>
                                                     )}
                                                 </div>
                                             </div>
@@ -607,6 +621,55 @@ export default function Device() {
                     </div>
                 )
             }
+            {/* Modal: Delete Confirmation */}
+            {isDeleteModalOpen && (
+                <div className="modal modal-open z-[1100]">
+                    <div className="modal-box rounded-3xl border border-error/20 p-8">
+                        <div className="flex items-center gap-4 text-error mb-4">
+                            <div className="p-3 rounded-2xl bg-error/10">
+                                <ShieldAlert size={28} />
+                            </div>
+                            <h3 className="font-black text-2xl italic uppercase tracking-tight">
+                                Delete Device?
+                            </h3>
+                        </div>
+
+                        <p className="font-medium opacity-70 mb-6 leading-relaxed">
+                            This action is <b>irreversible</b>. All sensor data and history associated with <span className="text-error font-bold">{selectedDevice?.name}</span> will be permanently removed from the system.
+                        </p>
+
+                        <div className="form-control">
+                            <label className="label">
+                                <span className="label-text-alt font-black opacity-50 uppercase">Type <span className="text-error font-mono">{selectedDevice?.device_code}</span> to confirm</span>
+                            </label>
+                            <input
+                                type="text"
+                                className="input input-bordered input-error font-mono font-bold w-full uppercase"
+                                placeholder="ENTER DEVICE CODE"
+                                value={deleteConfirmCode}
+                                onChange={(e) => setDeleteConfirmCode(e.target.value)}
+                                autoFocus
+                            />
+                        </div>
+
+                        <div className="flex flex-col gap-2 mt-8">
+                            <button
+                                className="btn btn-error btn-block font-black italic shadow-lg shadow-error/20"
+                                disabled={deleteConfirmCode.toUpperCase() !== selectedDevice?.device_code.toUpperCase() || deleteMutation.isPending}
+                                onClick={() => {
+                                    deleteMutation.mutate(selectedDevice.id);
+                                    setIsDeleteModalOpen(false);
+                                }}
+                            >
+                                {deleteMutation.isPending ? <span className="loading loading-spinner" /> : 'CONFIRM PERMANENT DELETION'}
+                            </button>
+                            <button className="btn btn-ghost btn-block font-bold opacity-50" onClick={() => setIsDeleteModalOpen(false)}>
+                                KEEP ASSET
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div >
     );
 }
