@@ -1347,9 +1347,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"backend_2@workspace:.":
+"backend@workspace:.":
   version: 0.0.0-use.local
-  resolution: "backend_2@workspace:."
+  resolution: "backend@workspace:."
   dependencies:
     "@types/bcryptjs": "npm:^3.0.0"
     "@types/cors": "npm:^2.8.19"
