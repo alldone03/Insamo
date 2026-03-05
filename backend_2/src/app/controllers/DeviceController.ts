@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { Controller } from './Controller';
 import { db } from '../../config/database';
 import { devices, users, deviceUser, deviceSettings, sensorReadings } from '../models/schema';
-import { eq, desc, and } from 'drizzle-orm';
+import { eq, desc, and, sql } from 'drizzle-orm';
 
 export class DeviceController extends Controller {
   async index(req: Request, res: Response) {
@@ -177,6 +177,15 @@ export class DeviceController extends Controller {
         .orderBy(desc(sensorReadings.recorded_at))
         .limit(100);
       device.sensor_readings = latestReading;
+      
+      // 4. Get total readings count
+      const [countResult] = await db.select({ 
+        total: sql<number>`count(*)` 
+      })
+      .from(sensorReadings)
+      .where(eq(sensorReadings.device_id, device.id));
+      
+      device.total_readings = Number(countResult?.total || 0);
 
       return this.sendResponse(res, device, 'Device retrieved successfully');
     } catch (error: any) {

@@ -37,7 +37,8 @@ export default function Sensordata() {
 
                     return {
                         ...oldData,
-                        sensor_readings: [payload.reading, ...(oldData.sensor_readings || [])]
+                        sensor_readings: [payload.reading, ...(oldData.sensor_readings || [])],
+                        total_readings: (oldData.total_readings || 0) + 1
                     };
                 });
             }
@@ -263,7 +264,7 @@ export default function Sensordata() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <StatCard label="Latest Sync" value={readings.length > 0 ? new Date(readings[readings.length - 1].recorded_at).toLocaleString() : 'N/A'} icon={<Activity size={20} />} />
                 <StatCard label="Location" value={`${device?.latitude}, ${device?.longitude}`} icon={<MapPin size={20} />} />
-                <StatCard label="Data Points" value={readings.length} icon={<Hash size={20} />} />
+                <StatCard label="Data Points" value={device?.total_readings ?? readings.length} icon={<Hash size={20} />} />
             </div>
 
             {renderCharts()}
