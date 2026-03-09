@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { Controller } from './Controller';
 import { db } from '../../config/database';
 import { devices, users, deviceUser, deviceSettings, sensorReadings } from '../models/schema';
-import { eq, desc, and, sql } from 'drizzle-orm';
+import { eq, desc, and, sql, inArray } from 'drizzle-orm';
 
 export class DeviceController extends Controller {
   async index(req: Request, res: Response) {
@@ -30,31 +30,67 @@ export class DeviceController extends Controller {
         .where(eq(deviceUser.user_id, user.id));
       }
       
-      // Fetch related data
-      for (let i = 0; i < allDevices.length; i++) {
-          const device = allDevices[i] as any;
-          
-          // 1. Get Users
-          const usersForDevice = await db.select({
-              id: users.id, name: users.name, email: users.email, telegram_chat_id: users.telegramChatId
-          })
-          .from(deviceUser)
-          .innerJoin(users, eq(deviceUser.user_id, users.id))
-          .where(eq(deviceUser.device_id, device.id));
-          
-          device.users = usersForDevice;
+      // Fetch related data in bulk to fix N+1 query issue
+      if (allDevices.length > 0) {
+        const deviceIds = allDevices.map(d => d.id);
+        
+        // 1. Get ALL Users for these devices
+        const allDeviceUsers = await db.select({
+            device_id: deviceUser.device_id,
+            id: users.id, name: users.name, email: users.email, telegram_chat_id: users.telegramChatId
+        })
+        .from(deviceUser)
+        .innerJoin(users, eq(deviceUser.user_id, users.id))
+        .where(inArray(deviceUser.device_id, deviceIds));
+        
+        const usersByDeviceId: Record<number, any[]> = {};
+        allDeviceUsers.forEach(u => {
+            if (u.device_id !== null && u.device_id !== undefined) {
+                if (!usersByDeviceId[u.device_id]) usersByDeviceId[u.device_id] = [];
+                usersByDeviceId[u.device_id].push({
+                    id: u.id, name: u.name, email: u.email, telegram_chat_id: u.telegram_chat_id
+                });
+            }
+        });
 
-          // 2. Get Settings
-          const settings = await db.select().from(deviceSettings)
-            .where(eq(deviceSettings.device_id, device.id)).limit(1);
-          device.settings = settings.length > 0 ? settings[0] : null;
+        // 2. Get ALL Settings for these devices
+        const allDeviceSettings = await db.select().from(deviceSettings)
+          .where(inArray(deviceSettings.device_id, deviceIds));
+          
+        const settingsByDeviceId: Record<number, any> = {};
+        allDeviceSettings.forEach(s => {
+            if (s.device_id !== null && s.device_id !== undefined) {
+                if (!settingsByDeviceId[s.device_id]) {
+                    settingsByDeviceId[s.device_id] = s;
+                }
+            }
+        });
 
-          // 3. Get latest sensor reading
-          const latestReading = await db.select().from(sensorReadings)
-            .where(eq(sensorReadings.device_id, device.id))
-            .orderBy(desc(sensorReadings.recorded_at))
-            .limit(1);
-          device.sensor_readings = latestReading;
+        // 3. Get latest sensor reading for these devices
+        const allLatestReadings = await db.select().from(sensorReadings)
+          .where(
+            and(
+              inArray(sensorReadings.device_id, deviceIds),
+              sql`${sensorReadings.recorded_at} = (SELECT MAX(recorded_at) FROM sensor_readings sr2 WHERE sr2.device_id = ${sensorReadings.device_id})`
+            )
+          );
+
+        const readingsByDeviceId: Record<number, any[]> = {};
+        allLatestReadings.forEach(r => {
+            if (r.device_id !== null && r.device_id !== undefined) {
+                if (!readingsByDeviceId[r.device_id]) {
+                    readingsByDeviceId[r.device_id] = [r];
+                }
+            }
+        });
+
+        // Attach to devices
+        for (let i = 0; i < allDevices.length; i++) {
+            const device = allDevices[i] as any;
+            device.users = usersByDeviceId[device.id] || [];
+            device.settings = settingsByDeviceId[device.id] || null;
+            device.sensor_readings = readingsByDeviceId[device.id] || [];
+        }
       }
 
       return this.sendResponse(res, allDevices, 'Devices retrieved successfully');
