@@ -67,21 +67,19 @@ export class DeviceController extends Controller {
         });
 
         // 3. Get latest sensor reading for these devices
-        const allLatestReadings = await db.select().from(sensorReadings)
-          .where(
-            and(
-              inArray(sensorReadings.device_id, deviceIds),
-              sql`${sensorReadings.recorded_at} = (SELECT MAX(recorded_at) FROM sensor_readings sr2 WHERE sr2.device_id = ${sensorReadings.device_id})`
-            )
-          );
+        // Using Promise.all instead of a correlated subquery prevents CPU spikes 
+        // by utilizing simple indexed queries in parallel instead of full table scans.
+        const latestReadingsPromises = deviceIds.map(deviceId => 
+            db.select().from(sensorReadings)
+              .where(eq(sensorReadings.device_id, deviceId))
+              .orderBy(desc(sensorReadings.recorded_at))
+              .limit(1)
+        );
+        const readingsResults = await Promise.all(latestReadingsPromises);
 
         const readingsByDeviceId: Record<number, any[]> = {};
-        allLatestReadings.forEach(r => {
-            if (r.device_id !== null && r.device_id !== undefined) {
-                if (!readingsByDeviceId[r.device_id]) {
-                    readingsByDeviceId[r.device_id] = [r];
-                }
-            }
+        deviceIds.forEach((deviceId, index) => {
+            readingsByDeviceId[deviceId] = readingsResults[index] || [];
         });
 
         // Attach to devices
