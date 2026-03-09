@@ -125,22 +125,36 @@ export class TelegramLogController extends Controller {
 
                 // Handle /device command
                 if (text === '/device') {
-                    const userDevices = await db.select({
-                        id: devices.id,
-                        name: devices.name,
-                        device_code: devices.device_code,
-                        address: devices.address
-                    })
-                    .from(deviceUser)
-                    .innerJoin(devices, eq(deviceUser.device_id, devices.id))
-                    .where(eq(deviceUser.user_id, user.id));
+                    let userDevices;
+                    
+                    if (Number(user.roleId) === 1) {
+                        // Superadmin sees all devices
+                        userDevices = await db.select({
+                            id: devices.id,
+                            name: devices.name,
+                            device_code: devices.device_code,
+                            address: devices.address
+                        })
+                        .from(devices);
+                    } else {
+                        // Regular user sees only assigned devices
+                        userDevices = await db.select({
+                            id: devices.id,
+                            name: devices.name,
+                            device_code: devices.device_code,
+                            address: devices.address
+                        })
+                        .from(deviceUser)
+                        .innerJoin(devices, eq(deviceUser.device_id, devices.id))
+                        .where(eq(deviceUser.user_id, Number(user.id)));
+                    }
 
                     if (userDevices.length === 0) {
-                        await TelegramService.sendMessage(chatId, "📂 You don't have any devices assigned yet.");
+                        await TelegramService.sendMessage(chatId, "📂 No devices available.");
                     } else {
-                        let response = "📱 *YOUR DEVICES*\n\n";
+                        let response = "📱 *DEVICE LIST*\n\n";
                         for (const d of userDevices) {
-                            // Check latest reading to determine online status (e.g. within last 10 mins)
+                            // Check latest reading to determine online status
                             const latest = await db.query.sensorReadings.findFirst({
                                 where: eq(sensorReadings.device_id, d.id),
                                 orderBy: desc(sensorReadings.recorded_at)
@@ -164,12 +178,17 @@ export class TelegramLogController extends Controller {
                     if (isNaN(deviceId)) {
                         await TelegramService.sendMessage(chatId, "⚠️ Invalid Device ID format.");
                     } else {
-                        // Check if user has access to this device
-                        const access = await db.query.deviceUser.findFirst({
-                            where: sql`${deviceUser.user_id} = ${user.id} AND ${deviceUser.device_id} = ${deviceId}`
-                        });
+                        // Check if user has access to this device (Superadmin has access to everything)
+                        let hasAccess = Number(user.roleId) === 1;
+                        
+                        if (!hasAccess) {
+                            const access = await db.query.deviceUser.findFirst({
+                                where: sql`${deviceUser.user_id} = ${Number(user.id)} AND ${deviceUser.device_id} = ${deviceId}`
+                            });
+                            hasAccess = !!access;
+                        }
 
-                        if (!access) {
+                        if (!hasAccess) {
                             await TelegramService.sendMessage(chatId, "🚫 You do not have permission to access this device.");
                         } else {
                             const device = await db.query.devices.findFirst({

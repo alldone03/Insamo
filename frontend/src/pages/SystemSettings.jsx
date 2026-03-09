@@ -270,8 +270,11 @@ const SystemSettings = () => {
                                             </div>
                                         </td>
                                         <td>
-                                            <span className={`badge font-bold text-[10px] ${u.roleId === 1 ? 'badge-primary' : 'badge-ghost'}`}>
-                                                {u.role?.name || 'User'}
+                                            <span className={`badge font-bold text-[10px] ${u.roleId === 1 ? 'badge-primary' :
+                                                u.roleId === 2 ? 'badge-info' :
+                                                    'badge-ghost'
+                                                }`}>
+                                                {u.roleId === 1 ? 'SuperAdmin' : u.roleId === 2 ? 'Admin' : 'User'}
                                             </span>
                                         </td>
                                         <td>
@@ -405,10 +408,11 @@ const SystemSettings = () => {
                                 <select
                                     className="select select-bordered font-bold"
                                     value={userFormData.roleId}
-                                    onChange={e => setUserFormData({ ...userFormData, roleId: e.target.value })}
+                                    onChange={e => setUserFormData({ ...userFormData, roleId: Number(e.target.value) })}
                                 >
-                                    <option value={1}>Super Admin</option>
-                                    <option value={2}>User / Client</option>
+                                    <option value={1}>SuperAdmin</option>
+                                    <option value={2}>Admin</option>
+                                    <option value={3}>User</option>
                                 </select>
                             </div>
                             <div className="form-control">

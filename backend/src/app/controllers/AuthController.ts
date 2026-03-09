@@ -35,6 +35,7 @@ export class AuthController extends Controller {
         email,
         password: hashedPassword,
         name,
+        roleId: 3,
       });
 
       // Fetch the created user with role
