@@ -86,6 +86,28 @@ const SystemSettings = () => {
         }
     };
 
+    const handleSetWebhook = async () => {
+        const url = window.prompt("Enter your application's base URL (e.g. https://yourdomain.com):");
+        if (!url) return;
+
+        try {
+            const webhookUrl = `${url.replace(/\/$/, '')}/api/telegram/webhook`;
+            await api.post('/telegram-logs/set-webhook', { url: webhookUrl });
+            showToast("Webhook URL set successfully!");
+        } catch (error) {
+            showToast("Failed to set webhook: " + (error.response?.data?.message || error.message), "error");
+        }
+    };
+
+    const handleSendTestMessage = async (userId) => {
+        try {
+            await api.post('/telegram-logs/send-test', { userId });
+            showToast("Test message sent!");
+        } catch (error) {
+            showToast("Failed to send test: " + (error.response?.data?.message || error.message), "error");
+        }
+    };
+
     const getVal = (key) => settings.find(s => s.key === key)?.value || "";
 
     if (isLoading && settings.length === 0) return <div className="flex justify-center items-center h-64"><span className="loading loading-spinner text-primary" /></div>;
@@ -153,7 +175,15 @@ const SystemSettings = () => {
                                         onBlur={(e) => handleUpdateSetting('telegram_bot_token', e.target.value)}
                                         placeholder="paste your bot token here..."
                                     />
+                                    <button
+                                        onClick={handleSetWebhook}
+                                        className="btn btn-primary rounded-xl flex items-center gap-2"
+                                        title="Configure Telegram Webhook"
+                                    >
+                                        <Check size={16} /> SET WEBHOOK
+                                    </button>
                                 </div>
+                                <p className="text-[10px] mt-2 opacity-50 font-bold uppercase italic">Important: Telegram requires an HTTPS webhook URL to receive messages.</p>
                             </div>
                         </div>
                     </div>
@@ -231,6 +261,9 @@ const SystemSettings = () => {
                                         </td>
                                         <td className="text-right">
                                             <div className="flex justify-end gap-1">
+                                                <button className="btn btn-ghost btn-xs text-primary" onClick={() => handleSendTestMessage(u.id)} title="Send Test Telegram Message">
+                                                    <Bot size={14} />
+                                                </button>
                                                 <button className="btn btn-ghost btn-xs" onClick={() => {
                                                     setEditingUser(u);
                                                     setUserFormData({
@@ -282,12 +315,12 @@ const SystemSettings = () => {
                                     logs.map(log => (
                                         <tr key={log.id} className="hover">
                                             <td className="font-mono text-[10px] opacity-60">
-                                                {new Date(log.created_at).toLocaleString()}
+                                                {new Date(log.createdAt).toLocaleString()}
                                             </td>
                                             <td>
                                                 <div className="flex flex-col">
-                                                    <span className="font-bold text-xs">{log.user?.name || log.chat_id}</span>
-                                                    <span className="text-[10px] opacity-50 font-mono">ID: {log.chat_id}</span>
+                                                    <span className="font-bold text-xs">{log.user?.name || log.chatId}</span>
+                                                    <span className="text-[10px] opacity-50 font-mono">ID: {log.chatId}</span>
                                                 </div>
                                             </td>
                                             <td className="max-w-xs">
