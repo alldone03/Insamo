@@ -252,7 +252,7 @@ export default function Home() {
             <div className="relative card bg-base-100 shadow-2xl overflow-hidden h-[700px] border border-base-200">
 
                 {/* --- BAGIAN DROPDOWN SETTINGS --- */}
-                <div className="dropdown dropdown-end absolute top-4 right-4 z-[1000]">
+                <div className="dropdown dropdown-end absolute top-4 right-4 z-[30]">
                     <div
                         tabIndex={0}
                         role="button"

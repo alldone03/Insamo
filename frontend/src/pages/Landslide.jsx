@@ -173,7 +173,7 @@ const Landslide = () => {
                     <span className="font-mono text-[10px] opacity-80 font-bold">Just now</span>
                   </div>
                 </div>
-                <div className="h-full min-h-[120px]">
+                <div className="h-full min-h-[120px] z-10">
                   <MiniMap lat={selectedDevice.latitude} lng={selectedDevice.longitude} />
                 </div>
               </div>
