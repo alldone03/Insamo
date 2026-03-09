@@ -82,6 +82,7 @@ router.post('/system-settings/:key', (req, res) => SystemSettingController.updat
 // Telegram Logs
 router.get('/telegram-logs', (req, res) => TelegramLogController.index(req, res));
 router.post('/telegram-logs/set-webhook', (req, res) => TelegramLogController.setWebhook(req, res));
+router.post('/telegram-logs/set-commands', (req, res) => TelegramLogController.setCommands(req, res));
 router.post('/telegram-logs/send-test', (req, res) => TelegramLogController.sendTest(req, res));
 router.delete('/telegram-logs/:id', (req, res) => TelegramLogController.destroy(req, res));
 

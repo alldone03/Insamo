@@ -96,6 +96,17 @@ export class TelegramLogController extends Controller {
         }
     }
 
+    // POST /api/telegram-logs/set-commands
+    async setCommands(req: Request, res: Response) {
+        try {
+            const result = await TelegramService.setCommands();
+            return this.sendResponse(res, result, 'Telegram commands set successfully');
+        } catch (error: any) {
+            console.error('Set Telegram Commands Error:', error);
+            return this.sendError(res, 'Failed to set commands: ' + error.message);
+        }
+    }
+
     // POST /api/telegram/webhook (Public)
     async webhook(req: Request, res: Response) {
         try {

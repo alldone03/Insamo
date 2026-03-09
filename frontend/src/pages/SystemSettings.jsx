@@ -119,6 +119,15 @@ const SystemSettings = () => {
         }
     };
 
+    const handleSetBotMenu = async () => {
+        try {
+            await api.post('/telegram-logs/set-commands');
+            showToast("Bot Menu Commands set successfully!");
+        } catch (error) {
+            showToast("Failed to set commands: " + (error.response?.data?.message || error.message), "error");
+        }
+    };
+
     const handleSendTestMessage = async (userId) => {
         try {
             await api.post('/telegram-logs/send-test', { userId });
@@ -201,6 +210,13 @@ const SystemSettings = () => {
                                         title="Configure Telegram Webhook"
                                     >
                                         <Check size={16} /> SET WEBHOOK
+                                    </button>
+                                    <button
+                                        onClick={handleSetBotMenu}
+                                        className="btn btn-secondary rounded-xl flex items-center gap-2"
+                                        title="Set Bot Menu Commands"
+                                    >
+                                        <Bot size={16} /> SET BOT MENU
                                     </button>
                                 </div>
                                 <p className="text-[10px] mt-2 opacity-50 font-bold uppercase italic">Important: Telegram requires an HTTPS webhook URL to receive messages.</p>

@@ -127,4 +127,32 @@ export class TelegramService {
           console.error("Failed to process flood alert:", error.message);
       }
   }
+
+  static async setCommands() {
+    try {
+      const tokenSetting = await db.select().from(systemSettings).where(eq(systemSettings.key, 'telegram_bot_token')).limit(1);
+      const token = tokenSetting.length > 0 ? tokenSetting[0].value : null;
+
+      if (!token || token === 'YOUR_BOT_TOKEN') {
+        throw new Error('Telegram bot token not configured.');
+      }
+
+      const response = await fetch(`https://api.telegram.org/bot${token}/setMyCommands`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          commands: [
+            { command: 'device', description: 'Lihat daftar perangkat Anda' }
+          ]
+        })
+      });
+
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.description || 'Failed to set commands');
+      return result;
+    } catch (error: any) {
+      console.error('Failed to set Telegram commands:', error.message);
+      throw error;
+    }
+  }
 }
