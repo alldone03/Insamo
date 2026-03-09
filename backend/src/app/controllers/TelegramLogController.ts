@@ -110,12 +110,12 @@ export class TelegramLogController extends Controller {
                     where: eq(users.telegramChatId, chatId)
                 });
 
-                await db.insert(telegramLogs).values({
-                    chat_id: chatId,
-                    user_id: user ? user.id : null,
-                    message: text,
-                    type: 'received'
-                });
+                await TelegramService.logAndEmit(
+                    chatId,
+                    user ? user.id : null,
+                    text,
+                    'received'
+                );
             }
 
             return res.json({ status: 'ok' });

@@ -3,6 +3,43 @@ import { systemSettings, telegramLogs, users, deviceUser } from '../models/schem
 import { eq } from 'drizzle-orm';
 
 export class TelegramService {
+  static async logAndEmit(chatId: string, userId: number | null, message: string, type: 'sent' | 'received') {
+    try {
+      const inserted = await db.insert(telegramLogs).values({
+        chat_id: chatId,
+        user_id: userId,
+        message: message,
+        type: type
+      });
+
+      const logId = (inserted as any)[0].insertId;
+      const newLog = await db.select({
+        id: telegramLogs.id,
+        chatId: telegramLogs.chat_id,
+        message: telegramLogs.message,
+        type: telegramLogs.type,
+        createdAt: telegramLogs.createdAt,
+        user: {
+          id: users.id,
+          name: users.name,
+          email: users.email
+        }
+      })
+      .from(telegramLogs)
+      .leftJoin(users, eq(telegramLogs.user_id, users.id))
+      .where(eq(telegramLogs.id, logId))
+      .limit(1);
+
+      if (newLog.length > 0) {
+        const { io } = await import('../../index');
+        io.emit('telegram-log', newLog[0]);
+      }
+      return newLog[0];
+    } catch (error: any) {
+      console.error('Failed to log and emit telegram message:', error.message);
+    }
+  }
+
   static async sendMessage(chatId: string, message: string) {
     try {
       const tokenSetting = await db.select().from(systemSettings).where(eq(systemSettings.key, 'telegram_bot_token')).limit(1);
@@ -27,13 +64,7 @@ export class TelegramService {
 
       if (response.ok) {
         const user = await db.select().from(users).where(eq(users.telegramChatId, chatId)).limit(1);
-        
-        await db.insert(telegramLogs).values({
-          chat_id: chatId,
-          user_id: user.length > 0 ? user[0].id : null,
-          message: message,
-          type: 'sent'
-        });
+        await this.logAndEmit(chatId, user.length > 0 ? user[0].id : null, message, 'sent');
       }
     } catch (error: any) {
       console.error('Failed to send Telegram message:', error.message);

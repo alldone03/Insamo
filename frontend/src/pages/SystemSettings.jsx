@@ -4,6 +4,7 @@ import {
     AlertTriangle, Users, History, Trash2, Edit2, X, Plus, UserPlus
 } from 'lucide-react';
 import { api } from '../lib/api';
+import { io } from 'socket.io-client';
 
 const SystemSettings = () => {
     const [activeTab, setActiveTab] = useState('general');
@@ -40,6 +41,25 @@ const SystemSettings = () => {
 
     useEffect(() => {
         fetchData();
+    }, []);
+
+    useEffect(() => {
+        const backendUrl = import.meta.env.VITE_API_URL
+            ? new URL(import.meta.env.VITE_API_URL).origin
+            : "http://localhost:3000";
+        const socket = io(backendUrl, { path: '/socket.io/', transports: ['websocket', 'polling'] });
+
+        socket.on('telegram-log', (newLog) => {
+            setLogs(prevLogs => {
+                // Check if already exists (avoid duplicates if any race condition occurs)
+                if (prevLogs.find(l => l.id === newLog.id)) return prevLogs;
+                return [newLog, ...prevLogs.slice(0, 49)];
+            });
+        });
+
+        return () => {
+            socket.disconnect();
+        };
     }, []);
 
     const showToast = (message, type = "success") => {
