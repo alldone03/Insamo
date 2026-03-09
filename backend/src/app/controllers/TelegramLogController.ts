@@ -1,8 +1,8 @@
 import { Request, Response } from 'express';
 import { Controller } from './Controller';
 import { db } from '../../config/database';
-import { telegramLogs, users } from '../models/schema';
-import { eq, desc } from 'drizzle-orm';
+import { telegramLogs, users, devices, deviceUser, deviceSettings, sensorReadings } from '../models/schema';
+import { eq, desc, sql } from 'drizzle-orm';
 import { TelegramService } from '../services/TelegramService';
 
 export class TelegramLogController extends Controller {
@@ -104,18 +104,129 @@ export class TelegramLogController extends Controller {
             const { message } = req.body;
             if (message) {
                 const chatId = message.chat.id.toString();
-                const text = message.text || message.caption || '[Non-text message]';
+                const text = (message.text || message.caption || '').trim();
 
                 const user = await db.query.users.findFirst({
                     where: eq(users.telegramChatId, chatId)
                 });
 
+                // Log the incoming message
                 await TelegramService.logAndEmit(
                     chatId,
                     user ? user.id : null,
                     text,
                     'received'
                 );
+
+                if (!user) {
+                    await TelegramService.sendMessage(chatId, "❌ Your Telegram account is not linked to any user in the Insamo system. Please contact an admin.");
+                    return res.json({ status: 'ok' });
+                }
+
+                // Handle /device command
+                if (text === '/device') {
+                    const userDevices = await db.select({
+                        id: devices.id,
+                        name: devices.name,
+                        device_code: devices.device_code,
+                        address: devices.address
+                    })
+                    .from(deviceUser)
+                    .innerJoin(devices, eq(deviceUser.device_id, devices.id))
+                    .where(eq(deviceUser.user_id, user.id));
+
+                    if (userDevices.length === 0) {
+                        await TelegramService.sendMessage(chatId, "📂 You don't have any devices assigned yet.");
+                    } else {
+                        let response = "📱 *YOUR DEVICES*\n\n";
+                        for (const d of userDevices) {
+                            // Check latest reading to determine online status (e.g. within last 10 mins)
+                            const latest = await db.query.sensorReadings.findFirst({
+                                where: eq(sensorReadings.device_id, d.id),
+                                orderBy: desc(sensorReadings.recorded_at)
+                            });
+
+                            const isOnline = latest && (new Date().getTime() - new Date(latest.recorded_at).getTime()) < 10 * 60 * 1000;
+                            const statusEmoji = isOnline ? "🟢 ONLINE" : "🔴 OFFLINE";
+
+                            response += `/device/${d.id}\n`;
+                            response += `*${d.name}*\n`;
+                            response += `_${d.device_code}_\n`;
+                            response += `${d.address || 'No Address'}\n`;
+                            response += `${statusEmoji}\n\n`;
+                        }
+                        await TelegramService.sendMessage(chatId, response);
+                    }
+                } 
+                // Handle /device/[id] command
+                else if (text.startsWith('/device/')) {
+                    const deviceId = parseInt(text.split('/')[2]);
+                    if (isNaN(deviceId)) {
+                        await TelegramService.sendMessage(chatId, "⚠️ Invalid Device ID format.");
+                    } else {
+                        // Check if user has access to this device
+                        const access = await db.query.deviceUser.findFirst({
+                            where: sql`${deviceUser.user_id} = ${user.id} AND ${deviceUser.device_id} = ${deviceId}`
+                        });
+
+                        if (!access) {
+                            await TelegramService.sendMessage(chatId, "🚫 You do not have permission to access this device.");
+                        } else {
+                            const device = await db.query.devices.findFirst({
+                                where: eq(devices.id, deviceId)
+                            });
+
+                            const latest = await db.query.sensorReadings.findFirst({
+                                where: eq(sensorReadings.device_id, deviceId),
+                                orderBy: desc(sensorReadings.recorded_at)
+                            });
+
+                            const settings = await db.query.deviceSettings.findFirst({
+                                where: eq(deviceSettings.device_id, deviceId)
+                            });
+
+                            if (!device) {
+                                await TelegramService.sendMessage(chatId, "❓ Device not found.");
+                            } else {
+                                const isOnline = latest && (new Date().getTime() - new Date(latest.recorded_at).getTime()) < 10 * 60 * 1000;
+                                const statusEmoji = isOnline ? "🟢 ONLINE" : "🔴 OFFLINE";
+                                
+                                let response = `📡 *DEVICE STATUS: ${device.name}*\n\n`;
+                                response += `*Status:* ${statusEmoji}\n`;
+                                
+                                if (settings) {
+                                    const calibration = settings.initial_distance - (latest?.water_level || 0);
+                                    response += `*Calibration:* ${calibration > 0 ? '+' : ''}${calibration.toFixed(1)} cm\n`;
+                                }
+
+                                response += `*Coordinates:* ${device.latitude}, ${device.longitude}\n`;
+                                
+                                if (latest) {
+                                    const timeDiff = Math.floor((new Date().getTime() - new Date(latest.recorded_at).getTime()) / 60000);
+                                    response += `*Last Update:* ${timeDiff === 0 ? 'Just now' : `${timeDiff} min(s) ago`}\n\n`;
+                                    
+                                    response += `📊 *LATEST READINGS*\n`;
+                                    if (device.device_type === 'FLOWS') {
+                                        response += `🌊 Water Level: ${latest.water_level}m\n`;
+                                        response += `🌡️ Temp: ${latest.temperature}°C\n`;
+                                        response += `💨 Wind: ${latest.wind_speed}m/s\n`;
+                                    } else if (device.device_type === 'LANDSLIDE') {
+                                        response += `📉 Score: ${latest.landslide_score}\n`;
+                                        response += `⚠️ Status: ${latest.landslide_status}\n`;
+                                        response += `💧 Moisture: ${latest.soil_moisture}%\n`;
+                                    } else if (device.device_type === 'SIGMA') {
+                                        response += `📐 Tilt: ${latest.device_tilt}°\n`;
+                                        response += `🫨 Magnitude: ${latest.magnitude}\n`;
+                                    }
+                                } else {
+                                    response += `\n_No data points record yet._`;
+                                }
+
+                                await TelegramService.sendMessage(chatId, response);
+                            }
+                        }
+                    }
+                }
             }
 
             return res.json({ status: 'ok' });
