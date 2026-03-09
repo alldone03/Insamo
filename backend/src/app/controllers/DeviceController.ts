@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { Controller } from './Controller';
 import { db } from '../../config/database';
+import { redis } from '../../config/redis';
 import { devices, users, deviceUser, deviceSettings, sensorReadings } from '../models/schema';
 import { eq, desc, and, sql, inArray } from 'drizzle-orm';
 
@@ -69,12 +70,31 @@ export class DeviceController extends Controller {
         // 3. Get latest sensor reading for these devices
         // Using Promise.all instead of a correlated subquery prevents CPU spikes 
         // by utilizing simple indexed queries in parallel instead of full table scans.
-        const latestReadingsPromises = deviceIds.map(deviceId => 
-            db.select().from(sensorReadings)
+        const latestReadingsPromises = deviceIds.map(async (deviceId) => {
+            try {
+                const cachedReading = await redis.get(`device:${deviceId}:latest_reading`);
+                if (cachedReading) {
+                    return [JSON.parse(cachedReading)];
+                }
+            } catch (err) {
+                console.error('Redis get error:', err);
+            }
+
+            const dbReading = await db.select().from(sensorReadings)
               .where(eq(sensorReadings.device_id, deviceId))
               .orderBy(desc(sensorReadings.recorded_at))
-              .limit(1)
-        );
+              .limit(1);
+
+            if (dbReading.length > 0) {
+                try {
+                    await redis.set(`device:${deviceId}:latest_reading`, JSON.stringify(dbReading[0]));
+                } catch (err) {
+                    console.error('Redis set error:', err);
+                }
+            }
+
+            return dbReading;
+        });
         const readingsResults = await Promise.all(latestReadingsPromises);
 
         const readingsByDeviceId: Record<number, any[]> = {};

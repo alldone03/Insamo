@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { Controller } from './Controller';
 import { db } from '../../config/database';
+import { redis } from '../../config/redis';
 import { sensorReadings, devices, deviceSettings, classificationResults, deviceUser } from '../models/schema';
 import { eq, desc, and, gte, lte, inArray } from 'drizzle-orm';
 import { TelegramService } from '../services/TelegramService';
@@ -128,6 +129,13 @@ export class SensorReadingController extends Controller {
 
       const readingResult = await db.select().from(sensorReadings).where(eq(sensorReadings.id, Number(insertResult.insertId))).limit(1);
       const reading = readingResult[0];
+
+      // Cache latest reading to Redis
+      try {
+          await redis.set(`device:${device.id}:latest_reading`, JSON.stringify(reading));
+      } catch (err) {
+          console.error('Failed to cache reading to Redis:', err);
+      }
 
       // Alert Logic for Flood (FLOWS)
       if (device.device_type === 'FLOWS' && typeof data.water_level !== 'undefined') {
