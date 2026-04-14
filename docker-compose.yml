@@ -26,10 +26,13 @@ services:
       DB_USER: ${DB_USERNAME:-insamo}
       DB_PASSWORD: ${DB_PASSWORD:-password}
       JWT_SECRET: ${JWT_SECRET:-secret_dev_key_here}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
     networks:
       - insamo-network
     depends_on:
       - db
+      - redis
 
   db:
     image: mysql:8.0
@@ -46,6 +49,14 @@ services:
       SERVICE_NAME: mysql
     volumes:
       - dbdata:/var/lib/mysql
+    networks:
+      - insamo-network
+
+  redis:
+    image: redis:alpine
+    container_name: insamo-redis
+    command: redis-server --maxmemory 200mb --maxmemory-policy allkeys-lru
+    restart: unless-stopped
     networks:
       - insamo-network
 
@@ -68,6 +79,18 @@ services:
       - insamo-network
     depends_on:
       - app
+
+  prediction:
+    build:
+      context: ./prediction-service
+      dockerfile: Dockerfile
+    image: insamo-prediction
+    container_name: insamo-prediction
+    restart: unless-stopped
+    ports:
+      - "8501:8501"
+    networks:
+      - insamo-network
 
 networks:
   insamo-network:

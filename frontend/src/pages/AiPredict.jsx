@@ -1,226 +1,375 @@
-import React, { useState } from 'react';
-import { 
-  CheckCircle2, 
-  ArrowDown, 
-  ArrowUp, 
-  Bell, 
-  AlertTriangle, 
+import React, { useState, useEffect, useCallback } from 'react';
+import {
+  CheckCircle2,
+  ArrowDown,
+  ArrowUp,
+  Bell,
+  AlertTriangle,
   TrendingUp,
-  ChevronDown
+  ChevronDown,
+  Loader2,
+  Brain,
+  BarChart3,
 } from 'lucide-react';
+import {
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
+  ResponsiveContainer, ReferenceLine, ComposedChart,
+} from 'recharts';
+import { api } from '../lib/api';
 
 const AiPredict = () => {
-  const [horizon, setHorizon] = useState('24');
+  const [horizon, setHorizon] = useState('50');
+  const [devices, setDevices] = useState([]);
+  const [selectedDevice, setSelectedDevice] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [loadingDevices, setLoadingDevices] = useState(true);
+  const [result, setResult] = useState(null);
+  const [error, setError] = useState(null);
+
+  // Fetch FLOWS devices
+  useEffect(() => {
+    const fetchDevices = async () => {
+      try {
+        const res = await api.get('/predict-devices');
+        const data = Array.isArray(res.data) ? res.data : res.data?.data || [];
+        setDevices(data);
+        if (data.length > 0) setSelectedDevice(data[0]);
+      } catch (err) {
+        console.error('Failed to fetch devices:', err);
+      } finally {
+        setLoadingDevices(false);
+      }
+    };
+    fetchDevices();
+  }, []);
+
+  // Run prediction
+  const runPrediction = useCallback(async () => {
+    if (!selectedDevice) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.get(`/predict/${selectedDevice.id}`, {
+        params: { predict_steps: Number(horizon) },
+      });
+      const data = res.data?.data || res.data;
+      setResult(data);
+    } catch (err) {
+      const msg = err.response?.data?.message || err.message || 'Prediction failed';
+      setError(msg);
+      setResult(null);
+    } finally {
+      setLoading(false);
+    }
+  }, [selectedDevice, horizon]);
+
+  // Build chart data
+  const buildChartData = () => {
+    if (!result) return [];
+    const { train_data, test_actual, test_predicted, predictions } = result;
+    const chartData = [];
+
+    // Train data
+    train_data.forEach((val, i) => {
+      chartData.push({ index: i, actual: val, type: 'train' });
+    });
+
+    // Test: actual vs predicted
+    test_actual.forEach((val, i) => {
+      chartData.push({
+        index: train_data.length + i,
+        actual: val,
+        predicted_test: test_predicted[i],
+        type: 'test',
+      });
+    });
+
+    // Future predictions
+    predictions.forEach((p, i) => {
+      chartData.push({
+        index: train_data.length + test_actual.length + i,
+        future: p.value,
+        type: 'future',
+      });
+    });
+
+    return chartData;
+  };
+
+  const chartData = buildChartData();
+  const alertTh = result?.thresholds?.alert ?? 50;
+  const dangerTh = result?.thresholds?.danger ?? 80;
+
+  // Status config
+  const getStatusConfig = (status) => {
+    switch (status) {
+      case 'DANGER':
+        return { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200', icon: AlertTriangle, label: 'DANGER' };
+      case 'ALERT':
+        return { bg: 'bg-yellow-50', text: 'text-yellow-700', border: 'border-yellow-200', icon: Bell, label: 'WARNING' };
+      default:
+        return { bg: 'bg-[#e6ffed]', text: 'text-[#008000]', border: 'border-green-200', icon: CheckCircle2, label: 'SAFE' };
+    }
+  };
+
+  const statusConfig = result ? getStatusConfig(result.overall_status) : getStatusConfig('NORMAL');
+  const StatusIcon = statusConfig.icon;
+
+  const lastActual = result?.test_actual?.length > 0 ? result.test_actual[result.test_actual.length - 1] : null;
+  const firstPred = result?.predictions?.length > 0 ? result.predictions[0].value : null;
+  const peakPred = result?.peak_predicted ?? null;
 
   return (
     <div className="min-h-screen bg-[#f0f2f5] p-6 font-sans text-base-content">
-      
+
       {/* Header */}
       <h2 className="text-4xl font-extrabold text-gray-800 mb-8">
         AI Water Level Predictive Monitor
       </h2>
 
-      {/* Controls Section */}
+      {/* Controls */}
       <div className="flex flex-col md:flex-row items-start md:items-center gap-6 mb-6">
-        {/* Dropdown Device */}
+        {/* Device Dropdown */}
         <div className="dropdown">
           <div tabIndex={0} role="button" className="btn bg-[#1B75A7] hover:bg-[#155e8a] text-white border-none rounded-md px-6">
-            Device ID 9 <ChevronDown className="w-4 h-4 ml-2" />
+            {loadingDevices ? 'Loading...' : selectedDevice ? selectedDevice.name : 'Select Device'}
+            <ChevronDown className="w-4 h-4 ml-2" />
           </div>
-          <ul tabIndex={0} className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52 mt-2">
-            <li><a>Device ID 9</a></li>
-            <li><a>Device ID 10</a></li>
+          <ul tabIndex={0} className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-64 mt-2 max-h-60 overflow-y-auto">
+            {devices.map((d) => (
+              <li key={d.id}>
+                <a onClick={() => { setSelectedDevice(d); setResult(null); }}>
+                  {d.name} ({d.device_code})
+                </a>
+              </li>
+            ))}
+            {devices.length === 0 && <li><a className="text-gray-400">No FLOWS devices</a></li>}
           </ul>
         </div>
 
-        {/* Prediction Horizon Radios */}
+        {/* Predict Steps */}
         <div className="flex items-center gap-4 text-sm font-semibold text-gray-600 bg-white px-4 py-2 rounded-lg shadow-sm">
-          <span>Select Prediction Horizon:</span>
-          <label className="flex items-center gap-2 cursor-pointer hover:text-primary">
-            <input 
-              type="radio" 
-              name="horizon" 
-              className="radio radio-primary radio-sm" 
-              value="24" 
-              checked={horizon === '24'} 
-              onChange={(e) => setHorizon(e.target.value)} 
-            />
-            24 Hours
-          </label>
-          <label className="flex items-center gap-2 cursor-pointer hover:text-primary">
-            <input 
-              type="radio" 
-              name="horizon" 
-              className="radio radio-primary radio-sm" 
-              value="72" 
-              checked={horizon === '72'} 
-              onChange={(e) => setHorizon(e.target.value)} 
-            />
-            72 Hours
-          </label>
-          <label className="flex items-center gap-2 cursor-pointer hover:text-primary">
-            <input 
-              type="radio" 
-              name="horizon" 
-              className="radio radio-primary radio-sm" 
-              value="168" 
-              checked={horizon === '168'} 
-              onChange={(e) => setHorizon(e.target.value)} 
-            />
-            168 Hours (7 Days)
-          </label>
+          <span>Predict Steps:</span>
+          {['25', '50', '75'].map((val) => (
+            <label key={val} className="flex items-center gap-2 cursor-pointer hover:text-primary">
+              <input
+                type="radio"
+                name="horizon"
+                className="radio radio-primary radio-sm"
+                value={val}
+                checked={horizon === val}
+                onChange={(e) => setHorizon(e.target.value)}
+              />
+              {val}
+            </label>
+          ))}
         </div>
+
+        {/* Run Button */}
+        <button
+          className={`btn rounded-md px-6 border-none text-white ${loading ? 'bg-gray-400' : 'bg-[#28a745] hover:bg-[#218838]'}`}
+          onClick={runPrediction}
+          disabled={loading || !selectedDevice}
+        >
+          {loading ? (
+            <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Training LSTM...</>
+          ) : (
+            <><Brain className="w-4 h-4 mr-2" /> Run Prediction</>
+          )}
+        </button>
       </div>
+
+      {/* Error */}
+      {error && (
+        <div className="bg-red-50 text-red-700 p-4 rounded-xl mb-6 border border-red-200">
+          <strong>Error:</strong> {error}
+        </div>
+      )}
 
       {/* Status Bar */}
-      <div className="bg-[#e6ffed] text-[#008000] p-5 rounded-xl flex flex-col md:flex-row items-center justify-between font-bold mb-6 shadow-sm border border-green-200">
+      <div className={`${statusConfig.bg} ${statusConfig.text} p-5 rounded-xl flex flex-col md:flex-row items-center justify-between font-bold mb-6 shadow-sm border ${statusConfig.border}`}>
         <div className="flex items-center gap-3">
-          <CheckCircle2 className="w-6 h-6 text-[#008000]" fill="currentColor" stroke="white" />
-          <span className="text-lg tracking-wide">SYSTEM IS SAFE (CONTROLLED) IN THE NEXT {horizon} HOURS</span>
+          <StatusIcon className="w-6 h-6" fill="currentColor" stroke="white" />
+          <span className="text-lg tracking-wide">
+            {result
+              ? `SYSTEM STATUS: ${statusConfig.label} — PEAK PREDICTED: ${peakPred?.toFixed(2)} cm`
+              : 'SELECT DEVICE & RUN PREDICTION TO START'}
+          </span>
         </div>
-        <div className="mt-2 md:mt-0 text-lg">
-          CURRENT WATER LEVEL: 3.80 cm
-        </div>
+        {lastActual !== null && (
+          <div className="mt-2 md:mt-0 text-lg">
+            LATEST WATER LEVEL: {lastActual.toFixed(2)} cm
+          </div>
+        )}
       </div>
 
-      {/* 5 Metrics Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-5 mb-6">
-        
-        {/* Card 1 */}
-        <div className="card bg-base-100 shadow-sm border border-base-200 rounded-xl">
-          <div className="card-body p-5">
-            <h4 className="text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">Predicted 1 Hour</h4>
-            <div className="flex justify-between items-start">
-              <span className="text-3xl font-extrabold text-[#007bff]">3.80 cm</span>
-              <ArrowDown className="w-5 h-5 text-red-500" />
+      {/* Metrics Cards */}
+      {result && (
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-5 mb-6">
+          <div className="card bg-base-100 shadow-sm border border-base-200 rounded-xl">
+            <div className="card-body p-5">
+              <h4 className="text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">Predicted Next</h4>
+              <div className="flex justify-between items-start">
+                <span className="text-3xl font-extrabold text-[#007bff]">{firstPred?.toFixed(2)} cm</span>
+                {firstPred > lastActual ? <ArrowUp className="w-5 h-5 text-red-500" /> : <ArrowDown className="w-5 h-5 text-green-500" />}
+              </div>
             </div>
-            {/* Mock Sparkline */}
-            <div className="mt-3 h-8 w-full">
-              <svg viewBox="0 0 100 30" className="w-full h-full stroke-[#007bff] fill-none" preserveAspectRatio="none">
-                <path d="M0,15 L20,25 L40,10 L60,20 L80,5 L100,28" strokeWidth="1.5" strokeDasharray="3,3" />
-              </svg>
+          </div>
+
+          <div className="card bg-base-100 shadow-sm border border-base-200 rounded-xl">
+            <div className="card-body p-5">
+              <h4 className="text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">Last Actual</h4>
+              <div className="flex justify-between items-start">
+                <span className="text-3xl font-extrabold text-[#007bff]">{lastActual?.toFixed(2)} cm</span>
+                <BarChart3 className="w-5 h-5 text-blue-400" />
+              </div>
+            </div>
+          </div>
+
+          <div className="card bg-base-100 shadow-sm border border-base-200 rounded-xl">
+            <div className="card-body p-5">
+              <h4 className="text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">Peak Predicted</h4>
+              <div className="flex justify-between items-start">
+                <span className="text-3xl font-extrabold text-[#007bff]">{peakPred?.toFixed(2)} cm</span>
+                <TrendingUp className="w-5 h-5 text-green-500" />
+              </div>
+            </div>
+          </div>
+
+          <div className="card bg-base-100 shadow-sm border border-base-200 rounded-xl justify-center">
+            <div className="card-body p-5">
+              <h4 className="text-xs font-bold text-gray-500 mb-2 uppercase tracking-wider">Alert Threshold</h4>
+              <div className="flex items-center gap-2">
+                <span className="text-3xl font-extrabold text-[#d89f00]">{alertTh.toFixed(2)} cm</span>
+                <Bell className="w-6 h-6 text-[#d89f00] fill-current" />
+              </div>
+            </div>
+          </div>
+
+          <div className="card bg-base-100 shadow-sm border border-base-200 rounded-xl justify-center">
+            <div className="card-body p-5">
+              <h4 className="text-xs font-bold text-gray-500 mb-2 uppercase tracking-wider">Danger Threshold</h4>
+              <div className="flex items-center gap-2">
+                <span className="text-3xl font-extrabold text-[#cc0000]">{dangerTh.toFixed(2)} cm</span>
+                <AlertTriangle className="w-6 h-6 text-[#cc0000] fill-current" />
+              </div>
             </div>
           </div>
         </div>
+      )}
 
-        {/* Card 2 */}
-        <div className="card bg-base-100 shadow-sm border border-base-200 rounded-xl relative overflow-hidden">
-          <div className="card-body p-5">
-            <h4 className="text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">Real-Time Water</h4>
-            <div className="flex justify-between items-start">
-              <span className="text-3xl font-extrabold text-[#007bff]">3.80 cm</span>
-              <ArrowUp className="w-5 h-5 text-green-500" />
-            </div>
-            <p className="text-[10px] text-gray-400 text-right absolute right-5 top-14">Last updated: 8:27:41 AM</p>
-            {/* Mock Sparkline */}
-            <div className="mt-3 h-8 w-full">
-              <svg viewBox="0 0 100 30" className="w-full h-full stroke-[#007bff] fill-none" preserveAspectRatio="none">
-                <path d="M0,25 L20,20 L40,25 L60,15 L80,20 L100,5" strokeWidth="1.5" />
-              </svg>
-            </div>
-          </div>
-        </div>
-
-        {/* Card 3 */}
-        <div className="card bg-base-100 shadow-sm border border-base-200 rounded-xl">
-          <div className="card-body p-5">
-            <h4 className="text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">Predicted Peak (24h)</h4>
-            <div className="flex justify-between items-start">
-              <span className="text-3xl font-extrabold text-[#007bff]">3.80 cm</span>
-              <TrendingUp className="w-5 h-5 text-green-500" />
-            </div>
-            {/* Mock Sparkline */}
-            <div className="mt-3 h-8 w-full">
-              <svg viewBox="0 0 100 30" className="w-full h-full stroke-[#007bff] fill-none" preserveAspectRatio="none">
-                <path d="M0,28 L20,25 L40,20 L60,10 L80,15 L100,5" strokeWidth="1.5" strokeDasharray="3,3" />
-              </svg>
-            </div>
-          </div>
-        </div>
-
-        {/* Card 4 */}
-        <div className="card bg-base-100 shadow-sm border border-base-200 rounded-xl justify-center">
-          <div className="card-body p-5">
-            <h4 className="text-xs font-bold text-gray-500 mb-2 uppercase tracking-wider">Warning Threshold</h4>
-            <div className="flex items-center gap-2">
-              <span className="text-3xl font-extrabold text-[#d89f00]">50.00 cm</span>
-              <Bell className="w-6 h-6 text-[#d89f00] fill-current" />
-            </div>
-          </div>
-        </div>
-
-        {/* Card 5 */}
-        <div className="card bg-base-100 shadow-sm border border-base-200 rounded-xl justify-center">
-          <div className="card-body p-5">
-            <h4 className="text-xs font-bold text-gray-500 mb-2 uppercase tracking-wider">Danger Threshold</h4>
-            <div className="flex items-center gap-2">
-              <span className="text-3xl font-extrabold text-[#cc0000]">80.00 cm</span>
-              <AlertTriangle className="w-6 h-6 text-[#cc0000] fill-current" />
-            </div>
-          </div>
-        </div>
-
-      </div>
-
-      {/* Main Bottom Section */}
+      {/* Chart + Insights */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
-        {/* Chart Section (col-span-2) */}
+        {/* Chart */}
         <div className="lg:col-span-2 card bg-base-100 shadow-md border-l-4 border-l-[#007bff] rounded-xl">
           <div className="card-body">
             <h3 className="text-lg font-bold text-gray-800 mb-4">
-              Water Level & Forecast Trend (cm) - 24h Hist. + 24h Pred.
+              Water Level — Train / Test / Prediction (cm)
             </h3>
-            
-            {/* Legend Mock */}
-            <div className="flex justify-center gap-6 mb-4 text-xs text-gray-500">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-1 bg-[#007bff]"></div> Actual Water Level (cm)
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-1 border-b-2 border-dashed border-[#ff8000]"></div> AI Prediction (24h) (cm)
-              </div>
+
+            <div className="flex flex-wrap justify-center gap-6 mb-4 text-xs text-gray-500">
+              <div className="flex items-center gap-2"><div className="w-8 h-1 bg-[#007bff]"></div> Actual</div>
+              <div className="flex items-center gap-2"><div className="w-8 h-1 bg-[#e83e8c]"></div> Test (LSTM)</div>
+              <div className="flex items-center gap-2"><div className="w-8 h-1 border-b-2 border-dashed border-[#ff8000]"></div> Future</div>
             </div>
 
-            {/* Placeholder untuk Chart.js / Recharts */}
-            <div className="w-full h-80 bg-gray-50 rounded flex items-center justify-center border border-gray-100 relative">
-               <span className="text-gray-400 font-medium absolute z-10">Area Render <code className="text-primary">react-chartjs-2</code></span>
-               {/* Mock Grid & Lines just for visual representation */}
-               <svg className="absolute w-full h-full opacity-30" preserveAspectRatio="none">
-                 <g stroke="#e5e7eb" strokeWidth="1">
-                   <line x1="0" y1="20%" x2="100%" y2="20%"/>
-                   <line x1="0" y1="40%" x2="100%" y2="40%"/>
-                   <line x1="0" y1="60%" x2="100%" y2="60%"/>
-                   <line x1="0" y1="80%" x2="100%" y2="80%"/>
-                 </g>
-                 <path d="M0,200 C50,220 100,50 150,180 S200,20 250,150 S300,200 350,100 L400,100" fill="none" stroke="#007bff" strokeWidth="2"/>
-                 <path d="M400,100 L500,100 L600,100 L700,100 L800,100" fill="none" stroke="#ff8000" strokeWidth="2" strokeDasharray="5,5"/>
-               </svg>
+            <div className="w-full h-80">
+              {result ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <ComposedChart data={chartData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                    <XAxis
+                      dataKey="index"
+                      tick={{ fontSize: 10 }}
+                      tickFormatter={(val) => {
+                        if (val === 0) return 'T1';
+                        if (val === result.train_size) return 'Test';
+                        if (val === result.train_size + result.test_size) return 'Pred';
+                        return '';
+                      }}
+                    />
+                    <YAxis tick={{ fontSize: 11 }} domain={['auto', 'auto']} />
+                    <Tooltip
+                      contentStyle={{ borderRadius: 8, fontSize: 12 }}
+                      formatter={(val) => [`${Number(val).toFixed(2)} cm`]}
+                      labelFormatter={(idx) => {
+                        if (idx < result.train_size) return `Train #${idx + 1}`;
+                        if (idx < result.train_size + result.test_size) return `Test #${idx - result.train_size + 1}`;
+                        return `Future #${idx - result.train_size - result.test_size + 1}`;
+                      }}
+                    />
+                    <ReferenceLine y={alertTh} stroke="#d89f00" strokeDasharray="6 3" label={{ value: `Alert ${alertTh}`, position: 'right', fontSize: 10, fill: '#d89f00' }} />
+                    <ReferenceLine y={dangerTh} stroke="#cc0000" strokeDasharray="6 3" label={{ value: `Danger ${dangerTh}`, position: 'right', fontSize: 10, fill: '#cc0000' }} />
+                    <Line type="monotone" dataKey="actual" stroke="#007bff" dot={false} strokeWidth={1.5} name="Actual" connectNulls={false} />
+                    <Line type="monotone" dataKey="predicted_test" stroke="#e83e8c" dot={false} strokeWidth={2} name="Test Predicted" connectNulls={false} />
+                    <Line type="monotone" dataKey="future" stroke="#ff8000" strokeDasharray="5 3" dot={false} strokeWidth={2} name="Future" connectNulls={false} />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="w-full h-full bg-gray-50 rounded flex items-center justify-center border border-gray-100">
+                  <span className="text-gray-400 font-medium">
+                    {loading ? 'Training LSTM model...' : 'Select a device and run prediction'}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         </div>
 
-        {/* AI Prediction Insights Section */}
+        {/* Insights */}
         <div className="card bg-base-100 shadow-md rounded-xl">
           <div className="card-body">
             <h3 className="text-lg font-bold text-gray-800 mb-2">Prediction Insights</h3>
-            <p className="text-sm text-gray-600 mb-4">
-              The system predicts the water level will remain stable and controlled within the next {horizon} hours. No flood risk detected.
-            </p>
-            
-            <h4 className="font-bold text-gray-800 mb-1">AI Scaling Parameters:</h4>
-            <ul className="list-disc list-inside text-sm text-gray-600 mb-6 space-y-1">
-              <li>Mean: -0.0000</li>
-              <li>StdDev: 0.4276</li>
-              <li>Last Raw Level: 3.80 cm</li>
-            </ul>
+            {result ? (
+              <>
+                <p className="text-sm text-gray-600 mb-4">
+                  {result.overall_status === 'NORMAL'
+                    ? `LSTM model predicts water level will remain stable. Peak at ${peakPred?.toFixed(2)} cm, below alert threshold (${alertTh} cm).`
+                    : result.overall_status === 'ALERT'
+                      ? `Warning: predicted peak ${peakPred?.toFixed(2)} cm exceeds alert threshold (${alertTh} cm). Monitor closely.`
+                      : `DANGER: predicted peak ${peakPred?.toFixed(2)} cm exceeds danger threshold (${dangerTh} cm)! Immediate action required.`
+                  }
+                </p>
 
-            <button className="btn w-full bg-[#28a745] hover:bg-[#218838] text-white border-none rounded-lg font-bold tracking-wide mt-auto">
-              NO ACTION REQUIRED
-            </button>
+                <h4 className="font-bold text-gray-800 mb-1">Model Metrics:</h4>
+                <div className="text-sm text-gray-600 mb-4 space-y-1">
+                  <p>RMSE: <span className="font-mono font-bold">{result.metrics.rmse}</span></p>
+                  <p>MAE: <span className="font-mono font-bold">{result.metrics.mae}</span></p>
+                  <p>MAPE: <span className="font-mono font-bold">{result.metrics.mape}%</span></p>
+                </div>
+
+                <h4 className="font-bold text-gray-800 mb-1">Scaling Parameters:</h4>
+                <div className="text-sm text-gray-600 mb-4 space-y-1">
+                  <p>Mean: <span className="font-mono font-bold">{result.scaling.mean}</span></p>
+                  <p>StdDev: <span className="font-mono font-bold">{result.scaling.std}</span></p>
+                </div>
+
+                <h4 className="font-bold text-gray-800 mb-1">Data Split:</h4>
+                <div className="text-sm text-gray-600 mb-6 space-y-1">
+                  <p>Train: <span className="font-mono font-bold">{result.train_size}</span> points</p>
+                  <p>Test: <span className="font-mono font-bold">{result.test_size}</span> points</p>
+                  <p>Predict: <span className="font-mono font-bold">{result.predictions.length}</span> steps</p>
+                </div>
+
+                <button
+                  className={`btn w-full border-none rounded-lg font-bold tracking-wide mt-auto text-white ${
+                    result.overall_status === 'DANGER' ? 'bg-red-600 hover:bg-red-700'
+                      : result.overall_status === 'ALERT' ? 'bg-yellow-500 hover:bg-yellow-600'
+                        : 'bg-[#28a745] hover:bg-[#218838]'
+                  }`}
+                >
+                  {result.overall_status === 'DANGER' ? 'IMMEDIATE ACTION REQUIRED'
+                    : result.overall_status === 'ALERT' ? 'MONITOR CLOSELY'
+                      : 'NO ACTION REQUIRED'}
+                </button>
+              </>
+            ) : (
+              <p className="text-sm text-gray-400">
+                Run a prediction to see model insights, metrics, and flood risk assessment.
+              </p>
+            )}
           </div>
         </div>
-
       </div>
     </div>
   );

@@ -28,6 +28,8 @@ services:
     depends_on:
       - db
       - redis
+    ports:
+      - "3000:3000"
 
   redis:
     image: redis:alpine
@@ -67,6 +69,18 @@ services:
     restart: unless-stopped
     networks:
       - web
+    depends_on:
+      - app
+
+  prediction:
+    build:
+      context: ./prediction-service
+      dockerfile: Dockerfile
+    image: insamo-prediction:prod
+    container_name: insamo-prediction-prod
+    restart: unless-stopped
+    networks:
+      - insamo-prod-network
     depends_on:
       - app
 
