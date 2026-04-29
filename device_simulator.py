@@ -8,7 +8,8 @@ import math
 # Configuration
 API_URL = "http://localhost:3000/api/sensor-readings"
 WEATHER_API_URL = "http://localhost:3000/api/weather"
-TARGET_READINGS = 150
+TARGET_READINGS = 0
+GENERATE_DUMMY = False 
 
 # Hanya FLOWS devices (untuk LSTM prediction)
 DEVICES = [
