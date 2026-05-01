@@ -61,6 +61,20 @@ export const translations = {
         profile: "Profile & Preference",
         logout: "Logout",
         
+        // Carousel Items
+        prod_weather_title: "Weather Monitoring",
+        prod_weather_desc: "High-precision real-time weather parameter monitoring system for microclimate analysis.",
+        prod_wildfire_title: "Wildfire Monitoring",
+        prod_wildfire_desc: "Early fire point detection and air quality monitoring to prevent widespread forest fires.",
+        prod_landslide_title: "Landslide Monitoring",
+        prod_landslide_desc: "Soil movement and slope inclination sensors for early warning of potential landslides.",
+        prod_earthquake_title: "Earthquake Monitoring",
+        prod_earthquake_desc: "Real-time seismic activity monitoring to mitigate the impact of earthquake disasters.",
+        prod_flood_title: "Flood Early Warning",
+        prod_flood_desc: "Integrated flood early warning system based on water level and river discharge.",
+        prod_ai_title: "AI Visual Analytics",
+        prod_ai_desc: "AI-based visual analytics for intelligent environmental monitoring and event prediction.",
+        
         // Footer
         footer_desc: "Empowering industries with next-generation IoT monitoring and analytics. Built for reliability, designed for people.",
         company: "Company",
@@ -128,6 +142,20 @@ export const translations = {
         profile: "Profil & Preferensi",
         logout: "Keluar",
         
+        // Carousel Items
+        prod_weather_title: "Weather Monitoring",
+        prod_weather_desc: "Sistem pemantauan parameter cuaca real-time dengan akurasi tinggi untuk analisis mikroklimat.",
+        prod_wildfire_title: "Wildfire Monitoring",
+        prod_wildfire_desc: "Deteksi dini titik api dan pemantauan kualitas udara untuk mencegah kebakaran hutan yang meluas.",
+        prod_landslide_title: "Landslide Monitoring",
+        prod_landslide_desc: "Sensor pergerakan tanah dan kemiringan lereng untuk peringatan dini potensi tanah longsor.",
+        prod_earthquake_title: "Earthquake Monitoring",
+        prod_earthquake_desc: "Pemantauan aktivitas seismik secara real-time untuk mitigasi dampak bencana gempa bumi.",
+        prod_flood_title: "Flood Early Warning",
+        prod_flood_desc: "Sistem peringatan dini banjir berbasis ketinggian muka air dan debit sungai yang terintegrasi.",
+        prod_ai_title: "AI Visual Analytics",
+        prod_ai_desc: "Analisis visual berbasis AI untuk pemantauan lingkungan dan prediksi kejadian secara cerdas.",
+        
         // Footer
         footer_desc: "Memberdayakan industri dengan pemantauan IoT dan analitik generasi berikutnya. Dibangun untuk keandalan, dirancang untuk manusia.",
         company: "Perusahaan",
@@ -140,7 +168,7 @@ export const translations = {
 };
 
 export const LanguageProvider = ({ children }) => {
-    const [lang, setLang] = useState(() => localStorage.getItem("lang") || "id");
+    const [lang, setLang] = useState(() => localStorage.getItem("lang") || "en");
 
     useEffect(() => {
         localStorage.setItem("lang", lang);

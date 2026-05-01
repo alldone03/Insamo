@@ -91,7 +91,7 @@ export class TelegramLogController extends Controller {
             const result = await TelegramService.setWebhook(url);
             return this.sendResponse(res, result, 'Webhook set successfully');
         } catch (error: any) {
-            console.error('Set Telegram Webhook Error:', error);
+            console.error('Set Telegram Webhook Error:',    error);
             return this.sendError(res, 'Failed to set webhook: ' + error.message);
         }
     }

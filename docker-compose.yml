@@ -3,58 +3,75 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    image: insamo-backend
-    container_name: insamo-backend
+    image: insamo-backend:dev
+    container_name: insamo-backend-dev
     restart: unless-stopped
     working_dir: /var/www
-    volumes:
-      - ./backend:/var/www
-      - backend_node_modules:/var/www/node_modules
-      - backend_yarn:/var/www/.yarn
-      - /var/www/.pnp.cjs
-      - /var/www/.pnp.loader.mjs
-    ports:
-      - "3000:3000"
+    env_file:
+      - .env
     environment:
-      APP_NAME: Insamo_v2
       APP_ENV: local
-      APP_URL: http://localhost:3000
-      FRONTEND_URL: http://localhost:5173
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
+      APP_URL: ${APP_URL:-http://localhost:3000}
       DB_HOST: db
       DB_PORT: 3306
       DB_NAME: ${DB_DATABASE:-insamo_rw}
       DB_USER: ${DB_USERNAME:-insamo}
       DB_PASSWORD: ${DB_PASSWORD:-password}
-      JWT_SECRET: ${JWT_SECRET:-secret_dev_key_here}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    ports:
+      - "3000:3000"
     networks:
-      - insamo-network
+      - insamo-dev-network
+    volumes:
+      - ./backend:/var/www
+      - ./backend/uploads:/var/www/uploads
+      - backend_node_modules:/var/www/node_modules
+      - backend_yarn:/var/www/.yarn
+      - /var/www/.pnp.cjs
+      - /var/www/.pnp.loader.mjs
     depends_on:
       - db
+      - redis
+
+  redis:
+    image: redis:alpine
+    container_name: insamo-redis-dev
+    restart: unless-stopped
+    ports:
+      - "6379:6379" # Dibuka di dev agar bisa di-inspect via Redis Desktop Manager
+    networks:
+      - insamo-dev-network
 
   db:
     image: mysql:8.0
-    container_name: insamo-db
+    container_name: insamo-db-dev
     restart: unless-stopped
     ports:
       - "${DB_PORT_EXTERNAL:-3306}:3306"
     environment:
       MYSQL_DATABASE: ${DB_DATABASE:-insamo_rw}
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_password}
-      MYSQL_PASSWORD: ${DB_PASSWORD:-password}
       MYSQL_USER: ${DB_USERNAME:-insamo}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-password}
       SERVICE_TAGS: dev
       SERVICE_NAME: mysql
     volumes:
-      - dbdata:/var/lib/mysql
+      - dbdata-dev:/var/lib/mysql
     networks:
-      - insamo-network
+      - insamo-dev-network
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    image: insamo-frontend
-    container_name: insamo-frontend
+      args:
+        # Di dev biasanya dipassing via env, tapi jika Dockerfile butuh ARG:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:3000/api}
+    image: insamo-frontend:dev
+    container_name: insamo-frontend-dev
+    restart: unless-stopped
     environment:
       VITE_API_URL: http://localhost:3000/api
       CHOKIDAR_USEPOLLING: "true"
@@ -65,15 +82,16 @@ services:
       - ./frontend:/app
       - /app/node_modules
     networks:
-      - insamo-network
+      - insamo-dev-network
     depends_on:
       - app
 
 networks:
-  insamo-network:
+  insamo-dev-network:
     driver: bridge
 
 volumes:
-  dbdata:
+  dbdata-dev:
+    driver: local
   backend_node_modules:
   backend_yarn:
