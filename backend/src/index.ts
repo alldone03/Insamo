@@ -42,6 +42,10 @@ app.use(express.urlencoded({ extended: true }));
 import path from 'path';
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
+// Prediction route (LSTM microservice proxy)
+import predictionRoutes from './routes/prediction';
+app.use('/api', predictionRoutes);
+
 // API Routes
 app.use('/api', apiRoutes);
 
