@@ -1,12 +1,14 @@
 import { Outlet, Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../lib/auth_context";
-import { LayoutDashboard, User, LogOut, Menu, Cpu, History, Settings, Sun, Moon, BrainCircuit, Waves, Activity, Mountain, Flame, CloudSun } from "lucide-react";
+import { useLanguage } from "../lib/language_context";
+import { LayoutDashboard, User, LogOut, Menu, Cpu, History, Settings, Sun, Moon, BrainCircuit, Waves, Activity, Mountain, Flame, CloudSun, Languages } from "lucide-react";
 import { useState, useEffect } from "react";
 import InsamoLogo from "../assets/InsamoLogo.webp";
 import { getImageUrl } from "../lib/api";
 
 export default function MainLayout() {
     const { user, logout } = useAuth();
+    const { lang, setLang, t } = useLanguage();
     const navigate = useNavigate();
     const location = useLocation();
     const [theme, setTheme] = useState(() => localStorage.getItem("theme") || "light");
@@ -27,19 +29,19 @@ export default function MainLayout() {
     };
 
     const menuItems = [
-        { path: "/home", label: "Dashboard", icon: <LayoutDashboard size={20} /> },
-        { path: "/predict", label: "AI Prediction", icon: <BrainCircuit size={20} />, badge: "DEV" },
-        { path: "/flood", label: "Flood Monitor", icon: <Waves size={20} /> },
-        { path: "/earthquake", label: "Earthquake", icon: <Activity size={20} /> },
-        { path: "/landslide", label: "Landslide", icon: <Mountain size={20} /> },
-        { path: "/wildfire", label: "Wildfire", icon: <Flame size={20} /> },
-        { path: "/weather", label: "Weather", icon: <CloudSun size={20} /> },
-        { path: "/history", label: "History", icon: <History size={20} /> },
-        { path: "/device", label: "Device Management", icon: <Cpu size={20} /> },
+        { path: "/home", label: t('dashboard'), icon: <LayoutDashboard size={20} /> },
+        { path: "/predict", label: t('ai_prediction'), icon: <BrainCircuit size={20} />, badge: "DEV" },
+        { path: "/flood", label: t('flood_monitor'), icon: <Waves size={20} /> },
+        { path: "/earthquake", label: t('earthquake'), icon: <Activity size={20} /> },
+        { path: "/landslide", label: t('landslide'), icon: <Mountain size={20} /> },
+        { path: "/wildfire", label: t('wildfire'), icon: <Flame size={20} /> },
+        { path: "/weather", label: t('weather'), icon: <CloudSun size={20} /> },
+        { path: "/history", label: t('history'), icon: <History size={20} /> },
+        { path: "/device", label: t('device_mgmt'), icon: <Cpu size={20} /> },
     ].filter(Boolean);
 
     if (user?.roleId === 1) {
-        menuItems.push({ path: "/settings", label: "System Settings", icon: <Settings size={20} /> });
+        menuItems.push({ path: "/settings", label: t('sys_settings'), icon: <Settings size={20} /> });
     }
 
     return (
@@ -61,13 +63,33 @@ export default function MainLayout() {
                         </div>
                     </div>
 
-                    <div className="flex-none gap-2">
+                    <div className="flex-none gap-2 flex items-center">
+                        <div className="dropdown dropdown-end">
+                            <button tabIndex={0} className="btn btn-ghost btn-circle">
+                                <Languages size={20} />
+                            </button>
+                            <ul tabIndex={0} className="dropdown-content z-[1] menu p-2 shadow-2xl bg-base-100 rounded-2xl w-32 border border-base-200 mt-2">
+                                <li>
+                                    <button 
+                                        onClick={() => setLang('en')} 
+                                        className={lang === 'en' ? 'bg-primary text-primary-content font-bold' : ''}
+                                    >
+                                        English
+                                    </button>
+                                </li>
+                                <li>
+                                    <button 
+                                        onClick={() => setLang('id')} 
+                                        className={lang === 'id' ? 'bg-primary text-primary-content font-bold' : ''}
+                                    >
+                                        Indonesia
+                                    </button>
+                                </li>
+                            </ul>
+                        </div>
                         <button className="btn btn-ghost btn-circle" onClick={toggleTheme}>
                             {theme === "light" ? <Moon size={20} /> : <Sun size={20} />}
                         </button>
-                        {/* <button className="btn btn-ghost btn-circle">
-                            <Settings size={20} />
-                        </button> */}
                     </div>
                 </div>
 
@@ -105,7 +127,6 @@ export default function MainLayout() {
                             </li>
                         ))}
                     </div>
-
                     <div className="divider opacity-50"></div>
 
                     {/* Profile Dropdown */}
@@ -128,13 +149,13 @@ export default function MainLayout() {
                         <ul tabIndex={0} className="dropdown-content z-[1] menu p-2 shadow-2xl bg-base-100 rounded-2xl w-full mb-2 border border-base-200 animate-in fade-in slide-in-from-bottom-2">
                             <li>
                                 <Link to="/profile" className="py-3 px-4">
-                                    <User size={18} /> Profile & Preference
+                                    <User size={18} /> {t('profile')}
                                 </Link>
                             </li>
                             <div className="divider my-0 opacity-50"></div>
                             <li>
                                 <button onClick={handleLogout} className="text-error py-3 px-4">
-                                    <LogOut size={18} /> Logout
+                                    <LogOut size={18} /> {t('logout')}
                                 </button>
                             </li>
                         </ul>

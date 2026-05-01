@@ -4,22 +4,25 @@ import { ArrowRight, CheckCircle, Smartphone, Shield, Zap, Globe, BarChart3, Act
 import ProductModel from '../components/ProductModel';
 import ProductCarousel from '../components/ProductCarousel';
 import MapDemo from '../components/MapDemo';
+import { useLanguage } from '../lib/language_context';
 import InsamoLogo from '../assets/InsamoLogo.webp';
 import LogoITS from '../assets/LogoITS.png';
 
 const LandingPage = () => {
+    const { lang, setLang, t } = useLanguage();
+
     useEffect(() => {
         document.title = "Insamo - Integrated Smart Monitoring";
         const metaDescription = document.querySelector('meta[name="description"]');
         if (metaDescription) {
-            metaDescription.content = "Transform your environmental data into actionable insights with Insamo's real-time monitoring and analytics platform.";
+            metaDescription.content = t('hero_desc');
         } else {
             const meta = document.createElement('meta');
             meta.name = "description";
-            meta.content = "Transform your environmental data into actionable insights with Insamo's real-time monitoring and analytics platform.";
+            meta.content = t('hero_desc');
             document.head.appendChild(meta);
         }
-    }, []);
+    }, [lang]);
 
     return (
         <div className="min-h-screen bg-base-100 font-sans text-base-content scroll-smooth">
@@ -32,12 +35,20 @@ const LandingPage = () => {
 
                         </div>
                         <ul tabIndex={0} className="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-64 border border-base-200">
-                            <li><a href="#features">Features</a></li>
-                            <li><a href="#products">Products</a></li>
-                            <li><a href="#demo">Live Demo</a></li>
+                            <li><a href="#features">{t('features')}</a></li>
+                            <li><a href="#demo">{t('demo')}</a></li>
+                            <li><a href="#products">{t('products')}</a></li>
+                            <li><a href="#about">{t('about_us')}</a></li>
                             <div className="divider my-1"></div>
-                            <li><Link to="/login" className="flex items-center justify-between">Log In <ArrowRight size={14} /></Link></li>
-                            <li><Link to="/login" className="btn btn-primary btn-sm text-white mt-1">Get Started</Link></li>
+                            <li>
+                                <div className="flex gap-2 p-0">
+                                    <button onClick={() => setLang('en')} className={`btn btn-xs flex-1 ${lang === 'en' ? 'btn-primary' : 'btn-ghost'}`}>EN</button>
+                                    <button onClick={() => setLang('id')} className={`btn btn-xs flex-1 ${lang === 'id' ? 'btn-primary' : 'btn-ghost'}`}>ID</button>
+                                </div>
+                            </li>
+                            <div className="divider my-1"></div>
+                            <li><Link to="/login" className="flex items-center justify-between">{t('login')} <ArrowRight size={14} /></Link></li>
+                            <li><Link to="/login" className="btn btn-primary btn-sm text-white mt-1">{t('register')}</Link></li>
                         </ul>
                     </div>
                     <div className='flex justify-center w-full md:w-auto'>
@@ -52,15 +63,31 @@ const LandingPage = () => {
                     </div>
                 </div>
                 <div className="navbar-center hidden lg:flex md:flex">
-                    <ul className="menu menu-horizontal px-1 font-medium">
-                        <li><a href="#features" className="hover:text-primary">Features</a></li>
-                        <li><a href="#products" className="hover:text-primary">Products</a></li>
-                        <li><a href="#demo" className="hover:text-primary">Live Demo</a></li>
+                    <ul className="menu menu-horizontal px-1 font-medium items-center">
+                        <li><a href="#features" className="hover:text-primary">{t('features')}</a></li>
+                        <li><a href="#demo" className="hover:text-primary">{t('demo')}</a></li>
+                        <li><a href="#products" className="hover:text-primary">{t('products')}</a></li>
+                        <li><a href="#about" className="hover:text-primary">{t('about_us')}</a></li>
+                        <div className="divider divider-horizontal h-6 mx-2 my-auto"></div>
+                        <div className="join bg-base-200 p-0.5 rounded-xl border border-base-300">
+                            <button 
+                                onClick={() => setLang('en')} 
+                                className={`btn btn-xs join-item border-none ${lang === 'en' ? 'btn-primary text-white shadow-sm' : 'btn-ghost opacity-50 hover:opacity-100'}`}
+                            >
+                                EN
+                            </button>
+                            <button 
+                                onClick={() => setLang('id')} 
+                                className={`btn btn-xs join-item border-none ${lang === 'id' ? 'btn-primary text-white shadow-sm' : 'btn-ghost opacity-50 hover:opacity-100'}`}
+                            >
+                                ID
+                            </button>
+                        </div>
                     </ul>
                 </div>
                 <div className="navbar-end md:w-auto hidden lg:flex">
-                    <Link to="/login" className="btn btn-ghost">Log In</Link>
-                    <Link to="/register" className="btn btn-primary text-white shadow-lg shadow-primary/30">Get Started</Link>
+                    <Link to="/login" className="btn btn-ghost">{t('login')}</Link>
+                    <Link to="/register" className="btn btn-primary text-white shadow-lg shadow-primary/30">{t('register')}</Link>
                 </div>
             </div>
 
@@ -92,14 +119,14 @@ const LandingPage = () => {
                             </span>
                         </h1>
                         <p className="py-6 text-lg text-base-content/70 max-w-xl mx-auto lg:mx-0">
-                            Transform your environmental data into actionable insights. Insamo provides real-time analytics, predictive maintenance alerts, and seamless IoT integration for modern industries.
+                            {t('hero_desc')}
                         </p>
                         <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
                             <Link to="/login" className="btn btn-primary btn-lg shadow-xl shadow-primary/30 hover:scale-105 transition-transform">
-                                Get Started <ArrowRight size={20} />
+                                {t('register')} <ArrowRight size={20} />
                             </Link>
                             <a href="#demo" className="btn btn-outline btn-lg hover:bg-base-content hover:text-base-100">
-                                View Live Demo
+                                {t('view_demo')}
                             </a>
                         </div>
                         {/* <div className="mt-12 flex flex-col items-center lg:items-start gap-6 animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-500">
@@ -157,12 +184,30 @@ const LandingPage = () => {
                 </div>
             </section> */}
 
+            {/* Product Visual / Demo (Map) */}
+            <section id="demo" className="py-24 bg-base-100">
+                <div className="max-w-7xl mx-auto px-4 text-center">
+                    <h2 className="text-4xl font-bold mb-6">{t('demo_title')}</h2>
+                    <p className="text-base-content/60 max-w-2xl mx-auto mb-12">
+                        {t('demo_desc')}
+                    </p>
+
+                    <MapDemo />
+
+                    <div className="mt-8">
+                        <Link to="/login" className="btn btn-primary btn-lg shadow-xl shadow-primary/30">
+                            {t('full_dashboard')}
+                        </Link>
+                    </div>
+                </div>
+            </section>
+
             {/* Product Carousel */}
-            <section id="products" className="py-24 bg-base-100">
+            <section id="products" className="py-24 bg-base-200/50">
                 <div className="max-w-7xl mx-auto px-4">
                     <div className="text-center mb-12">
-                        <h2 className="text-4xl font-bold mb-4">Our Solutions</h2>
-                        <p className="text-base-content/60">Specialized monitoring systems for every environment.</p>
+                        <h2 className="text-4xl font-bold mb-4">{t('solutions_title')}</h2>
+                        <p className="text-base-content/60">{t('solutions_desc')}</p>
                     </div>
                     <ProductCarousel />
                 </div>
@@ -222,21 +267,76 @@ const LandingPage = () => {
                 </div>
             </section> */}
 
-            {/* Product Visual / Demo (Map) */}
-            <section id="demo" className="py-24 bg-base-100">
-                <div className="max-w-7xl mx-auto px-4 text-center">
-                    <h2 className="text-4xl font-bold mb-6">Live Network Visualization</h2>
-                    <p className="text-base-content/60 max-w-2xl mx-auto mb-12">
-                        See real-time data from our deployed sensors across the region.
-                        Experience the power of Insamo's interactive geospatial dashboard.
-                    </p>
-
-                    <MapDemo />
-
-                    <div className="mt-8">
-                        <Link to="/login" className="btn btn-primary btn-lg shadow-xl shadow-primary/30">
-                            Access Full Dashboard
-                        </Link>
+            {/* About Us Section */}
+            <section id="about" className="py-24 relative overflow-hidden bg-base-100">
+                <div className="absolute top-0 right-0 w-1/3 h-full bg-gradient-to-l from-primary/5 to-transparent -z-10"></div>
+                <div className="max-w-7xl mx-auto px-4">
+                    <div className="flex flex-col lg:flex-row items-center gap-16">
+                        <div className="flex-1 space-y-8 text-center lg:text-left">
+                            <div className="badge badge-primary badge-outline font-bold px-4 py-3">{t('about_badge')}</div>
+                            <h2 className="text-4xl lg:text-5xl font-extrabold">{t('about_title')}</h2>
+                            <div className="space-y-6 text-lg text-base-content/70">
+                                <p>{t('about_desc_1')}</p>
+                                <p>{t('about_desc_2')}</p>
+                            </div>
+                            
+                            <div className="pt-4 flex flex-col items-center lg:items-start gap-6">
+                                <span className="text-xs font-black uppercase tracking-[0.3em] opacity-40 text-center lg:text-left">{t('research_collab')}</span>
+                                <div className="flex flex-col sm:flex-row items-center gap-8">
+                                    <div className="flex items-center gap-4 group">
+                                        <div className="w-16 h-16 bg-white rounded-2xl shadow-md p-2 flex items-center justify-center border border-base-200 group-hover:shadow-xl transition-all">
+                                            <img src={LogoITS} alt="Logo ITS" className="w-12 h-12 object-contain" />
+                                        </div>
+                                        <div className="flex flex-col leading-tight">
+                                            <span className="font-black text-sm tracking-tighter uppercase">{t('its_name')}</span>
+                                            <span className="font-bold text-[11px] opacity-70 uppercase">{t('its_sub')}</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="hidden sm:block w-px h-12 bg-base-content/10"></div>
+                                    
+                                    <div className="flex items-center gap-4 group">
+                                        <div className="w-16 h-16 bg-secondary/10 rounded-2xl flex items-center justify-center font-black text-secondary text-2xl border border-secondary/20 group-hover:bg-secondary group-hover:text-white transition-all shadow-sm">MKPI</div>
+                                        <div className="flex flex-col leading-tight">
+                                            <span className="font-black text-sm tracking-tighter uppercase">{t('mkpi_name')}</span>
+                                            <span className="font-bold text-[10px] opacity-70 uppercase leading-none">{t('mkpi_sub')}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="flex-1 relative w-full hidden lg:block">
+                            <div className="relative">
+                                <div className="absolute -inset-4 bg-gradient-to-tr from-primary/20 to-secondary/20 rounded-[2.5rem] blur-2xl opacity-50"></div>
+                                <div className="card bg-base-200 border border-base-300 shadow-2xl overflow-hidden rounded-[2rem]">
+                                    <div className="card-body p-0">
+                                        <div className="bg-primary p-8 text-primary-content">
+                                            <Activity className="mb-4" size={40} />
+                                            <h3 className="text-2xl font-bold mb-2 italic">MITIGATION FIRST</h3>
+                                            <p className="opacity-80">Our technology is built to save lives and protect assets through early warning systems.</p>
+                                        </div>
+                                        <div className="p-8 grid grid-cols-2 gap-4">
+                                            <div className="p-4 bg-base-100 rounded-xl shadow-sm border border-base-200">
+                                                <div className="text-3xl font-black text-primary mb-1">24/7</div>
+                                                <div className="text-xs font-bold opacity-50 uppercase">Monitoring</div>
+                                            </div>
+                                            <div className="p-4 bg-base-100 rounded-xl shadow-sm border border-base-200">
+                                                <div className="text-3xl font-black text-secondary mb-1">99.9%</div>
+                                                <div className="text-xs font-bold opacity-50 uppercase">Uptime</div>
+                                            </div>
+                                            <div className="p-4 bg-base-100 rounded-xl shadow-sm border border-base-200">
+                                                <div className="text-3xl font-black text-accent mb-1">IoT</div>
+                                                <div className="text-xs font-bold opacity-50 uppercase">Powered</div>
+                                            </div>
+                                            <div className="p-4 bg-base-100 rounded-xl shadow-sm border border-base-200">
+                                                <div className="text-3xl font-black text-info mb-1">ITS</div>
+                                                <div className="text-xs font-bold opacity-50 uppercase">Research</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -249,7 +349,7 @@ const LandingPage = () => {
                             <img src={InsamoLogo} alt="Insamo" className="h-10 w-auto" />
                             <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Insamo</span>
                         </Link>
-                        <p className="max-w-md text-base-content/70 mb-6">Empowering industries with next-generation IoT monitoring and analytics. Built for reliability, designed for people.</p>
+                        <p className="max-w-md text-base-content/70 mb-6">{t('footer_desc')}</p>
                         <div className="flex gap-4">
                             {/* Social Icons */}
                             {['twitter', 'facebook', 'linkedin', 'github'].map(social => (
@@ -263,25 +363,24 @@ const LandingPage = () => {
                         </div>
                     </div>
                     <div>
-                        <h6 className="footer-title opacity-100 text-base-content">Company</h6>
+                        <h6 className="footer-title opacity-100 text-base-content">{t('company')}</h6>
                         <ul className="space-y-2 mt-4">
-                            <li><a href="#" className="link link-hover">About us</a></li>
+                            <li><a href="#about" className="link link-hover">{t('about_us')}</a></li>
                             <li><a href="#" className="link link-hover">Contact</a></li>
                             <li><a href="#" className="link link-hover">Jobs</a></li>
-                            {/* <li><a href="#" className="link link-hover">Press kit</a></li> */}
                         </ul>
                     </div>
                     <div>
-                        <h6 className="footer-title opacity-100 text-base-content">Legal</h6>
+                        <h6 className="footer-title opacity-100 text-base-content">{t('legal')}</h6>
                         <ul className="space-y-2 mt-4">
-                            <li><a href="#" className="link link-hover">Terms of use</a></li>
-                            <li><a href="#" className="link link-hover">Privacy policy</a></li>
-                            <li><a href="#" className="link link-hover">Cookie policy</a></li>
+                            <li><a href="#" className="link link-hover">{t('terms')}</a></li>
+                            <li><a href="#" className="link link-hover">{t('privacy')}</a></li>
+                            <li><a href="#" className="link link-hover">{t('cookies')}</a></li>
                         </ul>
                     </div>
                 </div>
                 <div className="border-t border-base-content/10 mt-10 pt-6 text-center text-sm text-base-content/60">
-                    <p>Insamo adalah Integrated Smart Monitoring merupakan Copyright © {new Date().getFullYear()} Berlian Al Kindhi & Tim, Riset Kolaborasi ITS</p>
+                    <p>{t('copyright').replace('{year}', new Date().getFullYear())}</p>
                 </div>
             </footer>
         </div>

@@ -14,6 +14,8 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "../lib/api";
 import { useEffect, useMemo, useState } from "react";
 
+import { useLanguage } from "../lib/language_context";
+
 import banjier from "../assets/banjier.webp";
 import longsyor from "../assets/longsyor.webp";
 import apiapi from "../assets/apiapi.webp";
@@ -96,6 +98,7 @@ const getCustomIcon = (type, status) => {
 };
 
 const MapDemo = () => {
+    const { t } = useLanguage();
     const { data: backendDevices } = useQuery({
         queryKey: ["public-devices"],
         queryFn: async () => {
@@ -132,24 +135,24 @@ const MapDemo = () => {
                     role="button"
                     className="btn btn-sm bg-base-100/90 backdrop-blur-md shadow-xl border-base-200 gap-2 font-black italic text-xs"
                 >
-                    <Layers size={14} /> MAP LEGEND
+                    <Layers size={14} /> {t('map_legend')}
                 </div>
 
                 <div
                     tabIndex={0}
-                    className="dropdown-content z-[1] menu mt-2 bg-base-100/90 backdrop-blur-md p-4 rounded-2xl shadow-2xl border border-base-200 w-52"
+                    className="dropdown-content z-[1] menu mt-2 bg-base-100/90 backdrop-blur-md p-4 rounded-2xl shadow-2xl border border-base-200 w-56"
                 >
                     <div className="space-y-3">
-                        <LegendItem color="bg-blue-500" label="SIGMA" icon={gempajir} />
-                        <LegendItem color="bg-cyan-500" label="FLOWS" icon={banjier} />
-                        <LegendItem color="bg-orange-500" label="LANDSLIDE" icon={longsyor} />
-                        <LegendItem color="bg-red-500" label="WILDFIRE" icon={apiapi} />
+                        <LegendItem color="bg-blue-500" label={t('legend_sigma')} icon={gempajir} />
+                        <LegendItem color="bg-cyan-500" label={t('legend_flows')} icon={banjier} />
+                        <LegendItem color="bg-orange-500" label={t('legend_landslide')} icon={longsyor} />
+                        <LegendItem color="bg-red-500" label={t('legend_wildfire')} icon={apiapi} />
                         <div className="divider my-1 opacity-10"></div>
-                        <LegendItem color="bg-black" label="OFFLINE / NO SIGNAL" icon={logoInsamo} />
+                        <LegendItem color="bg-black" label={t('legend_offline')} icon={logoInsamo} />
                     </div>
 
                     <p className="text-[10px] opacity-50 mt-4 italic font-medium leading-tight text-center">
-                        Click on markers to see live details and analysis.
+                        {t('click_marker')}
                     </p>
                 </div>
             </div>
@@ -229,7 +232,7 @@ const MapDemo = () => {
                                     to="/register"
                                     className="btn btn-primary text-white btn-sm w-full rounded-xl font-black italic shadow-lg shadow-primary/20"
                                 >
-                                    <Eye size={14} /> VIEW DETAILS
+                                    <Eye size={14} /> {t('view_details')}
                                 </Link>
                             </div>
                         </Popup>
