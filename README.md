@@ -87,6 +87,7 @@ To ensure the system is running correctly, you can use these commands:
     ```bash
     docker compose -f docker-compose.prod.yml exec app yarn prod:db:init
     docker compose -f docker-compose.prod.yml exec app yarn prod:db:migrate
+    docker compose -f docker-compose.prod.yml exec app yarn prod:db:seed
     ```
 
 ## Manual Setup (Without Docker)

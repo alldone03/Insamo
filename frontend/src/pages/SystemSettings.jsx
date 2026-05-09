@@ -47,7 +47,7 @@ const SystemSettings = () => {
         const backendUrl = import.meta.env.VITE_API_URL
             ? new URL(import.meta.env.VITE_API_URL).origin
             : "http://localhost:3000";
-        const socket = io(backendUrl, { path: '/socket.io/', transports: ['websocket', 'polling'] });
+        const socket = io(backendUrl, { path: '/api/socket.io', transports: ['websocket', 'polling'] });
 
         socket.on('telegram-log', (newLog) => {
             setLogs(prevLogs => {

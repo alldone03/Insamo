@@ -69,7 +69,7 @@ export const getImageUrl = (path) => {
 
     // Node.js backend path
     if (cleanPath.startsWith('uploads/')) {
-        return `${baseUrl || ""}/${cleanPath}`;
+        return `${baseUrl || ""}/api/${cleanPath}`;
     }
 
     // Legacy Laravel path

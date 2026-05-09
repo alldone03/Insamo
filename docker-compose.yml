@@ -30,6 +30,8 @@ services:
       - backend_yarn:/var/www/.yarn
       - /var/www/.pnp.cjs
       - /var/www/.pnp.loader.mjs
+    ports:
+      - "3000:3000"
     depends_on:
       - db
       - redis
