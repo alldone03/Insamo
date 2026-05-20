@@ -11,6 +11,7 @@ const poolConnection = mysql.createPool({
   password: process.env.DB_PASSWORD,
   database: process.env.DB_DATABASE || process.env.DB_NAME,
   port: Number(process.env.DB_PORT) || 3306,
+  timezone: '+07:00',
 });
 
 export const db = drizzle(poolConnection, { schema, mode: 'default', logger: true });

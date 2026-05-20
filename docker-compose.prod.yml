@@ -75,16 +75,24 @@ services:
       - app
 
   prediction:
-    build:
-      context: ./prediction-service
-      dockerfile: Dockerfile
-    image: insamo-prediction:prod
-    container_name: insamo-prediction-prod
-    restart: unless-stopped
-    networks:
-      - insamo-prod-network
-    depends_on:
-      - app
+      build:
+        context: ./prediction-service
+        dockerfile: Dockerfile
+      image: insamo-prediction:prod
+      container_name: insamo-prediction-prod
+      restart: unless-stopped
+      networks:
+        - insamo-prod-network
+      depends_on:
+        - app
+      # Tambahkan bagian ini untuk mengaktifkan GPU
+      deploy:
+        resources:
+          reservations:
+            devices:
+              - driver: nvidia
+                count: 1 # Ubah sesuai jumlah GPU yang ingin dialokasikan
+                capabilities: [gpu]
 
 networks:
   insamo-prod-network:
