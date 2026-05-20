@@ -26,16 +26,31 @@ Endpoint:
     }
 """
 
+import logging
+from typing import List
+import numpy as np
+import tensorflow as tf
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import List, Optional
-import numpy as np
-import logging
 
+# --- 1. Inisialisasi Logging & TensorFlow ---
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Validasi & Konfigurasi GPU (Dijalankan sekali saat startup)
+gpus = tf.config.list_physical_devices('GPU')
+if gpus:
+    logger.info(f"GPU Terdeteksi: {gpus}")
+    try:
+        for gpu in gpus:
+            tf.config.experimental.set_memory_growth(gpu, True)
+    except RuntimeError as e:
+        logger.error(f"Gagal mengatur memory growth: {e}")
+else:
+    logger.warning("GPU tidak terdeteksi, beralih menggunakan CPU.")
+
+# --- 2. Inisialisasi FastAPI ---
 app = FastAPI(title="INSAMO LSTM Prediction Service", version="1.0.0")
 
 app.add_middleware(
@@ -45,7 +60,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
+# --- 3. Pydantic Models ---
 class PredictionRequest(BaseModel):
     water_level: List[float]
     predict_steps: int = 50
@@ -74,6 +89,7 @@ class PredictionResponse(BaseModel):
     overall_status: str
 
 
+# --- 4. Helper Functions ---
 def classify_status(value: float, alert_th: float, danger_th: float) -> str:
     if value >= danger_th:
         return "DANGER"
@@ -83,23 +99,33 @@ def classify_status(value: float, alert_th: float, danger_th: float) -> str:
 
 
 def build_lstm_model(lookback: int):
-    """Build a simple LSTM model using raw TensorFlow/Keras."""
-    import tensorflow as tf
+    """Membangun model LSTM dengan dukungan GPU scope jika tersedia."""
+    device_name = '/GPU:0' if gpus else '/CPU:0'
 
-    model = tf.keras.Sequential([
-        tf.keras.layers.LSTM(64, activation='tanh', input_shape=(lookback, 1), return_sequences=True),
-        tf.keras.layers.Dropout(0.2),
-        tf.keras.layers.LSTM(32, activation='tanh'),
-        tf.keras.layers.Dropout(0.2),
-        tf.keras.layers.Dense(16, activation='relu'),
-        tf.keras.layers.Dense(1)
-    ])
-    model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.001), loss='mse')
+    print(device_name)
+    
+    with tf.device(device_name):
+        model = tf.keras.Sequential([
+            # Ciri cuDNN LSTM: activation='tanh', recurrent_activation='sigmoid'
+            tf.keras.layers.LSTM(64, activation='tanh', input_shape=(lookback, 1), return_sequences=True),
+            tf.keras.layers.Dropout(0.2),
+            
+            tf.keras.layers.LSTM(32, activation='tanh'),
+            tf.keras.layers.Dropout(0.2),
+            
+            tf.keras.layers.Dense(16, activation='relu'),
+            tf.keras.layers.Dense(1)
+        ])
+        
+        model.compile(
+            optimizer=tf.keras.optimizers.Adam(learning_rate=0.001), 
+            loss='mse'
+        )
     return model
 
 
 def create_sequences(data: np.ndarray, lookback: int):
-    """Create sliding window sequences for LSTM input."""
+    """Membuat sliding window sequences untuk input LSTM."""
     X, y = [], []
     for i in range(lookback, len(data)):
         X.append(data[i - lookback:i, 0])
@@ -107,6 +133,7 @@ def create_sequences(data: np.ndarray, lookback: int):
     return np.array(X), np.array(y)
 
 
+# --- 5. Endpoints ---
 @app.get("/health")
 def health_check():
     return {"status": "ok", "service": "insamo-lstm-prediction"}
@@ -114,8 +141,6 @@ def health_check():
 
 @app.post("/predict", response_model=PredictionResponse)
 def predict(req: PredictionRequest):
-    import tensorflow as tf
-
     data = np.array(req.water_level, dtype=np.float64)
     total = len(data)
     predict_steps = req.predict_steps
@@ -136,27 +161,23 @@ def predict(req: PredictionRequest):
     mean_val = float(np.mean(train_raw))
     std_val = float(np.std(train_raw))
     if std_val == 0:
-        std_val = 1.0  # prevent division by zero
+        std_val = 1.0  # mencegah pembagian dengan nol
 
     train_scaled = (train_raw - mean_val) / std_val
-    test_scaled = (test_raw - mean_val) / std_val
-
-    # Build full scaled series for sequence creation
     full_scaled = (data - mean_val) / std_val
 
-    # Create training sequences
+    # Buat training sequences
     train_data_for_seq = train_scaled.reshape(-1, 1)
     X_train, y_train = create_sequences(train_data_for_seq, lookback)
     X_train = X_train.reshape((X_train.shape[0], lookback, 1))
 
     logger.info(f"Training LSTM: {X_train.shape[0]} samples, {req.epochs} epochs, lookback={lookback}")
 
-    # Build & train
+    # Inisialisasi & Training Model
     model = build_lstm_model(lookback)
     model.fit(X_train, y_train, epochs=req.epochs, batch_size=16, verbose=0)
 
-    # === Evaluate on test set ===
-    # Build test sequences from full data (need lookback window from train)
+    # === Evaluasi pada Test Set ===
     full_for_test = full_scaled.reshape(-1, 1)
     X_test, y_test = create_sequences(
         full_for_test[train_size - lookback:],
@@ -166,38 +187,42 @@ def predict(req: PredictionRequest):
 
     test_pred_scaled = model.predict(X_test, verbose=0).flatten()
 
-    # Denormalize
+    # Denormalisasi data evaluasi
     test_pred = test_pred_scaled * std_val + mean_val
     test_act = y_test * std_val + mean_val
 
-    # Metrics
+    # Kalkulasi Metrik Evaluasi
     rmse = float(np.sqrt(np.mean((test_act - test_pred) ** 2)))
     mae = float(np.mean(np.abs(test_act - test_pred)))
     non_zero = test_act != 0
     mape = float(np.mean(np.abs((test_act[non_zero] - test_pred[non_zero]) / test_act[non_zero])) * 100) if np.any(non_zero) else 0.0
 
-    # === Future Prediction (predict_steps beyond last data) ===
-    # Start from last lookback window of actual data
+    # === Prediksi Masa Depan (Autoregressive) ===
     last_window = full_scaled[-lookback:].reshape(1, lookback, 1)
     future_predictions = []
-
     current_window = last_window.copy()
+
     for step in range(predict_steps):
         pred_scaled = model.predict(current_window, verbose=0)[0, 0]
         pred_value = float(pred_scaled * std_val + mean_val)
+        
+        # Logika lantai bawah air (tidak mungkin minus)
         if pred_value < 0:
             pred_value = 0.0
 
         status = classify_status(pred_value, req.alert_threshold, req.danger_threshold)
         future_predictions.append(PredictionPoint(step=step + 1, value=round(pred_value, 4), status=status))
 
-        # Slide window
+        # Geser sliding window (masukkan hasil prediksi terbaru ke dalam window input berikutnya)
         new_window = np.append(current_window[0, 1:, :], [[pred_scaled]], axis=0)
         current_window = new_window.reshape(1, lookback, 1)
 
-    # Overall status
+    # Status keseluruhan berdasarkan nilai tertinggi hasil prediksi
     peak = max(p.value for p in future_predictions)
     overall = classify_status(peak, req.alert_threshold, req.danger_threshold)
+
+    # Clear Keras session untuk mencegah memory leak
+    tf.keras.backend.clear_session()
 
     return PredictionResponse(
         predictions=future_predictions,
