@@ -2,6 +2,14 @@ import React from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Activity } from 'lucide-react';
 
+// Parse timestamp sebagai UTC agar konversi ke WIB benar
+const parseUTC = (ts) => {
+    if (!ts) return new Date();
+    const str = typeof ts === 'string' ? ts : String(ts);
+    // Kalau tidak ada info timezone, anggap UTC (tambah Z)
+    return new Date(str.includes('Z') || str.includes('+') ? str : str + 'Z');
+};
+
 const GenericChart = ({ data, title, lines, yAxisLabel, color }) => {
     return (
         <div className="card bg-base-100 shadow-xl border border-base-200">
@@ -19,8 +27,9 @@ const GenericChart = ({ data, title, lines, yAxisLabel, color }) => {
                                 tick={{ fontSize: 10 }}
                                 tickFormatter={(timeStr) => {
                                     if (!timeStr) return '';
-                                    const date = new Date(timeStr);
-                                    return `${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}`;
+                                    const match = timeStr.match(/T(\d{2}):(\d{2})/);
+                                    if (match) return match[1] + ':' + match [2];
+                                    return timeStr;
                                 }}
                             />
                             <YAxis
@@ -30,6 +39,12 @@ const GenericChart = ({ data, title, lines, yAxisLabel, color }) => {
                             <Tooltip
                                 contentStyle={{ backgroundColor: 'rgba(0,0,0,0.8)', border: 'none', borderRadius: '8px', color: '#fff' }}
                                 itemStyle={{ color: '#fff' }}
+                                labelFormatter={(label) => {
+                                    if (!label) return '';
+                                    const m = label.match(/(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})/);
+                                    if (m) return m[3] + '/' + m[2] + '/' + m[1] + ', ' + m[4] + ':' + m[5] + ':' + m[6];
+                                    return label;
+                                }}
                             />
                             <Legend wrapperStyle={{ fontSize: 10 }} />
                             {lines.map((line, i) => (

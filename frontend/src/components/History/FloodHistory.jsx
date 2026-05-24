@@ -4,7 +4,6 @@ import {
     TrendingUp,
     BarChart3,
     Table as TableIcon,
-    Search,
     Download,
     Filter,
     Activity
@@ -17,6 +16,21 @@ import { api } from "../../lib/api";
 import { io } from "socket.io-client";
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444'];
+
+// Parse timestamp sebagai UTC supaya konversi ke WIB benar
+const parseUTC = (ts) => {
+    if (!ts) return new Date();
+    const str = typeof ts === 'string' ? ts : String(ts);
+    return new Date(str.includes('Z') || str.includes('+') ? str : str + 'Z');
+};
+
+const formatWIB = (ts) => {
+    return parseUTC(ts).toLocaleString('id-ID', {
+        timeZone: 'Asia/Jakarta',
+        day: '2-digit', month: '2-digit', year: 'numeric',
+        hour: '2-digit', minute: '2-digit', second: '2-digit'
+    });
+};
 
 const getStatus = (level, settings) => {
     const danger = settings?.danger_threshold || 80;
@@ -75,12 +89,21 @@ const FloodHistory = () => {
 
                 params.append('start_date', start.toISOString());
                 params.append('end_date', now.toISOString());
-                params.append('per_page', '1000'); // get enough logs
+
+                // Naikkan limit supaya data 30 hari cukup terwakili
+                const perPage = dateRange === '30d' ? 5000 : dateRange === '7d' ? 2000 : 1000;
+                params.append('per_page', String(perPage));
 
                 const res = await api.get(`/sensor-readings?${params.toString()}`);
                 if (isMounted && res.data && res.data.data) {
-                    setRawLogs(res.data.data);
-                    setPage(1); // reset page on filter change
+                    // Filter out readings dengan water_level = 0 atau null (data sensor error)
+                    const validLogs = res.data.data.filter(log =>
+                        log.water_level !== null &&
+                        log.water_level !== undefined &&
+                        log.water_level > 0
+                    );
+                    setRawLogs(validLogs);
+                    setPage(1);
                 }
             } catch (error) {
                 console.error("Error fetching readings:", error);
@@ -101,28 +124,23 @@ const FloodHistory = () => {
         socket.on('new_sensor_reading', (payload) => {
             if (payload.device_type === 'FLOWS') {
                 setRawLogs(prev => {
-                    if (deviceId && String(payload.device_id) !== String(deviceId)) {
-                        return prev;
-                    }
-                    // Prevent duplicate insertion
-                    if (prev.some(log => log.id === payload.reading.id)) {
-                        return prev;
-                    }
+                    if (deviceId && String(payload.device_id) !== String(deviceId)) return prev;
+                    if (prev.some(log => log.id === payload.reading.id)) return prev;
+                    // Hanya tambahkan kalau water_level valid
+                    if (!payload.reading.water_level || payload.reading.water_level <= 0) return prev;
                     return [payload.reading, ...prev];
                 });
             }
         });
 
-        return () => {
-            socket.disconnect();
-        };
+        return () => socket.disconnect();
     }, [deviceId]);
 
     const hourlyData = useMemo(() => {
         if (!rawLogs.length) return [];
         const groups = {};
         rawLogs.forEach(log => {
-            const d = new Date(log.recorded_at);
+            const d = parseUTC(log.recorded_at);
             const hour = `${String(d.getHours()).padStart(2, '0')}:00`;
             if (!groups[hour]) groups[hour] = { sum: 0, count: 0 };
             groups[hour].sum += calibrateLevel(log.water_level || 0);
@@ -137,12 +155,11 @@ const FloodHistory = () => {
     const trendData = useMemo(() => {
         if (!rawLogs.length) return [];
         const groups = {};
-        // Use ascending order for trend timeline
         [...rawLogs].reverse().forEach(log => {
-            const d = new Date(log.recorded_at);
+            const d = parseUTC(log.recorded_at);
             const key = dateRange === '1d'
                 ? `${String(d.getHours()).padStart(2, '0')}:00`
-                : `${d.getMonth() + 1}/${d.getDate()}`;
+                : `${d.getDate()}/${d.getMonth() + 1}`;
             if (!groups[key]) groups[key] = { sum: 0, count: 0 };
             groups[key].sum += calibrateLevel(log.water_level || 0);
             groups[key].count += 1;
@@ -150,17 +167,12 @@ const FloodHistory = () => {
         const timeline = Object.keys(groups);
         return timeline.map((time, idx, arr) => {
             const value = +(groups[time].sum / groups[time].count).toFixed(1);
-            let maSum = 0;
-            let maCount = 0;
+            let maSum = 0, maCount = 0;
             for (let i = Math.max(0, idx - 6); i <= idx; i++) {
                 maSum += +(groups[arr[i]].sum / groups[arr[i]].count);
                 maCount++;
             }
-            return {
-                time,
-                value,
-                ma: +(maSum / maCount).toFixed(1)
-            }
+            return { time, value, ma: +(maSum / maCount).toFixed(1) };
         });
     }, [rawLogs, dateRange, currentDeviceSettings]);
 
@@ -168,7 +180,6 @@ const FloodHistory = () => {
         const danger = currentDeviceSettings?.danger_threshold || 80;
         const alert = currentDeviceSettings?.alert_threshold || 50;
         const counts = { [`< ${alert}cm`]: 0, [`${alert}-${danger}cm`]: 0, [`> ${danger}cm`]: 0 };
-
         rawLogs.forEach(log => {
             const l = calibrateLevel(log.water_level || 0);
             if (l < alert) counts[`< ${alert}cm`]++;
@@ -382,7 +393,7 @@ const FloodHistory = () => {
                                     const status = getStatus(calLevel, currentDeviceSettings);
                                     return (
                                         <tr key={log.id}>
-                                            <td>{new Date(log.recorded_at).toLocaleString('id-ID')}</td>
+                                            <td>{formatWIB(log.recorded_at)}</td>
                                             <td className="font-bold text-primary">{calLevel.toFixed(1)} cm</td>
                                             <td><span className={`badge badge-xs ${status.color}`}>{status.label}</span></td>
                                             <td>{(log.temperature || 0).toFixed(1)}</td>
@@ -422,4 +433,3 @@ const FloodHistory = () => {
 };
 
 export default FloodHistory;
-

@@ -12,11 +12,18 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 3000;
 
+
+
 const server = http.createServer(app);
+const allowedOrigins = (process.env.FRONTEND_URL || "http://localhost:5173")
+    .split(",")
+    .map(origin => origin.trim());
+// console.log(allowedOrigins);
+
 const io = new Server(server, {
     path: '/api/socket.io',
     cors: {
-        origin: process.env.FRONTEND_URL || "http://localhost:5173",
+        origin: allowedOrigins,
         credentials: true,
         methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
     }
@@ -25,7 +32,7 @@ const io = new Server(server, {
 export { io };
 
 app.use(cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:5173",
+    origin: allowedOrigins,
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"]
