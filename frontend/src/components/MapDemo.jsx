@@ -168,13 +168,13 @@ const MapDemo = () => {
                 <SetBounds devices={devices} />
 
                 <LayersControl position="bottomleft">
-                    <LayersControl.BaseLayer checked name="Street View">
+                    <LayersControl.BaseLayer name="Street View">
                         <TileLayer
                             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                         />
                     </LayersControl.BaseLayer>
-                    <LayersControl.BaseLayer name="Satellite View">
+                    <LayersControl.BaseLayer checked name="Satellite View">
                         <TileLayer
                             url="https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}"
                             attribution="&copy; Google Maps"
@@ -200,18 +200,18 @@ const MapDemo = () => {
                                     <div className="flex flex-col gap-1">
                                         <span
                                             className={`badge badge-sm font-black italic ${device.device_type === "SIGMA"
-                                                    ? "badge-primary"
-                                                    : device.device_type === "FLOWS"
-                                                        ? "badge-secondary"
-                                                        : "badge-accent"
+                                                ? "badge-primary"
+                                                : device.device_type === "FLOWS"
+                                                    ? "badge-secondary"
+                                                    : "badge-accent"
                                                 }`}
                                         >
                                             {device.device_type}
                                         </span>
                                         <span
                                             className={`text-[10px] font-black italic px-2 py-0.5 rounded-full ${device.status === "ACTIVE"
-                                                    ? "bg-success/20 text-success"
-                                                    : "bg-error/20 text-error"
+                                                ? "bg-success/20 text-success"
+                                                : "bg-error/20 text-error"
                                                 }`}
                                         >
                                             {device.status}

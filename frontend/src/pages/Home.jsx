@@ -313,6 +313,27 @@ export default function Home() {
                     style={{ height: "100%", width: "100%" }}
                     className="z-0"
                 >
+                    <LayersControl position="bottomleft">
+                        <LayersControl.BaseLayer name="Satellite View">
+                            <TileLayer
+                                url="https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}"
+                                attribution='&copy; Google Maps'
+                            />
+                        </LayersControl.BaseLayer>
+                        <LayersControl.BaseLayer checked={true} name="Street View">
+                            <TileLayer
+                                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                            />
+                        </LayersControl.BaseLayer>
+
+                        <LayersControl.BaseLayer name="Terrain View">
+                            <TileLayer
+                                url="https://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}"
+                                attribution='&copy; Google Maps'
+                            />
+                        </LayersControl.BaseLayer>
+                    </LayersControl>
                     <SetBounds devices={devices} />
 
                     {/* Dynamic Overlays */}
@@ -356,26 +377,7 @@ export default function Home() {
                         </Marker>
                     )}
 
-                    <LayersControl position="bottomleft">
-                        <LayersControl.BaseLayer name="Street View">
-                            <TileLayer
-                                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                            />
-                        </LayersControl.BaseLayer>
-                        <LayersControl.BaseLayer checked name="Satellite View">
-                            <TileLayer
-                                url="https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}"
-                                attribution='&copy; Google Maps'
-                            />
-                        </LayersControl.BaseLayer>
-                        <LayersControl.BaseLayer name="Terrain View">
-                            <TileLayer
-                                url="https://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}"
-                                attribution='&copy; Google Maps'
-                            />
-                        </LayersControl.BaseLayer>
-                    </LayersControl>
+
 
                     {devices?.filter(d => {
                         const isOffline = d.status === 'OFFLINE' || d.status === 'INACTIVE';
