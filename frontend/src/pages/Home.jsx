@@ -357,13 +357,13 @@ export default function Home() {
                     )}
 
                     <LayersControl position="bottomleft">
-                        <LayersControl.BaseLayer checked name="Street View">
+                        <LayersControl.BaseLayer name="Street View">
                             <TileLayer
                                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                             />
                         </LayersControl.BaseLayer>
-                        <LayersControl.BaseLayer name="Satellite View">
+                        <LayersControl.BaseLayer checked name="Satellite View">
                             <TileLayer
                                 url="https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}"
                                 attribution='&copy; Google Maps'

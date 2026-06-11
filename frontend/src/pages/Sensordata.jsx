@@ -54,22 +54,45 @@ export default function Sensordata() {
     const readings = device?.sensor_readings || [];
 
     // Format datetime for display
-    const formatDateTime = (dateString) => {
-        const date = new Date(dateString);
-        const yyyy = date.getFullYear();
-        const mm = String(date.getMonth() + 1).padStart(2, '0');
-        const dd = String(date.getDate()).padStart(2, '0');
-        const hh = String(date.getHours()).padStart(2, '0');
-        const min = String(date.getMinutes()).padStart(2, '0');
-        const ss = String(date.getSeconds()).padStart(2, '0');
-        return `${yyyy}-${mm}-${dd} ${hh}:${min}:${ss}`;
-    };
+function formatDate(isoString) {
+  const date = new Date(isoString);
+
+  const pad = (n) => String(n).padStart(2, '0');
+
+  const bulan = [
+    'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+  ];
+
+  const day     = date.getUTCDate();
+  const month   = bulan[date.getUTCMonth()];
+  const year    = date.getUTCFullYear();
+  const hours   = pad(date.getUTCHours());
+  const minutes = pad(date.getUTCMinutes());
+
+  return `${day} ${month} ${year}, ${hours}:${minutes}`;
+}
+
+// Contoh
+
+const parseUTC = (ts) => {
+    if (!ts) return new Date();
+    const str = typeof ts === 'string' ? ts : String(ts);
+    return new Date(str.includes('Z') || str.includes('+') ? str : str + 'Z');
+};
+    const formatWIB = (ts) => {
+    return parseUTC(ts).toLocaleString('id-ID', {
+        timeZone: 'Asia/Jakarta',
+        day: '2-digit', month: '2-digit', year: 'numeric',
+        hour: '2-digit', minute: '2-digit', second: '2-digit'
+    });
+};
 
     // Format readings with datetime
     const formattedReadings = readings.map(r => ({
         ...r,
         time: r.recorded_at,
-        datetime: formatDateTime(r.recorded_at),
+        datetime: formatDate(r.recorded_at),
         x: r.vib_x || r.tilt_x || 0,
         y: r.vib_y || r.tilt_y || 0,
         z: r.vib_z || r.tilt_z || 0,
@@ -82,6 +105,8 @@ export default function Sensordata() {
         gyro_y: r.gyro_y || 0,
         gyro_z: r.gyro_z || 0,
     })).reverse();
+
+    console.log(formattedReadings);
 
     if (isLoadingDevice) return <div className="flex justify-center p-20"><span className="loading loading-spinner loading-lg text-primary"></span></div>;
 
@@ -285,9 +310,9 @@ export default function Sensordata() {
                             </tr>
                         </thead>
                         <tbody>
-                            {[...readings].reverse().map((r, i) => (
+                            {[...formattedReadings].reverse().map((r, i) => (
                                 <tr key={i}>
-                                    <td className="font-mono text-[11px] opacity-60">{new Date(r.recorded_at).toLocaleString()}</td>
+                                    <td className="font-mono text-[11px] opacity-60">{r.datetime}</td>
                                     {device?.device_type === 'SIGMA' && <><td>{r.tilt_x}</td><td>{r.tilt_y}</td><td>{r.magnitude}</td></>}
                                     {device?.device_type === 'FLOWS' && <><td>{r.water_level}</td><td>{r.wind_speed}</td><td>{r.temperature}</td></>}
                                     {device?.device_type === 'LANDSLIDE' && <><td>{r.landslide_score}</td><td><span className={`badge badge-xs font-bold ${r.landslide_status === 'DANGER' ? 'badge-error' : 'badge-success'}`}>{r.landslide_status}</span></td></>}
