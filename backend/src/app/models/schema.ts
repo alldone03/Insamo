@@ -113,6 +113,13 @@ export const sensorReadings = mysqlTable('sensor_readings', {
     gyro_z: double('gyro_z'),
     rainfall_intensity: double('rainfall_intensity'),
     device_tilt: double('device_tilt'),
+    // SIGMA (earthquake) specific fields
+    shindo: double('shindo'),
+    pga_gal: double('pga_gal'),
+    earthquake_status: varchar('earthquake_status', { length: 20 }),
+    gempa_lat: double('gempa_lat'),
+    gempa_lng: double('gempa_lng'),
+    satellite_count: int('satellite_count'),
     created_at: timestamp('created_at').defaultNow(),
 });
 

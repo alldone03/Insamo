@@ -92,21 +92,51 @@ async function run() {
         for (const device of devices) {
             for (let i = 0; i < 10; i++) {
                 const recordedAt = new Date();
-                recordedAt.setHours(recordedAt.getHours() - i);
-                
-                await db.insert(schema.sensorReadings).values({
-                    device_id: device.id,
-                    recorded_at: recordedAt,
-                    temperature: Math.floor(Math.random() * (35 - 25 + 1)) + 25 + Math.random(),
-                    humidity: Math.floor(Math.random() * (90 - 60 + 1)) + 60 + Math.random(),
-                    wind_speed: Math.floor(Math.random() * 20) + Math.random(),
-                    water_level: Math.floor(Math.random() * 500) / 10,
-                    tilt_x: Math.floor(Math.random() * 20 - 10) / 10,
-                    tilt_y: Math.floor(Math.random() * 20 - 10) / 10,
-                    magnitude: Math.floor(Math.random() * 50) / 10,
-                    landslide_score: Math.floor(Math.random() * 100) / 100,
-                    landslide_status: Math.random() > 0.5 ? 'SAFE' : 'WARNING',
-                });
+                recordedAt.setMinutes(recordedAt.getMinutes() - i * 2);
+
+                if (device.device_type === 'SIGMA') {
+                    // Simulasi data akselerometer MPU6050 (m/s²) dengan noise ringan
+                    const vib_x = parseFloat((Math.random() * 0.4 - 0.2).toFixed(4));
+                    const vib_y = parseFloat((Math.random() * 0.4 - 0.2).toFixed(4));
+                    const vib_z = parseFloat((9.8 + Math.random() * 0.1 - 0.05).toFixed(4)); // ~gravitasi
+                    const pga_gal = parseFloat((Math.random() * 2.5).toFixed(3)); // < threshold 3.0 Gal = aman
+                    const shindo = pga_gal > 0.01
+                        ? parseFloat(((2.0 * Math.log10(pga_gal)) + 0.94).toFixed(2))
+                        : 0;
+
+                    await db.insert(schema.sensorReadings).values({
+                        device_id: device.id,
+                        recorded_at: recordedAt,
+                        vib_x,
+                        vib_y,
+                        vib_z,
+                        gyro_x: parseFloat((Math.random() * 0.02 - 0.01).toFixed(5)),
+                        gyro_y: parseFloat((Math.random() * 0.02 - 0.01).toFixed(5)),
+                        gyro_z: parseFloat((Math.random() * 0.02 - 0.01).toFixed(5)),
+                        pga_gal,
+                        shindo: shindo > 0 ? shindo : null,
+                        earthquake_status: 'AMAN',
+                        device_tilt: shindo > 0 ? shindo : null,
+                        magnitude: pga_gal,
+                        satellite_count: Math.floor(Math.random() * 6) + 4, // 4-9 satelit
+                        gempa_lat: null,
+                        gempa_lng: null,
+                    });
+                } else {
+                    await db.insert(schema.sensorReadings).values({
+                        device_id: device.id,
+                        recorded_at: recordedAt,
+                        temperature: Math.floor(Math.random() * (35 - 25 + 1)) + 25 + Math.random(),
+                        humidity: Math.floor(Math.random() * (90 - 60 + 1)) + 60 + Math.random(),
+                        wind_speed: Math.floor(Math.random() * 20) + Math.random(),
+                        water_level: Math.floor(Math.random() * 500) / 10,
+                        tilt_x: Math.floor(Math.random() * 20 - 10) / 10,
+                        tilt_y: Math.floor(Math.random() * 20 - 10) / 10,
+                        magnitude: Math.floor(Math.random() * 50) / 10,
+                        landslide_score: Math.floor(Math.random() * 100) / 100,
+                        landslide_status: Math.random() > 0.5 ? 'SAFE' : 'WARNING',
+                    });
+                }
             }
         }
 

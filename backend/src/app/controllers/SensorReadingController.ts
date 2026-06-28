@@ -125,6 +125,12 @@ export class SensorReadingController extends Controller {
         gyro_z: data.gyro_z ? Number(data.gyro_z) : null,
         rainfall_intensity: data.rainfall_intensity ? Number(data.rainfall_intensity) : null,
         device_tilt: data.device_tilt ? Number(data.device_tilt) : null,
+        shindo: data.shindo != null ? Number(data.shindo) : null,
+        pga_gal: data.pga_gal != null ? Number(data.pga_gal) : null,
+        earthquake_status: data.earthquake_status || null,
+        gempa_lat: data.gempa_lat != null ? Number(data.gempa_lat) : null,
+        gempa_lng: data.gempa_lng != null ? Number(data.gempa_lng) : null,
+        satellite_count: data.satellite_count != null ? Number(data.satellite_count) : null,
       });
 
       const readingResult = await db.select().from(sensorReadings).where(eq(sensorReadings.id, Number(insertResult.insertId))).limit(1);
