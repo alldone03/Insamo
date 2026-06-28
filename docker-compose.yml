@@ -23,6 +23,7 @@ services:
       REDIS_PORT: 6379
     networks:
       - insamo-dev-network
+      - insamo-network
     volumes:
       - ./backend:/var/www
       - ./backend/uploads:/var/www/uploads
@@ -101,9 +102,11 @@ services:
 networks:
   insamo-dev-network:
     driver: bridge
+  insamo-network:
+    driver: bridge
 
 volumes:
-  dbdata-dev:
+  dbdata:
     driver: local
   backend_node_modules:
   backend_yarn:
