@@ -130,12 +130,12 @@ const AiPredict = () => {
       {/* Controls */}
       <div className="flex flex-col md:flex-row items-start md:items-center gap-6 mb-6">
         {/* Device Dropdown */}
-        <div className="dropdown">
+        <div className="dropdown dropdown-bottom">
           <div tabIndex={0} role="button" className="btn bg-[#1B75A7] hover:bg-[#155e8a] text-white border-none rounded-md px-6">
             {loadingDevices ? 'Loading...' : selectedDevice ? selectedDevice.name : 'Select Device'}
-            <ChevronDown className="w-4 h-4 ml-2" />
+            <ChevronDown className="w-4 h-4 ml-2" />d
           </div>
-          <ul tabIndex={0} className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-64 mt-2 max-h-60 overflow-y-auto">
+          <ul tabIndex={0} className="z-[50] menu dropdown-content bg-base-100 rounded-box z-1 w-52 h-30 p-2 shadow-sm ">
             {devices.map((d) => (
               <li key={d.id}>
                 <a onClick={() => { setSelectedDevice(d); setResult(null); }}>
@@ -146,6 +146,8 @@ const AiPredict = () => {
             {devices.length === 0 && <li><a className="text-gray-400">No FLOWS devices</a></li>}
           </ul>
         </div>
+
+
 
         {/* Predict Steps */}
         <div className="flex items-center gap-4 text-sm font-semibold text-gray-600 bg-white px-4 py-2 rounded-lg shadow-sm">
@@ -352,11 +354,10 @@ const AiPredict = () => {
                 </div>
 
                 <button
-                  className={`btn w-full border-none rounded-lg font-bold tracking-wide mt-auto text-white ${
-                    result.overall_status === 'DANGER' ? 'bg-red-600 hover:bg-red-700'
-                      : result.overall_status === 'ALERT' ? 'bg-yellow-500 hover:bg-yellow-600'
-                        : 'bg-[#28a745] hover:bg-[#218838]'
-                  }`}
+                  className={`btn w-full border-none rounded-lg font-bold tracking-wide mt-auto text-white ${result.overall_status === 'DANGER' ? 'bg-red-600 hover:bg-red-700'
+                    : result.overall_status === 'ALERT' ? 'bg-yellow-500 hover:bg-yellow-600'
+                      : 'bg-[#28a745] hover:bg-[#218838]'
+                    }`}
                 >
                   {result.overall_status === 'DANGER' ? 'IMMEDIATE ACTION REQUIRED'
                     : result.overall_status === 'ALERT' ? 'MONITOR CLOSELY'
