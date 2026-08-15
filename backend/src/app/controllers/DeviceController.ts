@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { Controller } from './Controller';
 import { db } from '../../config/database';
 import { redis } from '../../config/redis';
-import { devices, users, deviceUser, deviceSettings, sensorReadings } from '../models/schema';
+import { devices, users, deviceUser, deviceSettings, sensorReadings, classificationResults } from '../models/schema';
 import { eq, desc, and, sql, inArray } from 'drizzle-orm';
 
 export class DeviceController extends Controller {
@@ -230,7 +230,23 @@ export class DeviceController extends Controller {
         .where(eq(sensorReadings.device_id, device.id))
         .orderBy(desc(sensorReadings.recorded_at))
         .limit(100);
-      device.sensor_readings = latestReading;
+
+      // Attach classification results (e.g. seismic anomaly confidence) per reading
+      const readingIds = latestReading.map(r => r.id);
+      const relatedClassifications = readingIds.length > 0
+        ? await db.select().from(classificationResults).where(inArray(classificationResults.sensor_reading_id, readingIds))
+        : [];
+      const classificationsByReadingId = new Map<number, typeof relatedClassifications>();
+      for (const c of relatedClassifications) {
+        if (c.sensor_reading_id == null) continue;
+        const list = classificationsByReadingId.get(c.sensor_reading_id) || [];
+        list.push(c);
+        classificationsByReadingId.set(c.sensor_reading_id, list);
+      }
+      device.sensor_readings = latestReading.map(r => ({
+        ...r,
+        classificationResults: classificationsByReadingId.get(r.id) || [],
+      }));
       
       // 4. Get total readings count
       const [countResult] = await db.select({ 
