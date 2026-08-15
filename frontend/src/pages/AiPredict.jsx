@@ -133,9 +133,9 @@ const AiPredict = () => {
         <div className="dropdown dropdown-bottom">
           <div tabIndex={0} role="button" className="btn bg-[#1B75A7] hover:bg-[#155e8a] text-white border-none rounded-md px-6">
             {loadingDevices ? 'Loading...' : selectedDevice ? selectedDevice.name : 'Select Device'}
-            <ChevronDown className="w-4 h-4 ml-2" />d
+            <ChevronDown className="w-4 h-4 ml-2" />
           </div>
-          <ul tabIndex={0} className="z-[50] menu dropdown-content bg-base-100 rounded-box z-1 w-52 h-30 p-2 shadow-sm ">
+          <ul tabIndex={0} className="z-[50] menu dropdown-content bg-base-100 rounded-box w-64 max-h-60 p-2 shadow-sm overflow-y-auto">
             {devices.map((d) => (
               <li key={d.id}>
                 <a onClick={() => { setSelectedDevice(d); setResult(null); }}>

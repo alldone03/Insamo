@@ -304,7 +304,7 @@ const parseUTC = (ts) => {
                         <thead className="sticky top-0 bg-base-100 z-10 font-black uppercase text-[10px] opacity-70">
                             <tr>
                                 <th>Timestamp</th>
-                                {device?.device_type === 'SIGMA' && <><th>Tilt X</th><th>Tilt Y</th><th>Magnitude</th></>}
+                                {device?.device_type === 'SIGMA' && <><th>Vib X</th><th>Vib Y</th><th>Vib Z</th><th>PGA (Gal)</th><th>Shindo</th><th>Status</th><th>AI Confidence</th></>}
                                 {device?.device_type === 'FLOWS' && <><th>Water Level</th><th>Wind Speed</th><th>Temp</th></>}
                                 {device?.device_type === 'LANDSLIDE' && <><th>Score</th><th>Status</th></>}
                             </tr>
@@ -313,7 +313,12 @@ const parseUTC = (ts) => {
                             {[...formattedReadings].reverse().map((r, i) => (
                                 <tr key={i}>
                                     <td className="font-mono text-[11px] opacity-60">{r.datetime}</td>
-                                    {device?.device_type === 'SIGMA' && <><td>{r.tilt_x}</td><td>{r.tilt_y}</td><td>{r.magnitude}</td></>}
+                                    {device?.device_type === 'SIGMA' && <><td>{r.vib_x}</td><td>{r.vib_y}</td><td>{r.vib_z}</td><td>{r.pga_gal ?? 0}</td><td>{r.shindo ?? '-'}</td><td>
+                                        <span className={`badge badge-xs font-bold ${r.earthquake_status === 'GEMPA' ? 'badge-error' : r.earthquake_status === 'CROSSCHECK' ? 'badge-warning' : 'badge-success'}`}>
+                                            {r.earthquake_status || 'AMAN'}
+                                        </span>
+                                    </td>
+                                    <td>{r.classificationResults?.[0] ? `${(r.classificationResults[0].confidence * 100).toFixed(1)}%` : '-'}</td></>}
                                     {device?.device_type === 'FLOWS' && <><td>{r.water_level}</td><td>{r.wind_speed}</td><td>{r.temperature}</td></>}
                                     {device?.device_type === 'LANDSLIDE' && <><td>{r.landslide_score}</td><td><span className={`badge badge-xs font-bold ${r.landslide_status === 'DANGER' ? 'badge-error' : 'badge-success'}`}>{r.landslide_status}</span></td></>}
                                 </tr>

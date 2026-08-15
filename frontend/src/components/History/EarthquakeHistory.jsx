@@ -40,7 +40,11 @@ const EarthquakeHistory = () => {
                                     <th className="font-black">AX</th>
                                     <th className="font-black">AY</th>
                                     <th className="font-black">AZ</th>
-                                    <th className="font-black">Label</th>
+                                    <th className="font-black">PGA (Gal)</th>
+                                    <th className="font-black">Shindo</th>
+                                    <th className="font-black">Satelit</th>
+                                    <th className="font-black">Status</th>
+                                    <th className="font-black">AI Confidence</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -53,11 +57,15 @@ const EarthquakeHistory = () => {
                                         <td>{log.vib_x || 0}</td>
                                         <td>{log.vib_y || 0}</td>
                                         <td>{log.vib_z || 0}</td>
+                                        <td>{log.pga_gal ?? 0}</td>
+                                        <td>{log.shindo ?? '-'}</td>
+                                        <td>{log.satellite_count ?? '-'}</td>
                                         <td>
-                                            <span className={`badge badge-xs font-bold ${log.classification_results?.[0]?.label === 'NORMAL' ? 'badge-success' : 'badge-error'}`}>
-                                                {log.classification_results?.[0]?.label || 'NORMAL'}
+                                            <span className={`badge badge-xs font-bold ${log.earthquake_status === 'GEMPA' ? 'badge-error' : log.earthquake_status === 'CROSSCHECK' ? 'badge-warning' : 'badge-success'}`}>
+                                                {log.earthquake_status || 'AMAN'}
                                             </span>
                                         </td>
+                                        <td>{log.classificationResults?.[0] ? `${(log.classificationResults[0].confidence * 100).toFixed(1)}%` : '-'}</td>
                                     </tr>
                                 ))}
                             </tbody>

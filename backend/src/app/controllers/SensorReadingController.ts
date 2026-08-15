@@ -5,6 +5,7 @@ import { redis } from '../../config/redis';
 import { sensorReadings, devices, deviceSettings, classificationResults, deviceUser } from '../models/schema';
 import { eq, desc, and, gte, lte, inArray } from 'drizzle-orm';
 import { TelegramService } from '../services/TelegramService';
+import { SeismicClassificationService } from '../services/SeismicClassificationService';
 import { io } from '../../index';
 
 export class SensorReadingController extends Controller {
@@ -59,15 +60,23 @@ export class SensorReadingController extends Controller {
             .limit(limitNum);
 
           const readings = await query;
-          
+
+          // Batch load related devices to avoid N+1 queries
+          const readingDeviceIds = [...new Set(readings.map(r => r.device_id).filter((id): id is number => id !== null))];
+          const relatedDevices = readingDeviceIds.length > 0
+              ? await db.select().from(devices).where(inArray(devices.id, readingDeviceIds))
+              : [];
+          const deviceMap = new Map(relatedDevices.map(d => [d.id, d]));
+
           // Eager load classificationResults manually
           const augmentedReadings = await Promise.all(readings.map(async (reading) => {
               const currentResult = await db.select()
                 .from(classificationResults)
                 .where(eq(classificationResults.sensor_reading_id, reading.id));
-              
+
               return {
                   ...reading,
+                  device: reading.device_id ? deviceMap.get(reading.device_id) : undefined,
                   classificationResults: currentResult
               };
           }));
@@ -141,6 +150,16 @@ export class SensorReadingController extends Controller {
           await redis.set(`device:${device.id}:latest_reading`, JSON.stringify(reading));
       } catch (err) {
           console.error('Failed to cache reading to Redis:', err);
+      }
+
+      // Seismic anomaly classification for SIGMA devices
+      if (device.device_type === 'SIGMA') {
+          await SeismicClassificationService.classifyAndStore(
+              device.id,
+              reading.id,
+              reading.pga_gal,
+              reading.earthquake_status
+          );
       }
 
       // Alert Logic for Flood (FLOWS)

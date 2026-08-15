@@ -12,6 +12,7 @@ const Earthquake = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [chartData, setChartData] = useState([]);
   const [latestReadings, setLatestReadings] = useState({});
+  const [latestConfidence, setLatestConfidence] = useState(null);
   const [currentTime, setCurrentTime] = useState(Date.now());
 
   useEffect(() => {
@@ -83,6 +84,8 @@ const Earthquake = () => {
       api.get(`/sensor-readings?device_id=${selectedDevice.id}`).then(res => {
         const readings = res.data && Array.isArray(res.data) ? res.data : (res.data?.data || []);
 
+        setLatestConfidence(readings[0]?.classificationResults?.[0]?.confidence ?? null);
+
         const formattedData = readings.reverse().map(r => ({
           time: r.recorded_at,
           x: r.vib_x || r.tilt_x || 0,
@@ -96,6 +99,21 @@ const Earthquake = () => {
       });
     }
   }, [selectedDevice]);
+
+  const getReading = (device) => {
+    return latestReadings[device.id] || device.sensor_readings?.[0] || {};
+  };
+
+  const getStatusBadge = (status) => {
+    switch (status) {
+      case 'GEMPA':
+        return { label: 'GEMPA', color: 'badge-error' };
+      case 'CROSSCHECK':
+        return { label: 'CROSSCHECK', color: 'badge-warning' };
+      default:
+        return { label: 'AMAN', color: 'badge-success' };
+    }
+  };
 
   const isDeviceOnline = (devId) => {
     const isRecent = (timestamp) => {
@@ -143,7 +161,7 @@ const Earthquake = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-3">
                   <div className="flex justify-between border-b border-base-200 pb-2">
-                    <span className="opacity-60 text-xs font-bold uppercase">Status</span>
+                    <span className="opacity-60 text-xs font-bold uppercase">Connection</span>
                     {isDeviceOnline(selectedDevice.id) ? (
                       <span className="badge badge-success badge-sm font-bold">ONLINE</span>
                     ) : (
@@ -151,16 +169,42 @@ const Earthquake = () => {
                     )}
                   </div>
                   <div className="flex justify-between border-b border-base-200 pb-2">
-                    <span className="opacity-60 text-xs font-bold uppercase">Vibration</span>
-                    <span className="text-error text-xs font-bold italic">NORMAL</span>
+                    <span className="opacity-60 text-xs font-bold uppercase">Earthquake Status</span>
+                    <span className={`badge badge-sm font-bold ${getStatusBadge(getReading(selectedDevice).earthquake_status).color}`}>
+                      {getStatusBadge(getReading(selectedDevice).earthquake_status).label}
+                    </span>
+                  </div>
+                  <div className="flex justify-between border-b border-base-200 pb-2">
+                    <span className="opacity-60 text-xs font-bold uppercase">PGA</span>
+                    <span className="text-error text-xs font-bold italic">{(getReading(selectedDevice).pga_gal ?? 0).toFixed?.(2) ?? getReading(selectedDevice).pga_gal ?? 0} Gal</span>
+                  </div>
+                  <div className="flex justify-between border-b border-base-200 pb-2">
+                    <span className="opacity-60 text-xs font-bold uppercase">Shindo (Intensity)</span>
+                    <span className="text-error text-xs font-bold italic">{getReading(selectedDevice).shindo ?? '-'}</span>
+                  </div>
+                  <div className="flex justify-between border-b border-base-200 pb-2">
+                    <span className="opacity-60 text-xs font-bold uppercase">GPS Satellites</span>
+                    <span className="font-mono text-xs opacity-80 font-bold">{getReading(selectedDevice).satellite_count ?? '-'}</span>
+                  </div>
+                  <div className="flex justify-between border-b border-base-200 pb-2">
+                    <span className="opacity-60 text-xs font-bold uppercase">AI Confidence</span>
+                    <span className="font-mono text-xs opacity-80 font-bold">{latestConfidence != null ? `${(latestConfidence * 100).toFixed(1)}%` : '-'}</span>
                   </div>
                   <div className="flex flex-col gap-1 border-b border-base-200 pb-2">
-                    <span className="opacity-60 text-[10px] font-bold uppercase tracking-widest">Coordinates</span>
-                    <span className="font-mono text-[10px] opacity-80">{selectedDevice.latitude || '-'}, {selectedDevice.longitude || '-'}</span>
+                    <span className="opacity-60 text-[10px] font-bold uppercase tracking-widest">
+                      {getReading(selectedDevice).earthquake_status === 'GEMPA' ? 'Epicenter (GPS)' : 'Coordinates'}
+                    </span>
+                    <span className="font-mono text-[10px] opacity-80">
+                      {getReading(selectedDevice).earthquake_status === 'GEMPA' && getReading(selectedDevice).gempa_lat != null
+                        ? `${getReading(selectedDevice).gempa_lat}, ${getReading(selectedDevice).gempa_lng}`
+                        : `${selectedDevice.latitude || '-'}, ${selectedDevice.longitude || '-'}`}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="opacity-60 text-xs font-bold uppercase">Last Sync</span>
-                    <span className="font-mono text-[10px] opacity-80 font-bold">Just now</span>
+                    <span className="font-mono text-[10px] opacity-80 font-bold">
+                      {getReading(selectedDevice).recorded_at ? new Date(getReading(selectedDevice).recorded_at).toLocaleTimeString('id-ID') : '-'}
+                    </span>
                   </div>
                 </div>
                 <div className="h-full min-h-[120px]">
@@ -270,8 +314,14 @@ const Earthquake = () => {
               <p className="text-xs font-mono opacity-50 line-clamp-1">{device.address || 'No location set'}</p>
 
               <div className="mt-4 pt-4 border-t border-base-200 flex flex-col gap-2 text-xs">
+                <div className="flex justify-between items-center">
+                  <span className="opacity-50">Status:</span>
+                  <span className={`badge badge-xs font-bold ${getStatusBadge(getReading(device).earthquake_status).color}`}>
+                    {getStatusBadge(getReading(device).earthquake_status).label}
+                  </span>
+                </div>
                 <div className="flex justify-between">
-                  <span className="opacity-50">Risk Level:</span> <strong className="text-success">LOW</strong>
+                  <span className="opacity-50">PGA:</span> <strong className="text-error">{getReading(device).pga_gal ?? 0} Gal</strong>
                 </div>
                 <div className="flex justify-between bg-base-200 p-2 rounded-lg mt-1 font-mono text-[10px]">
                   <div><span className="opacity-50">X:</span> <strong className="text-error">{parseFloat(latestReadings[device.id]?.vib_x ?? device.sensor_readings?.[0]?.vib_x ?? latestReadings[device.id]?.tilt_x ?? device.sensor_readings?.[0]?.tilt_x ?? 0).toFixed(3)}</strong></div>
