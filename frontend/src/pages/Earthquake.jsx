@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Activity, ArrowLeft, Eye } from 'lucide-react';
+import { Activity, ArrowLeft, Eye, Brain } from 'lucide-react';
 import GenericChart from '../components/GenericChart';
 import MiniMap from '../components/MiniMap';
 import { api, getImageUrl } from '../lib/api';
@@ -104,6 +104,13 @@ const Earthquake = () => {
     return latestReadings[device.id] || device.sensor_readings?.[0] || {};
   };
 
+  const getConfidenceLevel = (confidence) => {
+    if (confidence == null) return { text: 'text-base-content', badge: 'badge-ghost', border: 'border-base-300', gradient: 'from-base-100 to-base-100', label: 'NO DATA' };
+    if (confidence >= 0.7) return { text: 'text-error', badge: 'badge-error', border: 'border-error/40', gradient: 'from-error/10 to-base-100', label: 'HIGH ANOMALY' };
+    if (confidence >= 0.4) return { text: 'text-warning', badge: 'badge-warning', border: 'border-warning/40', gradient: 'from-warning/10 to-base-100', label: 'MODERATE' };
+    return { text: 'text-success', badge: 'badge-success', border: 'border-success/40', gradient: 'from-success/10 to-base-100', label: 'NORMAL PATTERN' };
+  };
+
   const getStatusBadge = (status) => {
     switch (status) {
       case 'GEMPA':
@@ -186,10 +193,6 @@ const Earthquake = () => {
                     <span className="opacity-60 text-xs font-bold uppercase">GPS Satellites</span>
                     <span className="font-mono text-xs opacity-80 font-bold">{getReading(selectedDevice).satellite_count ?? '-'}</span>
                   </div>
-                  <div className="flex justify-between border-b border-base-200 pb-2">
-                    <span className="opacity-60 text-xs font-bold uppercase">AI Confidence</span>
-                    <span className="font-mono text-xs opacity-80 font-bold">{latestConfidence != null ? `${(latestConfidence * 100).toFixed(1)}%` : '-'}</span>
-                  </div>
                   <div className="flex flex-col gap-1 border-b border-base-200 pb-2">
                     <span className="opacity-60 text-[10px] font-bold uppercase tracking-widest">
                       {getReading(selectedDevice).earthquake_status === 'GEMPA' ? 'Epicenter (GPS)' : 'Coordinates'}
@@ -228,6 +231,42 @@ const Earthquake = () => {
             </div>
           </div>
         </div>
+
+        {/* AI Confidence Banner */}
+        {(() => {
+          const confLevel = getConfidenceLevel(latestConfidence);
+          const confPercent = latestConfidence != null ? Math.round(latestConfidence * 100) : 0;
+          return (
+            <div className={`card shadow-xl border bg-gradient-to-r ${confLevel.gradient} ${confLevel.border}`}>
+              <div className="card-body flex-row items-center gap-6 py-5">
+                {latestConfidence != null ? (
+                  <div
+                    className={`radial-progress ${confLevel.text} shrink-0`}
+                    style={{ '--value': confPercent, '--size': '5.5rem', '--thickness': '7px' }}
+                    role="progressbar"
+                    aria-valuenow={confPercent}
+                  >
+                    <span className="text-xl font-black">{confPercent}%</span>
+                  </div>
+                ) : (
+                  <div className="radial-progress text-base-300 shrink-0" style={{ '--value': 0, '--size': '5.5rem', '--thickness': '7px' }}>
+                    <span className="text-xs font-bold opacity-50">N/A</span>
+                  </div>
+                )}
+                <div className="flex-1">
+                  <div className="flex flex-wrap items-center gap-2 mb-1">
+                    <Brain size={18} className={confLevel.text} />
+                    <h3 className="font-black italic uppercase text-sm tracking-wide">AI Anomaly Confidence</h3>
+                    <span className={`badge badge-sm font-bold ${confLevel.badge}`}>{confLevel.label}</span>
+                  </div>
+                  <p className="text-xs opacity-60 leading-snug max-w-xl">
+                    Seberapa jauh PGA pembacaan terakhir menyimpang dari baseline getaran normal perangkat ini. Ini skor anomali statistik real-time, bukan prediksi kapan gempa akan terjadi.
+                  </p>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Charts Area */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">

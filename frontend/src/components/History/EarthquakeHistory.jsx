@@ -2,6 +2,23 @@ import React, { useState, useEffect } from 'react';
 import { Activity, Table as TableIcon, Download, Search } from "lucide-react";
 import { api } from "../../lib/api";
 
+const getConfidenceStyle = (confidence) => {
+    if (confidence >= 0.7) return 'progress-error';
+    if (confidence >= 0.4) return 'progress-warning';
+    return 'progress-success';
+};
+
+const ConfidenceBar = ({ confidence }) => {
+    if (confidence == null) return <span className="opacity-30">-</span>;
+    const pct = Math.round(confidence * 100);
+    return (
+        <div className="flex items-center gap-1.5 min-w-[64px]">
+            <progress className={`progress ${getConfidenceStyle(confidence)} w-10 h-1.5`} value={pct} max="100"></progress>
+            <span className="font-bold">{pct}%</span>
+        </div>
+    );
+};
+
 const EarthquakeHistory = () => {
     const [logs, setLogs] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -65,7 +82,7 @@ const EarthquakeHistory = () => {
                                                 {log.earthquake_status || 'AMAN'}
                                             </span>
                                         </td>
-                                        <td>{log.classificationResults?.[0] ? `${(log.classificationResults[0].confidence * 100).toFixed(1)}%` : '-'}</td>
+                                        <td><ConfidenceBar confidence={log.classificationResults?.[0]?.confidence} /></td>
                                     </tr>
                                 ))}
                             </tbody>

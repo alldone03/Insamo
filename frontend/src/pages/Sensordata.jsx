@@ -11,6 +11,23 @@ import { Activity, ArrowLeft, Thermometer, Droplets, Wind, Waves, Move, Zap, Tre
 import InsamoLogo from "../assets/InsamoLogo.webp";
 import GenericChart from "../components/GenericChart";
 
+const getConfidenceStyle = (confidence) => {
+    if (confidence >= 0.7) return 'progress-error';
+    if (confidence >= 0.4) return 'progress-warning';
+    return 'progress-success';
+};
+
+const ConfidenceBar = ({ confidence }) => {
+    if (confidence == null) return <span className="opacity-30">-</span>;
+    const pct = Math.round(confidence * 100);
+    return (
+        <div className="flex items-center gap-1.5 min-w-[64px]">
+            <progress className={`progress ${getConfidenceStyle(confidence)} w-10 h-1.5`} value={pct} max="100"></progress>
+            <span className="font-bold">{pct}%</span>
+        </div>
+    );
+};
+
 export default function Sensordata() {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -318,7 +335,7 @@ const parseUTC = (ts) => {
                                             {r.earthquake_status || 'AMAN'}
                                         </span>
                                     </td>
-                                    <td>{r.classificationResults?.[0] ? `${(r.classificationResults[0].confidence * 100).toFixed(1)}%` : '-'}</td></>}
+                                    <td><ConfidenceBar confidence={r.classificationResults?.[0]?.confidence} /></td></>}
                                     {device?.device_type === 'FLOWS' && <><td>{r.water_level}</td><td>{r.wind_speed}</td><td>{r.temperature}</td></>}
                                     {device?.device_type === 'LANDSLIDE' && <><td>{r.landslide_score}</td><td><span className={`badge badge-xs font-bold ${r.landslide_status === 'DANGER' ? 'badge-error' : 'badge-success'}`}>{r.landslide_status}</span></td></>}
                                 </tr>
