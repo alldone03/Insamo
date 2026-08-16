@@ -202,12 +202,12 @@ const AiPredict = () => {
             {loadingDevices ? 'Loading...' : selectedDevice ? selectedDevice.name : 'Select Device'}
             <ChevronDown className="w-4 h-4 ml-2" />
           </div>
-          <ul tabIndex={0} className="z-[50] menu dropdown-content bg-base-100 rounded-box w-64 max-h-60 p-2 shadow-sm overflow-y-auto">
+          <ul tabIndex={0} className="z-[50] menu dropdown-content bg-base-100 rounded-box w-72 max-w-[90vw] max-h-60 p-2 shadow-sm overflow-y-auto overflow-x-hidden">
             {devices.map((d) => (
               <li key={d.id}>
-                <a onClick={() => { setSelectedDevice(d); setResult(null); setSeismicData(null); setError(null); }} className="flex items-center justify-between gap-2">
-                  <span>{d.name} ({d.device_code})</span>
-                  <span className={`badge badge-xs font-bold ${d.device_type === 'SIGMA' ? 'badge-error' : 'badge-info'}`}>{d.device_type}</span>
+                <a onClick={() => { setSelectedDevice(d); setResult(null); setSeismicData(null); setError(null); }} className="flex items-center gap-2">
+                  <span className="truncate flex-1 min-w-0">{d.name} ({d.device_code})</span>
+                  <span className={`badge badge-xs font-bold shrink-0 ${d.device_type === 'SIGMA' ? 'badge-error' : 'badge-info'}`}>{d.device_type}</span>
                 </a>
               </li>
             ))}
