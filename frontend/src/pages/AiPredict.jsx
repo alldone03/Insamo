@@ -187,10 +187,10 @@ const AiPredict = () => {
   const peakPred = result?.peak_predicted ?? null;
 
   return (
-    <div className="min-h-screen bg-[#f0f2f5] p-6 font-sans text-base-content">
+    <div className="min-h-screen bg-[#f0f2f5] dark:bg-base-200 p-6 font-sans text-base-content">
 
       {/* Header */}
-      <h2 className="text-4xl font-extrabold text-gray-800 mb-8">
+      <h2 className="text-4xl font-extrabold text-base-content mb-8">
         {isSigma ? 'AI Seismic Anomaly Monitor' : 'AI Water Level Predictive Monitor'}
       </h2>
 
@@ -211,7 +211,7 @@ const AiPredict = () => {
                 </a>
               </li>
             ))}
-            {devices.length === 0 && <li><a className="text-gray-400">No predictable devices</a></li>}
+            {devices.length === 0 && <li><a className="text-base-content/40">No predictable devices</a></li>}
           </ul>
         </div>
 
@@ -219,7 +219,7 @@ const AiPredict = () => {
 
         {/* Predict Steps (LSTM only) */}
         {!isSigma && (
-          <div className="flex items-center gap-4 text-sm font-semibold text-gray-600 bg-white px-4 py-2 rounded-lg shadow-sm">
+          <div className="flex items-center gap-4 text-sm font-semibold text-base-content/70 bg-base-100 px-4 py-2 rounded-lg shadow-sm">
             <span>Predict Steps:</span>
             {['25', '50', '75'].map((val) => (
               <label key={val} className="flex items-center gap-2 cursor-pointer hover:text-primary">
@@ -239,7 +239,7 @@ const AiPredict = () => {
 
         {/* Run Button */}
         <button
-          className={`btn rounded-md px-6 border-none text-white ${loading ? 'bg-gray-400' : 'bg-[#28a745] hover:bg-[#218838]'}`}
+          className={`btn rounded-md px-6 border-none text-white ${loading ? 'bg-base-300' : 'bg-[#28a745] hover:bg-[#218838]'}`}
           onClick={runCheck}
           disabled={loading || !selectedDevice}
         >
@@ -282,7 +282,7 @@ const AiPredict = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-5 mb-6">
           <div className="card bg-base-100 shadow-sm border border-base-200 rounded-xl">
             <div className="card-body p-5">
-              <h4 className="text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">Predicted Next</h4>
+              <h4 className="text-xs font-bold text-base-content/50 mb-1 uppercase tracking-wider">Predicted Next</h4>
               <div className="flex justify-between items-start">
                 <span className="text-3xl font-extrabold text-[#007bff]">{firstPred?.toFixed(2)} cm</span>
                 {firstPred > lastActual ? <ArrowUp className="w-5 h-5 text-red-500" /> : <ArrowDown className="w-5 h-5 text-green-500" />}
@@ -292,7 +292,7 @@ const AiPredict = () => {
 
           <div className="card bg-base-100 shadow-sm border border-base-200 rounded-xl">
             <div className="card-body p-5">
-              <h4 className="text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">Last Actual</h4>
+              <h4 className="text-xs font-bold text-base-content/50 mb-1 uppercase tracking-wider">Last Actual</h4>
               <div className="flex justify-between items-start">
                 <span className="text-3xl font-extrabold text-[#007bff]">{lastActual?.toFixed(2)} cm</span>
                 <BarChart3 className="w-5 h-5 text-blue-400" />
@@ -302,7 +302,7 @@ const AiPredict = () => {
 
           <div className="card bg-base-100 shadow-sm border border-base-200 rounded-xl">
             <div className="card-body p-5">
-              <h4 className="text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">Peak Predicted</h4>
+              <h4 className="text-xs font-bold text-base-content/50 mb-1 uppercase tracking-wider">Peak Predicted</h4>
               <div className="flex justify-between items-start">
                 <span className="text-3xl font-extrabold text-[#007bff]">{peakPred?.toFixed(2)} cm</span>
                 <TrendingUp className="w-5 h-5 text-green-500" />
@@ -312,7 +312,7 @@ const AiPredict = () => {
 
           <div className="card bg-base-100 shadow-sm border border-base-200 rounded-xl justify-center">
             <div className="card-body p-5">
-              <h4 className="text-xs font-bold text-gray-500 mb-2 uppercase tracking-wider">Alert Threshold</h4>
+              <h4 className="text-xs font-bold text-base-content/50 mb-2 uppercase tracking-wider">Alert Threshold</h4>
               <div className="flex items-center gap-2">
                 <span className="text-3xl font-extrabold text-[#d89f00]">{alertTh.toFixed(2)} cm</span>
                 <Bell className="w-6 h-6 text-[#d89f00] fill-current" />
@@ -322,7 +322,7 @@ const AiPredict = () => {
 
           <div className="card bg-base-100 shadow-sm border border-base-200 rounded-xl justify-center">
             <div className="card-body p-5">
-              <h4 className="text-xs font-bold text-gray-500 mb-2 uppercase tracking-wider">Danger Threshold</h4>
+              <h4 className="text-xs font-bold text-base-content/50 mb-2 uppercase tracking-wider">Danger Threshold</h4>
               <div className="flex items-center gap-2">
                 <span className="text-3xl font-extrabold text-[#cc0000]">{dangerTh.toFixed(2)} cm</span>
                 <AlertTriangle className="w-6 h-6 text-[#cc0000] fill-current" />
@@ -337,11 +337,11 @@ const AiPredict = () => {
         {/* Chart */}
         <div className="lg:col-span-2 card bg-base-100 shadow-md border-l-4 border-l-[#007bff] rounded-xl">
           <div className="card-body">
-            <h3 className="text-lg font-bold text-gray-800 mb-4">
+            <h3 className="text-lg font-bold text-base-content mb-4">
               Water Level — Train / Test / Prediction (cm)
             </h3>
 
-            <div className="flex flex-wrap justify-center gap-6 mb-4 text-xs text-gray-500">
+            <div className="flex flex-wrap justify-center gap-6 mb-4 text-xs text-base-content/50">
               <div className="flex items-center gap-2"><div className="w-8 h-1 bg-[#007bff]"></div> Actual</div>
               <div className="flex items-center gap-2"><div className="w-8 h-1 bg-[#e83e8c]"></div> Test (LSTM)</div>
               <div className="flex items-center gap-2"><div className="w-8 h-1 border-b-2 border-dashed border-[#ff8000]"></div> Future</div>
@@ -380,8 +380,8 @@ const AiPredict = () => {
                   </ComposedChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="w-full h-full bg-gray-50 rounded flex items-center justify-center border border-gray-100">
-                  <span className="text-gray-400 font-medium">
+                <div className="w-full h-full bg-base-200 rounded flex items-center justify-center border border-base-300">
+                  <span className="text-base-content/40 font-medium">
                     {loading ? 'Training LSTM model...' : 'Select a device and run prediction'}
                   </span>
                 </div>
@@ -393,10 +393,10 @@ const AiPredict = () => {
         {/* Insights */}
         <div className="card bg-base-100 shadow-md rounded-xl">
           <div className="card-body">
-            <h3 className="text-lg font-bold text-gray-800 mb-2">Prediction Insights</h3>
+            <h3 className="text-lg font-bold text-base-content mb-2">Prediction Insights</h3>
             {result ? (
               <>
-                <p className="text-sm text-gray-600 mb-4">
+                <p className="text-sm text-base-content/70 mb-4">
                   {result.overall_status === 'NORMAL'
                     ? `LSTM model predicts water level will remain stable. Peak at ${peakPred?.toFixed(2)} cm, below alert threshold (${alertTh} cm).`
                     : result.overall_status === 'ALERT'
@@ -405,21 +405,21 @@ const AiPredict = () => {
                   }
                 </p>
 
-                <h4 className="font-bold text-gray-800 mb-1">Model Metrics:</h4>
-                <div className="text-sm text-gray-600 mb-4 space-y-1">
+                <h4 className="font-bold text-base-content mb-1">Model Metrics:</h4>
+                <div className="text-sm text-base-content/70 mb-4 space-y-1">
                   <p>RMSE: <span className="font-mono font-bold">{result.metrics.rmse}</span></p>
                   <p>MAE: <span className="font-mono font-bold">{result.metrics.mae}</span></p>
                   <p>MAPE: <span className="font-mono font-bold">{result.metrics.mape}%</span></p>
                 </div>
 
-                <h4 className="font-bold text-gray-800 mb-1">Scaling Parameters:</h4>
-                <div className="text-sm text-gray-600 mb-4 space-y-1">
+                <h4 className="font-bold text-base-content mb-1">Scaling Parameters:</h4>
+                <div className="text-sm text-base-content/70 mb-4 space-y-1">
                   <p>Mean: <span className="font-mono font-bold">{result.scaling.mean}</span></p>
                   <p>StdDev: <span className="font-mono font-bold">{result.scaling.std}</span></p>
                 </div>
 
-                <h4 className="font-bold text-gray-800 mb-1">Data Split:</h4>
-                <div className="text-sm text-gray-600 mb-6 space-y-1">
+                <h4 className="font-bold text-base-content mb-1">Data Split:</h4>
+                <div className="text-sm text-base-content/70 mb-6 space-y-1">
                   <p>Train: <span className="font-mono font-bold">{result.train_size}</span> points</p>
                   <p>Test: <span className="font-mono font-bold">{result.test_size}</span> points</p>
                   <p>Predict: <span className="font-mono font-bold">{result.predictions.length}</span> steps</p>
@@ -437,7 +437,7 @@ const AiPredict = () => {
                 </button>
               </>
             ) : (
-              <p className="text-sm text-gray-400">
+              <p className="text-sm text-base-content/40">
                 Run a prediction to see model insights, metrics, and flood risk assessment.
               </p>
             )}
@@ -476,7 +476,7 @@ const AiPredict = () => {
                     <div className="flex-1">
                       <div className="flex flex-wrap items-center gap-2 mb-1">
                         <Activity size={18} className={confLevel.text} />
-                        <h3 className="font-black italic uppercase text-sm tracking-wide text-gray-800">AI Anomaly Confidence</h3>
+                        <h3 className="font-black italic uppercase text-sm tracking-wide text-base-content">AI Anomaly Confidence</h3>
                         <span className={`badge badge-sm font-bold ${confLevel.badge}`}>{confLevel.label}</span>
                         <InfoPopover title="Apa itu AI Confidence?" align="dropdown-start">
                           <p>Skor statistik yang menunjukkan seberapa jauh PGA pembacaan ini menyimpang dari kebiasaan getaran normal alat ini sendiri.</p>
@@ -484,7 +484,7 @@ const AiPredict = () => {
                           <p className="text-warning font-bold">Ini bukan prediksi kapan gempa terjadi — hanya skor anomali real-time, karena tidak ada dataset gempa asli berlabel untuk melatih model prediksi sungguhan.</p>
                         </InfoPopover>
                       </div>
-                      <p className="text-xs text-gray-500 leading-snug max-w-xl">
+                      <p className="text-xs text-base-content/50 leading-snug max-w-xl">
                         {seismicData
                           ? 'Seberapa jauh PGA pembacaan terakhir menyimpang dari baseline getaran normal perangkat ini. Ini skor anomali statistik real-time, bukan prediksi kapan gempa akan terjadi.'
                           : 'Klik "Check Anomaly Status" untuk mengambil pembacaan seismik terbaru dari perangkat ini.'}
@@ -498,7 +498,7 @@ const AiPredict = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
                     <div className="card bg-base-100 shadow-sm border border-base-200 rounded-xl">
                       <div className="card-body p-5">
-                        <h4 className="text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider flex items-center gap-1">
+                        <h4 className="text-xs font-bold text-base-content/50 mb-1 uppercase tracking-wider flex items-center gap-1">
                           Earthquake Status
                           <InfoPopover title="Earthquake Status">
                             <p>Status rule-based dari firmware alat (bukan AI), berdasarkan ambang PGA:</p>
@@ -512,7 +512,7 @@ const AiPredict = () => {
                     </div>
                     <div className="card bg-base-100 shadow-sm border border-base-200 rounded-xl">
                       <div className="card-body p-5">
-                        <h4 className="text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider flex items-center gap-1">
+                        <h4 className="text-xs font-bold text-base-content/50 mb-1 uppercase tracking-wider flex items-center gap-1">
                           PGA
                           <InfoPopover title="PGA (Peak Ground Acceleration)">
                             <p>Percepatan getaran maksimum dalam satuan Gal (1 Gal = 1 cm/detik²), dibaca langsung dari akselerometer MPU6050.</p>
@@ -524,7 +524,7 @@ const AiPredict = () => {
                     </div>
                     <div className="card bg-base-100 shadow-sm border border-base-200 rounded-xl">
                       <div className="card-body p-5">
-                        <h4 className="text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider flex items-center gap-1">
+                        <h4 className="text-xs font-bold text-base-content/50 mb-1 uppercase tracking-wider flex items-center gap-1">
                           Shindo (Intensity)
                           <InfoPopover title="Shindo">
                             <p>Skala intensitas gempa ala Jepang, dihitung dari PGA hanya saat status GEMPA terkonfirmasi.</p>
@@ -536,7 +536,7 @@ const AiPredict = () => {
                     </div>
                     <div className="card bg-base-100 shadow-sm border border-base-200 rounded-xl">
                       <div className="card-body p-5">
-                        <h4 className="text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">GPS Satellites</h4>
+                        <h4 className="text-xs font-bold text-base-content/50 mb-1 uppercase tracking-wider">GPS Satellites</h4>
                         <span className="text-2xl font-extrabold text-[#007bff]">{reading?.satellite_count ?? '-'}</span>
                       </div>
                     </div>
@@ -547,7 +547,7 @@ const AiPredict = () => {
                 {seismicHistory.length > 0 && (
                   <div className="card bg-base-100 shadow-md border-l-4 border-l-error rounded-xl mt-6">
                     <div className="card-body">
-                      <h3 className="text-lg font-bold text-gray-800 mb-1 flex items-center gap-1.5">
+                      <h3 className="text-lg font-bold text-base-content mb-1 flex items-center gap-1.5">
                         Seismic Trend — PGA vs AI Confidence
                         <InfoPopover title="Cara Baca Chart Ini">
                           <p><span className="font-bold" style={{ color: '#007bff' }}>Garis biru (PGA)</span>: getaran mentah dari sensor, sumbu kiri, satuan Gal.</p>
@@ -556,7 +556,7 @@ const AiPredict = () => {
                           <p>Data dari 30 pembacaan sensor_readings terakhir device ini, dipasangkan dengan confidence dari classification_results.</p>
                         </InfoPopover>
                       </h3>
-                      <p className="text-xs text-gray-500 mb-4">
+                      <p className="text-xs text-base-content/50 mb-4">
                         {seismicHistory.length} pembacaan terakhir. Garis merah putus-putus adalah ambang deteksi gempa firmware ({SEISMIC_THRESHOLD_GAL} Gal).
                       </p>
                       <div className="w-full h-72">

@@ -1,6 +1,11 @@
 @import "tailwindcss";
 @plugin "daisyui";
 
+/* Ties Tailwind's dark: variant to the app's own theme toggle (data-theme="dark"
+   set in MainLayout.jsx) instead of the OS-level prefers-color-scheme, which is
+   Tailwind's default and never matched the in-app light/dark switch. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 @plugin "daisyui/theme" {
   name: "light";
   default: true;

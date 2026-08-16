@@ -86,8 +86,8 @@ const Weather = () => {
    }
 
    return (
-      <div className="p-4 md:p-6 bg-[#A8D1DF] min-h-screen font-sans overflow-x-hidden">
-         <h1 className="text-2xl md:text-3xl font-extrabold text-black mb-4 md:mb-6">Weather</h1>
+      <div className="p-4 md:p-6 bg-[#A8D1DF] dark:bg-base-300 min-h-screen font-sans overflow-x-hidden">
+         <h1 className="text-2xl md:text-3xl font-extrabold text-black dark:text-base-content mb-4 md:mb-6">Weather</h1>
 
          {/* --- TOP CARDS SECTION --- */}
          {/* Tambahkan class group untuk memunculkan tombol panah hanya saat kursor mendekat (di desktop) */}
@@ -96,9 +96,9 @@ const Weather = () => {
             {/* Tombol Kiri (Disembunyikan di Mobile) */}
             <button
                onClick={() => scroll('left')}
-               className="hidden md:flex absolute left-0 z-10 -ml-4 bg-white rounded-full p-2 shadow hover:bg-gray-100 opacity-0 group-hover:opacity-100 transition-opacity"
+               className="hidden md:flex absolute left-0 z-10 -ml-4 bg-base-100 rounded-full p-2 shadow hover:bg-base-200 opacity-0 group-hover:opacity-100 transition-opacity"
             >
-               <ChevronLeft size={24} className="text-gray-600" />
+               <ChevronLeft size={24} className="text-base-content/70" />
             </button>
 
             {/* Container Kartu: 
@@ -168,9 +168,9 @@ const Weather = () => {
             {/* Tombol Kanan (Disembunyikan di Mobile) */}
             <button
                onClick={() => scroll('right')}
-               className="hidden md:flex absolute right-0 z-10 -mr-4 bg-white rounded-full p-2 shadow hover:bg-gray-100 opacity-0 group-hover:opacity-100 transition-opacity"
+               className="hidden md:flex absolute right-0 z-10 -mr-4 bg-base-100 rounded-full p-2 shadow hover:bg-base-200 opacity-0 group-hover:opacity-100 transition-opacity"
             >
-               <ChevronRight size={24} className="text-gray-600" />
+               <ChevronRight size={24} className="text-base-content/70" />
             </button>
          </div>
 
@@ -178,10 +178,10 @@ const Weather = () => {
          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
 
             {/* Temperature Chart */}
-            <div className="bg-white rounded-xl shadow-md p-4">
+            <div className="bg-base-100 rounded-xl shadow-md p-4">
                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-sm md:text-base font-bold text-gray-800">Temperature Chart</h3>
-                  <Maximize size={18} className="text-gray-400 cursor-pointer hover:text-gray-600" />
+                  <h3 className="text-sm md:text-base font-bold text-base-content">Temperature Chart</h3>
+                  <Maximize size={18} className="text-base-content/40 cursor-pointer hover:text-base-content/70" />
                </div>
                <div className="h-56 md:h-64">
                   <ResponsiveContainer width="100%" height="100%">
@@ -196,7 +196,7 @@ const Weather = () => {
                         <XAxis dataKey="time" tick={{ fontSize: 10 }} md={{ fontSize: 12 }} tickLine={false} axisLine={false} />
                         <YAxis tick={{ fontSize: 10 }} md={{ fontSize: 12 }} tickLine={false} axisLine={false} />
                         <Tooltip />
-                        <Legend verticalAlign="top" height={36} iconType="square" formatter={() => <span className="text-xs md:text-sm font-semibold text-gray-700">Temperature (°C)</span>} />
+                        <Legend verticalAlign="top" height={36} iconType="square" formatter={() => <span className="text-xs md:text-sm font-semibold text-base-content/80">Temperature (°C)</span>} />
                         <Area type="monotone" dataKey="temperature" stroke="#FF8FA3" strokeWidth={3} fillOpacity={1} fill="url(#colorTemp)" />
                      </AreaChart>
                   </ResponsiveContainer>
@@ -204,10 +204,10 @@ const Weather = () => {
             </div>
 
             {/* Humidity Chart */}
-            <div className="bg-white rounded-xl shadow-md p-4">
+            <div className="bg-base-100 rounded-xl shadow-md p-4">
                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-sm md:text-base font-bold text-gray-800">Humidity Chart</h3>
-                  <Maximize size={18} className="text-gray-400 cursor-pointer hover:text-gray-600" />
+                  <h3 className="text-sm md:text-base font-bold text-base-content">Humidity Chart</h3>
+                  <Maximize size={18} className="text-base-content/40 cursor-pointer hover:text-base-content/70" />
                </div>
                <div className="h-56 md:h-64">
                   <ResponsiveContainer width="100%" height="100%">
@@ -222,7 +222,7 @@ const Weather = () => {
                         <XAxis dataKey="time" tick={{ fontSize: 10 }} md={{ fontSize: 12 }} tickLine={false} axisLine={false} />
                         <YAxis tick={{ fontSize: 10 }} md={{ fontSize: 12 }} tickLine={false} axisLine={false} />
                         <Tooltip />
-                        <Legend verticalAlign="top" height={36} iconType="square" formatter={() => <span className="text-xs md:text-sm font-semibold text-gray-700">Humidity (%)</span>} />
+                        <Legend verticalAlign="top" height={36} iconType="square" formatter={() => <span className="text-xs md:text-sm font-semibold text-base-content/80">Humidity (%)</span>} />
                         <Area type="stepAfter" dataKey="humidity" stroke="#60A5FA" strokeWidth={3} fillOpacity={1} fill="url(#colorHumid)" />
                      </AreaChart>
                   </ResponsiveContainer>
@@ -230,10 +230,10 @@ const Weather = () => {
             </div>
 
             {/* Air Pressure Chart */}
-            <div className="bg-white rounded-xl shadow-md p-4">
+            <div className="bg-base-100 rounded-xl shadow-md p-4">
                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-sm md:text-base font-bold text-gray-800">Air Pressure Chart</h3>
-                  <Maximize size={18} className="text-gray-400 cursor-pointer hover:text-gray-600" />
+                  <h3 className="text-sm md:text-base font-bold text-base-content">Air Pressure Chart</h3>
+                  <Maximize size={18} className="text-base-content/40 cursor-pointer hover:text-base-content/70" />
                </div>
                <div className="h-56 md:h-64">
                   <ResponsiveContainer width="100%" height="100%">
@@ -248,7 +248,7 @@ const Weather = () => {
                         <XAxis dataKey="time" tick={{ fontSize: 10 }} md={{ fontSize: 12 }} tickLine={false} axisLine={false} />
                         <YAxis domain={[900, 1100]} tick={{ fontSize: 10 }} md={{ fontSize: 12 }} tickLine={false} axisLine={false} />
                         <Tooltip />
-                        <Legend verticalAlign="top" height={36} iconType="square" formatter={() => <span className="text-xs md:text-sm font-semibold text-gray-700">pressures (hPa)</span>} />
+                        <Legend verticalAlign="top" height={36} iconType="square" formatter={() => <span className="text-xs md:text-sm font-semibold text-base-content/80">pressures (hPa)</span>} />
                         <Area type="monotone" dataKey="pressure" stroke="#6EE7B7" strokeWidth={3} fillOpacity={1} fill="url(#colorPress)" />
                      </AreaChart>
                   </ResponsiveContainer>
@@ -256,10 +256,10 @@ const Weather = () => {
             </div>
 
             {/* Wind Speed Chart */}
-            <div className="bg-white rounded-xl shadow-md p-4">
+            <div className="bg-base-100 rounded-xl shadow-md p-4">
                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-sm md:text-base font-bold text-gray-800">Wind Speed Chart</h3>
-                  <Maximize size={18} className="text-gray-400 cursor-pointer hover:text-gray-600" />
+                  <h3 className="text-sm md:text-base font-bold text-base-content">Wind Speed Chart</h3>
+                  <Maximize size={18} className="text-base-content/40 cursor-pointer hover:text-base-content/70" />
                </div>
                <div className="h-56 md:h-64">
                   <ResponsiveContainer width="100%" height="100%">
@@ -274,7 +274,7 @@ const Weather = () => {
                         <XAxis dataKey="time" tick={{ fontSize: 10 }} md={{ fontSize: 12 }} tickLine={false} axisLine={false} />
                         <YAxis tick={{ fontSize: 10 }} md={{ fontSize: 12 }} tickLine={false} axisLine={false} />
                         <Tooltip />
-                        <Legend verticalAlign="top" height={36} iconType="square" formatter={() => <span className="text-xs md:text-sm font-semibold text-gray-700">wind speed (km/h)</span>} />
+                        <Legend verticalAlign="top" height={36} iconType="square" formatter={() => <span className="text-xs md:text-sm font-semibold text-base-content/80">wind speed (km/h)</span>} />
                         <Area type="stepBefore" dataKey="windSpeed" stroke="#FCD34D" strokeWidth={3} fillOpacity={1} fill="url(#colorWind)" />
                      </AreaChart>
                   </ResponsiveContainer>
