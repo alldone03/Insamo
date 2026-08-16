@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../config/database';
 import { sensorReadings, devices, deviceSettings } from '../app/models/schema';
-import { eq, desc } from 'drizzle-orm';
+import { eq, desc, inArray } from 'drizzle-orm';
 
 const router = Router();
 
@@ -27,6 +27,13 @@ router.get('/predict/:deviceId', async (req: Request, res: Response) => {
             return res.status(404).json({ success: false, message: 'Device not found' });
         }
         const device = deviceRecords[0];
+
+        if (device.device_type !== 'FLOWS') {
+            return res.status(400).json({
+                success: false,
+                message: 'LSTM water level forecasting is only available for FLOWS devices',
+            });
+        }
 
         // Fetch device settings for thresholds
         const settingRecords = await db.select().from(deviceSettings).where(eq(deviceSettings.device_id, deviceId)).limit(1);
@@ -105,20 +112,24 @@ router.get('/predict/:deviceId', async (req: Request, res: Response) => {
 
 /**
  * GET /api/predict-devices
- * 
- * List semua FLOWS devices yang bisa di-predict.
+ *
+ * List device yang punya sesuatu untuk ditampilkan di tab AI Predict:
+ * - FLOWS: forecast LSTM water level ke depan.
+ * - SIGMA: skor anomali getaran real-time (bukan forecast time-series,
+ *   karena tidak ada dataset gempa berlabel untuk melatih model semacam itu).
  */
 router.get('/predict-devices', async (req: Request, res: Response) => {
     try {
-        const flowsDevices = await db.select({
+        const predictableDevices = await db.select({
             id: devices.id,
             name: devices.name,
             device_code: devices.device_code,
+            device_type: devices.device_type,
         })
             .from(devices)
-            .where(eq(devices.device_type, 'FLOWS'));
+            .where(inArray(devices.device_type, ['FLOWS', 'SIGMA']));
 
-        return res.json({ success: true, data: flowsDevices });
+        return res.json({ success: true, data: predictableDevices });
     } catch (error: any) {
         return res.status(500).json({ success: false, message: error.message });
     }

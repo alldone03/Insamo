@@ -10,6 +10,7 @@ import {
   Loader2,
   Brain,
   BarChart3,
+  Activity,
 } from 'lucide-react';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
@@ -24,9 +25,12 @@ const AiPredict = () => {
   const [loading, setLoading] = useState(false);
   const [loadingDevices, setLoadingDevices] = useState(true);
   const [result, setResult] = useState(null);
+  const [seismicData, setSeismicData] = useState(null);
   const [error, setError] = useState(null);
 
-  // Fetch FLOWS devices
+  const isSigma = selectedDevice?.device_type === 'SIGMA';
+
+  // Fetch devices that support AI Predict (FLOWS = LSTM forecast, SIGMA = anomaly confidence)
   useEffect(() => {
     const fetchDevices = async () => {
       try {
@@ -43,7 +47,7 @@ const AiPredict = () => {
     fetchDevices();
   }, []);
 
-  // Run prediction
+  // Run LSTM water-level prediction (FLOWS devices only)
   const runPrediction = useCallback(async () => {
     if (!selectedDevice) return;
     setLoading(true);
@@ -62,6 +66,55 @@ const AiPredict = () => {
       setLoading(false);
     }
   }, [selectedDevice, horizon]);
+
+  // Check latest seismic anomaly confidence (SIGMA devices only)
+  const runSeismicCheck = useCallback(async () => {
+    if (!selectedDevice) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.get('/sensor-readings', {
+        params: { device_id: selectedDevice.id, per_page: 1 },
+      });
+      const readings = res.data?.data || [];
+      const latest = readings[0];
+      if (!latest) {
+        setError('No sensor readings yet for this device');
+        setSeismicData(null);
+      } else {
+        setSeismicData({
+          reading: latest,
+          confidence: latest.classificationResults?.[0]?.confidence ?? null,
+        });
+      }
+    } catch (err) {
+      const msg = err.response?.data?.message || err.message || 'Failed to fetch seismic data';
+      setError(msg);
+      setSeismicData(null);
+    } finally {
+      setLoading(false);
+    }
+  }, [selectedDevice]);
+
+  const runCheck = isSigma ? runSeismicCheck : runPrediction;
+
+  const getConfidenceLevel = (confidence) => {
+    if (confidence == null) return { text: 'text-base-content', badge: 'badge-ghost', border: 'border-base-300', gradient: 'from-base-100 to-base-100', label: 'NO DATA' };
+    if (confidence >= 0.7) return { text: 'text-error', badge: 'badge-error', border: 'border-error/40', gradient: 'from-error/10 to-base-100', label: 'HIGH ANOMALY' };
+    if (confidence >= 0.4) return { text: 'text-warning', badge: 'badge-warning', border: 'border-warning/40', gradient: 'from-warning/10 to-base-100', label: 'MODERATE' };
+    return { text: 'text-success', badge: 'badge-success', border: 'border-success/40', gradient: 'from-success/10 to-base-100', label: 'NORMAL PATTERN' };
+  };
+
+  const getStatusBadge = (status) => {
+    switch (status) {
+      case 'GEMPA':
+        return { label: 'GEMPA', color: 'badge-error' };
+      case 'CROSSCHECK':
+        return { label: 'CROSSCHECK', color: 'badge-warning' };
+      default:
+        return { label: 'AMAN', color: 'badge-success' };
+    }
+  };
 
   // Build chart data
   const buildChartData = () => {
@@ -124,7 +177,7 @@ const AiPredict = () => {
 
       {/* Header */}
       <h2 className="text-4xl font-extrabold text-gray-800 mb-8">
-        AI Water Level Predictive Monitor
+        {isSigma ? 'AI Seismic Anomaly Monitor' : 'AI Water Level Predictive Monitor'}
       </h2>
 
       {/* Controls */}
@@ -138,45 +191,48 @@ const AiPredict = () => {
           <ul tabIndex={0} className="z-[50] menu dropdown-content bg-base-100 rounded-box w-64 max-h-60 p-2 shadow-sm overflow-y-auto">
             {devices.map((d) => (
               <li key={d.id}>
-                <a onClick={() => { setSelectedDevice(d); setResult(null); }}>
-                  {d.name} ({d.device_code})
+                <a onClick={() => { setSelectedDevice(d); setResult(null); setSeismicData(null); setError(null); }} className="flex items-center justify-between gap-2">
+                  <span>{d.name} ({d.device_code})</span>
+                  <span className={`badge badge-xs font-bold ${d.device_type === 'SIGMA' ? 'badge-error' : 'badge-info'}`}>{d.device_type}</span>
                 </a>
               </li>
             ))}
-            {devices.length === 0 && <li><a className="text-gray-400">No FLOWS devices</a></li>}
+            {devices.length === 0 && <li><a className="text-gray-400">No predictable devices</a></li>}
           </ul>
         </div>
 
 
 
-        {/* Predict Steps */}
-        <div className="flex items-center gap-4 text-sm font-semibold text-gray-600 bg-white px-4 py-2 rounded-lg shadow-sm">
-          <span>Predict Steps:</span>
-          {['25', '50', '75'].map((val) => (
-            <label key={val} className="flex items-center gap-2 cursor-pointer hover:text-primary">
-              <input
-                type="radio"
-                name="horizon"
-                className="radio radio-primary radio-sm"
-                value={val}
-                checked={horizon === val}
-                onChange={(e) => setHorizon(e.target.value)}
-              />
-              {val}
-            </label>
-          ))}
-        </div>
+        {/* Predict Steps (LSTM only) */}
+        {!isSigma && (
+          <div className="flex items-center gap-4 text-sm font-semibold text-gray-600 bg-white px-4 py-2 rounded-lg shadow-sm">
+            <span>Predict Steps:</span>
+            {['25', '50', '75'].map((val) => (
+              <label key={val} className="flex items-center gap-2 cursor-pointer hover:text-primary">
+                <input
+                  type="radio"
+                  name="horizon"
+                  className="radio radio-primary radio-sm"
+                  value={val}
+                  checked={horizon === val}
+                  onChange={(e) => setHorizon(e.target.value)}
+                />
+                {val}
+              </label>
+            ))}
+          </div>
+        )}
 
         {/* Run Button */}
         <button
           className={`btn rounded-md px-6 border-none text-white ${loading ? 'bg-gray-400' : 'bg-[#28a745] hover:bg-[#218838]'}`}
-          onClick={runPrediction}
+          onClick={runCheck}
           disabled={loading || !selectedDevice}
         >
           {loading ? (
-            <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Training LSTM...</>
+            <><Loader2 className="w-4 h-4 animate-spin mr-2" /> {isSigma ? 'Checking...' : 'Training LSTM...'}</>
           ) : (
-            <><Brain className="w-4 h-4 mr-2" /> Run Prediction</>
+            <><Brain className="w-4 h-4 mr-2" /> {isSigma ? 'Check Anomaly Status' : 'Run Prediction'}</>
           )}
         </button>
       </div>
@@ -188,6 +244,8 @@ const AiPredict = () => {
         </div>
       )}
 
+      {!isSigma && (
+      <>
       {/* Status Bar */}
       <div className={`${statusConfig.bg} ${statusConfig.text} p-5 rounded-xl flex flex-col md:flex-row items-center justify-between font-bold mb-6 shadow-sm border ${statusConfig.border}`}>
         <div className="flex items-center gap-3">
@@ -372,6 +430,84 @@ const AiPredict = () => {
           </div>
         </div>
       </div>
+      </>
+      )}
+
+      {isSigma && (
+        <>
+          {(() => {
+            const confLevel = getConfidenceLevel(seismicData?.confidence);
+            const confPercent = seismicData?.confidence != null ? Math.round(seismicData.confidence * 100) : 0;
+            const reading = seismicData?.reading;
+            const statusInfo = getStatusBadge(reading?.earthquake_status);
+            return (
+              <>
+                {/* Confidence Banner */}
+                <div className={`card shadow-md border bg-gradient-to-r ${confLevel.gradient} ${confLevel.border} mb-6`}>
+                  <div className="card-body flex-row items-center gap-6 py-5">
+                    {seismicData ? (
+                      <div
+                        className={`radial-progress ${confLevel.text} shrink-0`}
+                        style={{ '--value': confPercent, '--size': '5.5rem', '--thickness': '7px' }}
+                        role="progressbar"
+                        aria-valuenow={confPercent}
+                      >
+                        <span className="text-xl font-black">{confPercent}%</span>
+                      </div>
+                    ) : (
+                      <div className="radial-progress text-base-300 shrink-0" style={{ '--value': 0, '--size': '5.5rem', '--thickness': '7px' }}>
+                        <span className="text-xs font-bold opacity-50">N/A</span>
+                      </div>
+                    )}
+                    <div className="flex-1">
+                      <div className="flex flex-wrap items-center gap-2 mb-1">
+                        <Activity size={18} className={confLevel.text} />
+                        <h3 className="font-black italic uppercase text-sm tracking-wide text-gray-800">AI Anomaly Confidence</h3>
+                        <span className={`badge badge-sm font-bold ${confLevel.badge}`}>{confLevel.label}</span>
+                      </div>
+                      <p className="text-xs text-gray-500 leading-snug max-w-xl">
+                        {seismicData
+                          ? 'Seberapa jauh PGA pembacaan terakhir menyimpang dari baseline getaran normal perangkat ini. Ini skor anomali statistik real-time, bukan prediksi kapan gempa akan terjadi.'
+                          : 'Klik "Check Anomaly Status" untuk mengambil pembacaan seismik terbaru dari perangkat ini.'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Seismic Stat Cards */}
+                {seismicData && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+                    <div className="card bg-base-100 shadow-sm border border-base-200 rounded-xl">
+                      <div className="card-body p-5">
+                        <h4 className="text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">Earthquake Status</h4>
+                        <span className={`badge font-bold ${statusInfo.color}`}>{statusInfo.label}</span>
+                      </div>
+                    </div>
+                    <div className="card bg-base-100 shadow-sm border border-base-200 rounded-xl">
+                      <div className="card-body p-5">
+                        <h4 className="text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">PGA</h4>
+                        <span className="text-2xl font-extrabold text-[#007bff]">{reading?.pga_gal ?? '-'} Gal</span>
+                      </div>
+                    </div>
+                    <div className="card bg-base-100 shadow-sm border border-base-200 rounded-xl">
+                      <div className="card-body p-5">
+                        <h4 className="text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">Shindo (Intensity)</h4>
+                        <span className="text-2xl font-extrabold text-[#007bff]">{reading?.shindo ?? '-'}</span>
+                      </div>
+                    </div>
+                    <div className="card bg-base-100 shadow-sm border border-base-200 rounded-xl">
+                      <div className="card-body p-5">
+                        <h4 className="text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">GPS Satellites</h4>
+                        <span className="text-2xl font-extrabold text-[#007bff]">{reading?.satellite_count ?? '-'}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </>
+            );
+          })()}
+        </>
+      )}
     </div>
   );
 };
