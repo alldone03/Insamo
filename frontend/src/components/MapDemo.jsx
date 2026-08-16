@@ -27,12 +27,15 @@ const DUMMY_DEVICES = [];
 
 const { BaseLayer } = LayersControl;
 
+const hasValidCoords = (d) => Number.isFinite(parseFloat(d?.latitude)) && Number.isFinite(parseFloat(d?.longitude));
+
 function SetBounds({ devices }) {
     const map = useMap();
     useEffect(() => {
-        if (devices && devices.length > 0) {
+        const validDevices = (devices || []).filter(hasValidCoords);
+        if (validDevices.length > 0) {
             const bounds = L.latLngBounds(
-                devices.map((d) => [d.latitude, d.longitude]),
+                validDevices.map((d) => [d.latitude, d.longitude]),
             );
             map.fitBounds(bounds, { padding: [50, 50], maxZoom: 10 });
         }
@@ -113,16 +116,17 @@ const MapDemo = () => {
     }, [backendDevices]);
 
     const mapCenter = useMemo(() => {
-        if (!devices || devices.length === 0) return [-7.5, 110.0];
-        const totalLat = devices.reduce(
+        const validDevices = (devices || []).filter(hasValidCoords);
+        if (validDevices.length === 0) return [-7.5, 110.0];
+        const totalLat = validDevices.reduce(
             (sum, d) => sum + parseFloat(d.latitude),
             0,
         );
-        const totalLon = devices.reduce(
+        const totalLon = validDevices.reduce(
             (sum, d) => sum + parseFloat(d.longitude),
             0,
         );
-        return [totalLat / devices.length, totalLon / devices.length];
+        return [totalLat / validDevices.length, totalLon / validDevices.length];
     }, [devices]);
 
     return (
@@ -188,7 +192,7 @@ const MapDemo = () => {
                     </LayersControl.BaseLayer>
                 </LayersControl>
 
-                {devices.map((device) => (
+                {devices.filter(hasValidCoords).map((device) => (
                     <Marker
                         key={device.id}
                         position={[device.latitude, device.longitude]}

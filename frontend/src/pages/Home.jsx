@@ -8,6 +8,8 @@ import { Link } from "react-router-dom";
 import { Eye, Info, Layers, Map as MapIcon } from "lucide-react";
 import { useMemo, useEffect, useState } from 'react';
 
+const hasValidCoords = (d) => Number.isFinite(parseFloat(d?.latitude)) && Number.isFinite(parseFloat(d?.longitude));
+
 import banjier from "../assets/banjier.webp";
 import longsyor from "../assets/longsyor.webp";
 import apiapi from "../assets/apiapi.webp";
@@ -20,8 +22,9 @@ function SetBounds({ devices }) {
     const [hasFit, setHasFit] = useState(false);
 
     useEffect(() => {
-        if (devices && devices.length > 0 && !hasFit) {
-            const bounds = L.latLngBounds(devices.map(d => [d.latitude, d.longitude]));
+        const validDevices = (devices || []).filter(hasValidCoords);
+        if (validDevices.length > 0 && !hasFit) {
+            const bounds = L.latLngBounds(validDevices.map(d => [d.latitude, d.longitude]));
             map.fitBounds(bounds, { padding: [50, 50], maxZoom: 12 });
             setHasFit(true);
         }
@@ -176,10 +179,11 @@ export default function Home() {
 
     // Calculate dynamic center for initial view (only re-computes if device count changes)
     const mapCenter = useMemo(() => {
-        if (!devices || devices.length === 0) return [-6.2088, 106.8456]; // Default Jakarta
-        const totalLat = devices.reduce((sum, d) => sum + parseFloat(d.latitude), 0);
-        const totalLon = devices.reduce((sum, d) => sum + parseFloat(d.longitude), 0);
-        return [totalLat / devices.length, totalLon / devices.length];
+        const validDevices = (devices || []).filter(hasValidCoords);
+        if (validDevices.length === 0) return [-6.2088, 106.8456]; // Default Jakarta
+        const totalLat = validDevices.reduce((sum, d) => sum + parseFloat(d.latitude), 0);
+        const totalLon = validDevices.reduce((sum, d) => sum + parseFloat(d.longitude), 0);
+        return [totalLat / validDevices.length, totalLon / validDevices.length];
     }, [devices?.length]);
 
     const [activeLayers, setActiveLayers] = useState({
@@ -380,6 +384,7 @@ export default function Home() {
 
 
                     {devices?.filter(d => {
+                        if (!hasValidCoords(d)) return false;
                         const isOffline = d.status === 'OFFLINE' || d.status === 'INACTIVE';
                         if (isOffline) return deviceFilter.OFFLINE;
                         return deviceFilter[d.device_type];
