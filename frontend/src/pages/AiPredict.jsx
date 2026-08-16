@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
-  ResponsiveContainer, ReferenceLine, ComposedChart,
+  ResponsiveContainer, ReferenceLine, ComposedChart, Area,
 } from 'recharts';
 import { api } from '../lib/api';
 
@@ -26,7 +26,11 @@ const AiPredict = () => {
   const [loadingDevices, setLoadingDevices] = useState(true);
   const [result, setResult] = useState(null);
   const [seismicData, setSeismicData] = useState(null);
+  const [seismicHistory, setSeismicHistory] = useState([]);
   const [error, setError] = useState(null);
+
+  // Ambang deteksi gempa dari firmware SIGMA (THRESHOLD_GAL di sigma_earthquake_sensor.ino)
+  const SEISMIC_THRESHOLD_GAL = 3.0;
 
   const isSigma = selectedDevice?.device_type === 'SIGMA';
 
@@ -67,30 +71,39 @@ const AiPredict = () => {
     }
   }, [selectedDevice, horizon]);
 
-  // Check latest seismic anomaly confidence (SIGMA devices only)
+  // Check seismic anomaly confidence trend (SIGMA devices only)
   const runSeismicCheck = useCallback(async () => {
     if (!selectedDevice) return;
     setLoading(true);
     setError(null);
     try {
       const res = await api.get('/sensor-readings', {
-        params: { device_id: selectedDevice.id, per_page: 1 },
+        params: { device_id: selectedDevice.id, per_page: 30 },
       });
       const readings = res.data?.data || [];
       const latest = readings[0];
       if (!latest) {
         setError('No sensor readings yet for this device');
         setSeismicData(null);
+        setSeismicHistory([]);
       } else {
         setSeismicData({
           reading: latest,
           confidence: latest.classificationResults?.[0]?.confidence ?? null,
         });
+        setSeismicHistory(
+          [...readings].reverse().map((r) => ({
+            time: r.recorded_at,
+            pga_gal: r.pga_gal ?? 0,
+            confidence_pct: r.classificationResults?.[0]?.confidence != null ? Math.round(r.classificationResults[0].confidence * 100) : null,
+          }))
+        );
       }
     } catch (err) {
       const msg = err.response?.data?.message || err.message || 'Failed to fetch seismic data';
       setError(msg);
       setSeismicData(null);
+      setSeismicHistory([]);
     } finally {
       setLoading(false);
     }
@@ -499,6 +512,46 @@ const AiPredict = () => {
                       <div className="card-body p-5">
                         <h4 className="text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">GPS Satellites</h4>
                         <span className="text-2xl font-extrabold text-[#007bff]">{reading?.satellite_count ?? '-'}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* PGA vs AI Confidence Trend */}
+                {seismicHistory.length > 0 && (
+                  <div className="card bg-base-100 shadow-md border-l-4 border-l-error rounded-xl mt-6">
+                    <div className="card-body">
+                      <h3 className="text-lg font-bold text-gray-800 mb-1">
+                        Seismic Trend — PGA vs AI Confidence
+                      </h3>
+                      <p className="text-xs text-gray-500 mb-4">
+                        {seismicHistory.length} pembacaan terakhir. Garis merah putus-putus adalah ambang deteksi gempa firmware ({SEISMIC_THRESHOLD_GAL} Gal).
+                      </p>
+                      <div className="w-full h-72">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <ComposedChart data={seismicHistory} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                            <XAxis
+                              dataKey="time"
+                              tick={{ fontSize: 10 }}
+                              tickFormatter={(timeStr) => {
+                                if (!timeStr) return '';
+                                const match = String(timeStr).match(/T(\d{2}):(\d{2})/);
+                                return match ? `${match[1]}:${match[2]}` : timeStr;
+                              }}
+                            />
+                            <YAxis yAxisId="pga" tick={{ fontSize: 11 }} label={{ value: 'PGA (Gal)', angle: -90, position: 'insideLeft', fontSize: 10 }} />
+                            <YAxis yAxisId="conf" orientation="right" domain={[0, 100]} tick={{ fontSize: 11 }} label={{ value: 'Confidence %', angle: 90, position: 'insideRight', fontSize: 10 }} />
+                            <Tooltip
+                              contentStyle={{ borderRadius: 8, fontSize: 12 }}
+                              formatter={(val, name) => name === 'Confidence' ? [`${val}%`, name] : [`${Number(val).toFixed(2)} Gal`, name]}
+                            />
+                            <Legend wrapperStyle={{ fontSize: 11 }} />
+                            <ReferenceLine yAxisId="pga" y={SEISMIC_THRESHOLD_GAL} stroke="#cc0000" strokeDasharray="6 3" label={{ value: `Ambang ${SEISMIC_THRESHOLD_GAL} Gal`, position: 'right', fontSize: 10, fill: '#cc0000' }} />
+                            <Area yAxisId="conf" type="monotone" dataKey="confidence_pct" name="Confidence" fill="#e83e8c" stroke="#e83e8c" fillOpacity={0.15} connectNulls={false} />
+                            <Line yAxisId="pga" type="monotone" dataKey="pga_gal" name="PGA (Gal)" stroke="#007bff" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
+                          </ComposedChart>
+                        </ResponsiveContainer>
                       </div>
                     </div>
                   </div>
