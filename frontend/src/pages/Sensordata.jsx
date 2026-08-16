@@ -70,46 +70,32 @@ export default function Sensordata() {
     // The previous DeviceController.php show() method does load('sensorReadings')
     const readings = device?.sensor_readings || [];
 
-    // Format datetime for display
-function formatDate(isoString) {
-  const date = new Date(isoString);
-
-  const pad = (n) => String(n).padStart(2, '0');
-
-  const bulan = [
-    'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
-  ];
-
-  const day     = date.getUTCDate();
-  const month   = bulan[date.getUTCMonth()];
-  const year    = date.getUTCFullYear();
-  const hours   = pad(date.getUTCHours());
-  const minutes = pad(date.getUTCMinutes());
-
-  return `${day} ${month} ${year}, ${hours}:${minutes}`;
-}
-
-// Contoh
-
-const parseUTC = (ts) => {
-    if (!ts) return new Date();
-    const str = typeof ts === 'string' ? ts : String(ts);
-    return new Date(str.includes('Z') || str.includes('+') ? str : str + 'Z');
-};
+    // Parse a recorded_at value that may be missing an explicit UTC marker,
+    // and always display it converted to WIB (Asia/Jakarta) — matches FloodHistory.jsx.
+    const parseUTC = (ts) => {
+        if (!ts) return new Date();
+        const str = typeof ts === 'string' ? ts : String(ts);
+        return new Date(str.includes('Z') || str.includes('+') ? str : str + 'Z');
+    };
     const formatWIB = (ts) => {
-    return parseUTC(ts).toLocaleString('id-ID', {
-        timeZone: 'Asia/Jakarta',
-        day: '2-digit', month: '2-digit', year: 'numeric',
-        hour: '2-digit', minute: '2-digit', second: '2-digit'
-    });
-};
+        const bulan = [
+            'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+            'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+        ];
+        const date = parseUTC(ts);
+        const parts = new Intl.DateTimeFormat('en-US', {
+            timeZone: 'Asia/Jakarta',
+            day: 'numeric', month: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false,
+        }).formatToParts(date);
+        const get = (type) => parts.find((p) => p.type === type)?.value;
+        return `${get('day')} ${bulan[Number(get('month')) - 1]} ${get('year')}, ${get('hour')}:${get('minute')}`;
+    };
 
     // Format readings with datetime
     const formattedReadings = readings.map(r => ({
         ...r,
         time: r.recorded_at,
-        datetime: formatDate(r.recorded_at),
+        datetime: formatWIB(r.recorded_at),
         x: r.vib_x || r.tilt_x || 0,
         y: r.vib_y || r.tilt_y || 0,
         z: r.vib_z || r.tilt_z || 0,
@@ -304,7 +290,7 @@ const parseUTC = (ts) => {
 
             {/* Quick Status Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <StatCard label="Latest Sync" value={readings.length > 0 ? new Date(readings[readings.length - 1].recorded_at).toLocaleString() : 'N/A'} icon={<Activity size={20} />} />
+                <StatCard label="Latest Sync" value={readings.length > 0 ? formatWIB(readings[readings.length - 1].recorded_at) : 'N/A'} icon={<Activity size={20} />} />
                 <StatCard label="Location" value={`${device?.latitude}, ${device?.longitude}`} icon={<MapPin size={20} />} />
                 <StatCard label="Data Points" value={device?.total_readings ?? readings.length} icon={<Hash size={20} />} />
             </div>

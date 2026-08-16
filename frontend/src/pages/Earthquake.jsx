@@ -6,6 +6,13 @@ import { api, getImageUrl } from '../lib/api';
 import InfoPopover from '../components/InfoPopover';
 import { io } from 'socket.io-client';
 
+// Parse timestamp sebagai UTC supaya konversi ke WIB benar
+const parseUTC = (ts) => {
+  if (!ts) return new Date();
+  const str = typeof ts === 'string' ? ts : String(ts);
+  return new Date(str.includes('Z') || str.includes('+') ? str : str + 'Z');
+};
+
 const Earthquake = () => {
   const [devices, setDevices] = useState([]);
   const [selectedDevice, setSelectedDevice] = useState(null);
@@ -230,7 +237,7 @@ const Earthquake = () => {
                   <div className="flex justify-between">
                     <span className="opacity-60 text-xs font-bold uppercase">Last Sync</span>
                     <span className="font-mono text-[10px] opacity-80 font-bold">
-                      {getReading(selectedDevice).recorded_at ? new Date(getReading(selectedDevice).recorded_at).toLocaleTimeString('id-ID') : '-'}
+                      {getReading(selectedDevice).recorded_at ? parseUTC(getReading(selectedDevice).recorded_at).toLocaleTimeString('id-ID', { timeZone: 'Asia/Jakarta' }) : '-'}
                     </span>
                   </div>
                 </div>
@@ -317,8 +324,9 @@ const Earthquake = () => {
             <div className="card-body">
               <div className="text-sm opacity-50 font-bold mb-4">
                 Terakhir diperbarui: {
-                  new Date(latestReadings[selectedDevice.id]?.recorded_at || new Date().toISOString())
+                  parseUTC(latestReadings[selectedDevice.id]?.recorded_at || new Date().toISOString())
                     .toLocaleString('id-ID', {
+                      timeZone: 'Asia/Jakarta',
                       day: 'numeric', month: 'long', year: 'numeric',
                       hour: '2-digit', minute: '2-digit', second: '2-digit'
                     }).replace(/\./g, '.')
