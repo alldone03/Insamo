@@ -3,6 +3,7 @@ import { Activity, ArrowLeft, Eye, Brain } from 'lucide-react';
 import GenericChart from '../components/GenericChart';
 import MiniMap from '../components/MiniMap';
 import { api, getImageUrl } from '../lib/api';
+import InfoPopover from '../components/InfoPopover';
 import { io } from 'socket.io-client';
 
 const Earthquake = () => {
@@ -13,6 +14,9 @@ const Earthquake = () => {
   const [chartData, setChartData] = useState([]);
   const [latestReadings, setLatestReadings] = useState({});
   const [latestConfidence, setLatestConfidence] = useState(null);
+
+  // Ambang deteksi gempa dari firmware SIGMA (THRESHOLD_GAL di sigma_earthquake_sensor.ino)
+  const SEISMIC_THRESHOLD_GAL = 3.0;
   const [currentTime, setCurrentTime] = useState(Date.now());
 
   useEffect(() => {
@@ -176,17 +180,37 @@ const Earthquake = () => {
                     )}
                   </div>
                   <div className="flex justify-between border-b border-base-200 pb-2">
-                    <span className="opacity-60 text-xs font-bold uppercase">Earthquake Status</span>
+                    <span className="opacity-60 text-xs font-bold uppercase flex items-center gap-1">
+                      Earthquake Status
+                      <InfoPopover title="Earthquake Status">
+                        <p>Status rule-based dari firmware alat (bukan AI), berdasarkan ambang PGA:</p>
+                        <p><span className="badge badge-success badge-xs">AMAN</span> PGA di bawah {SEISMIC_THRESHOLD_GAL} Gal.</p>
+                        <p><span className="badge badge-warning badge-xs">CROSSCHECK</span> PGA lewat ambang, sedang diverifikasi (minimal 3 osilasi dalam 500ms) supaya getaran sesaat tidak dianggap gempa.</p>
+                        <p><span className="badge badge-error badge-xs">GEMPA</span> terkonfirmasi setelah cross-check terpenuhi.</p>
+                      </InfoPopover>
+                    </span>
                     <span className={`badge badge-sm font-bold ${getStatusBadge(getReading(selectedDevice).earthquake_status).color}`}>
                       {getStatusBadge(getReading(selectedDevice).earthquake_status).label}
                     </span>
                   </div>
                   <div className="flex justify-between border-b border-base-200 pb-2">
-                    <span className="opacity-60 text-xs font-bold uppercase">PGA</span>
+                    <span className="opacity-60 text-xs font-bold uppercase flex items-center gap-1">
+                      PGA
+                      <InfoPopover title="PGA (Peak Ground Acceleration)">
+                        <p>Percepatan getaran maksimum, satuan Gal (1 Gal = 1 cm/detik²), dibaca langsung dari akselerometer MPU6050.</p>
+                        <p className="font-mono text-[10px] bg-base-200 rounded px-1 py-0.5">pga_gal = |resultan_akselerasi − gravitasi_baseline| × 100</p>
+                      </InfoPopover>
+                    </span>
                     <span className="text-error text-xs font-bold italic">{(getReading(selectedDevice).pga_gal ?? 0).toFixed?.(2) ?? getReading(selectedDevice).pga_gal ?? 0} Gal</span>
                   </div>
                   <div className="flex justify-between border-b border-base-200 pb-2">
-                    <span className="opacity-60 text-xs font-bold uppercase">Shindo (Intensity)</span>
+                    <span className="opacity-60 text-xs font-bold uppercase flex items-center gap-1">
+                      Shindo (Intensity)
+                      <InfoPopover title="Shindo">
+                        <p>Skala intensitas gempa ala Jepang, dihitung dari PGA hanya saat status GEMPA terkonfirmasi.</p>
+                        <p className="font-mono text-[10px] bg-base-200 rounded px-1 py-0.5">shindo = 2 × log10(PGA) + 0.94</p>
+                      </InfoPopover>
+                    </span>
                     <span className="text-error text-xs font-bold italic">{getReading(selectedDevice).shindo ?? '-'}</span>
                   </div>
                   <div className="flex justify-between border-b border-base-200 pb-2">
@@ -258,6 +282,11 @@ const Earthquake = () => {
                     <Brain size={18} className={confLevel.text} />
                     <h3 className="font-black italic uppercase text-sm tracking-wide">AI Anomaly Confidence</h3>
                     <span className={`badge badge-sm font-bold ${confLevel.badge}`}>{confLevel.label}</span>
+                    <InfoPopover title="Apa itu AI Confidence?" align="dropdown-start">
+                      <p>Skor statistik yang menunjukkan seberapa jauh PGA pembacaan ini menyimpang dari kebiasaan getaran normal alat ini sendiri.</p>
+                      <p><strong>Cara hitung:</strong> ambil 30 pembacaan AMAN terakhir dari device ini → hitung rata-rata & standar deviasi PGA-nya (baseline) → hitung z-score PGA saat ini terhadap baseline → ubah jadi 0-100% lewat fungsi sigmoid.</p>
+                      <p className="text-warning font-bold">Ini bukan prediksi kapan gempa terjadi — hanya skor anomali real-time, karena tidak ada dataset gempa asli berlabel untuk melatih model prediksi sungguhan.</p>
+                    </InfoPopover>
                   </div>
                   <p className="text-xs opacity-60 leading-snug max-w-xl">
                     Seberapa jauh PGA pembacaan terakhir menyimpang dari baseline getaran normal perangkat ini. Ini skor anomali statistik real-time, bukan prediksi kapan gempa akan terjadi.

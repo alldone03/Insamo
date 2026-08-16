@@ -17,6 +17,7 @@ import {
   ResponsiveContainer, ReferenceLine, ComposedChart, Area,
 } from 'recharts';
 import { api } from '../lib/api';
+import InfoPopover from '../components/InfoPopover';
 
 const AiPredict = () => {
   const [horizon, setHorizon] = useState('50');
@@ -477,6 +478,11 @@ const AiPredict = () => {
                         <Activity size={18} className={confLevel.text} />
                         <h3 className="font-black italic uppercase text-sm tracking-wide text-gray-800">AI Anomaly Confidence</h3>
                         <span className={`badge badge-sm font-bold ${confLevel.badge}`}>{confLevel.label}</span>
+                        <InfoPopover title="Apa itu AI Confidence?" align="dropdown-start">
+                          <p>Skor statistik yang menunjukkan seberapa jauh PGA pembacaan ini menyimpang dari kebiasaan getaran normal alat ini sendiri.</p>
+                          <p><strong>Cara hitung:</strong> ambil 30 pembacaan AMAN terakhir dari device ini → hitung rata-rata & standar deviasi PGA-nya (baseline) → hitung z-score PGA saat ini terhadap baseline → ubah jadi 0-100% lewat fungsi sigmoid.</p>
+                          <p className="text-warning font-bold">Ini bukan prediksi kapan gempa terjadi — hanya skor anomali real-time, karena tidak ada dataset gempa asli berlabel untuk melatih model prediksi sungguhan.</p>
+                        </InfoPopover>
                       </div>
                       <p className="text-xs text-gray-500 leading-snug max-w-xl">
                         {seismicData
@@ -492,19 +498,39 @@ const AiPredict = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
                     <div className="card bg-base-100 shadow-sm border border-base-200 rounded-xl">
                       <div className="card-body p-5">
-                        <h4 className="text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">Earthquake Status</h4>
+                        <h4 className="text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider flex items-center gap-1">
+                          Earthquake Status
+                          <InfoPopover title="Earthquake Status">
+                            <p>Status rule-based dari firmware alat (bukan AI), berdasarkan ambang PGA:</p>
+                            <p><span className="badge badge-success badge-xs">AMAN</span> PGA di bawah {SEISMIC_THRESHOLD_GAL} Gal.</p>
+                            <p><span className="badge badge-warning badge-xs">CROSSCHECK</span> PGA lewat ambang, sedang diverifikasi (minimal 3 osilasi dalam 500ms) supaya getaran sesaat (mis. pintu dibanting) tidak dianggap gempa.</p>
+                            <p><span className="badge badge-error badge-xs">GEMPA</span> terkonfirmasi setelah cross-check terpenuhi.</p>
+                          </InfoPopover>
+                        </h4>
                         <span className={`badge font-bold ${statusInfo.color}`}>{statusInfo.label}</span>
                       </div>
                     </div>
                     <div className="card bg-base-100 shadow-sm border border-base-200 rounded-xl">
                       <div className="card-body p-5">
-                        <h4 className="text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">PGA</h4>
+                        <h4 className="text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider flex items-center gap-1">
+                          PGA
+                          <InfoPopover title="PGA (Peak Ground Acceleration)">
+                            <p>Percepatan getaran maksimum dalam satuan Gal (1 Gal = 1 cm/detik²), dibaca langsung dari akselerometer MPU6050.</p>
+                            <p className="font-mono text-[10px] bg-base-200 rounded px-1 py-0.5">pga_gal = |resultan_akselerasi − gravitasi_baseline| × 100</p>
+                          </InfoPopover>
+                        </h4>
                         <span className="text-2xl font-extrabold text-[#007bff]">{reading?.pga_gal ?? '-'} Gal</span>
                       </div>
                     </div>
                     <div className="card bg-base-100 shadow-sm border border-base-200 rounded-xl">
                       <div className="card-body p-5">
-                        <h4 className="text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">Shindo (Intensity)</h4>
+                        <h4 className="text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider flex items-center gap-1">
+                          Shindo (Intensity)
+                          <InfoPopover title="Shindo">
+                            <p>Skala intensitas gempa ala Jepang, dihitung dari PGA hanya saat status GEMPA terkonfirmasi.</p>
+                            <p className="font-mono text-[10px] bg-base-200 rounded px-1 py-0.5">shindo = 2 × log10(PGA) + 0.94</p>
+                          </InfoPopover>
+                        </h4>
                         <span className="text-2xl font-extrabold text-[#007bff]">{reading?.shindo ?? '-'}</span>
                       </div>
                     </div>
@@ -521,8 +547,14 @@ const AiPredict = () => {
                 {seismicHistory.length > 0 && (
                   <div className="card bg-base-100 shadow-md border-l-4 border-l-error rounded-xl mt-6">
                     <div className="card-body">
-                      <h3 className="text-lg font-bold text-gray-800 mb-1">
+                      <h3 className="text-lg font-bold text-gray-800 mb-1 flex items-center gap-1.5">
                         Seismic Trend — PGA vs AI Confidence
+                        <InfoPopover title="Cara Baca Chart Ini">
+                          <p><span className="font-bold" style={{ color: '#007bff' }}>Garis biru (PGA)</span>: getaran mentah dari sensor, sumbu kiri, satuan Gal.</p>
+                          <p><span className="font-bold" style={{ color: '#e83e8c' }}>Area merah muda (Confidence)</span>: skor anomali AI, sumbu kanan, satuan %.</p>
+                          <p><span className="font-bold text-error">Garis putus-putus merah</span>: ambang deteksi gempa firmware ({SEISMIC_THRESHOLD_GAL} Gal) — bukan dari AI.</p>
+                          <p>Data dari 30 pembacaan sensor_readings terakhir device ini, dipasangkan dengan confidence dari classification_results.</p>
+                        </InfoPopover>
                       </h3>
                       <p className="text-xs text-gray-500 mb-4">
                         {seismicHistory.length} pembacaan terakhir. Garis merah putus-putus adalah ambang deteksi gempa firmware ({SEISMIC_THRESHOLD_GAL} Gal).
