@@ -1,6 +1,6 @@
 CREATE TABLE `accounts` (
 	`id` varchar(255) NOT NULL,
-	`user_id` int,
+	`user_id` bigint unsigned,
 	`account_id` varchar(255) NOT NULL,
 	`provider_id` varchar(255) NOT NULL,
 	`access_token` text,
@@ -14,8 +14,8 @@ CREATE TABLE `accounts` (
 --> statement-breakpoint
 CREATE TABLE `classification_results` (
 	`id` serial AUTO_INCREMENT NOT NULL,
-	`sensor_reading_id` int,
-	`device_id` int,
+	`sensor_reading_id` bigint unsigned,
+	`device_id` bigint unsigned,
 	`label` varchar(255) NOT NULL,
 	`confidence` float NOT NULL,
 	`created_at` timestamp DEFAULT (now()),
@@ -24,7 +24,7 @@ CREATE TABLE `classification_results` (
 --> statement-breakpoint
 CREATE TABLE `device_settings` (
 	`id` serial AUTO_INCREMENT NOT NULL,
-	`device_id` int,
+	`device_id` bigint unsigned,
 	`initial_distance` float NOT NULL,
 	`alert_threshold` float NOT NULL,
 	`danger_threshold` float NOT NULL,
@@ -35,8 +35,8 @@ CREATE TABLE `device_settings` (
 --> statement-breakpoint
 CREATE TABLE `device_user` (
 	`id` serial AUTO_INCREMENT NOT NULL,
-	`user_id` int,
-	`device_id` int,
+	`user_id` bigint unsigned,
+	`device_id` bigint unsigned,
 	`created_at` timestamp DEFAULT (now()),
 	CONSTRAINT `device_user_id` PRIMARY KEY(`id`)
 );
@@ -64,7 +64,7 @@ CREATE TABLE `roles` (
 --> statement-breakpoint
 CREATE TABLE `sensor_readings` (
 	`id` serial AUTO_INCREMENT NOT NULL,
-	`device_id` int,
+	`device_id` bigint unsigned,
 	`recorded_at` datetime NOT NULL,
 	`temperature` double,
 	`humidity` double,
@@ -91,7 +91,7 @@ CREATE TABLE `sensor_readings` (
 --> statement-breakpoint
 CREATE TABLE `sessions` (
 	`id` varchar(255) NOT NULL,
-	`user_id` int,
+	`user_id` bigint unsigned,
 	`token` text NOT NULL,
 	`expires_at` timestamp NOT NULL,
 	`ip_address` text,
@@ -114,7 +114,7 @@ CREATE TABLE `system_settings` (
 CREATE TABLE `telegram_logs` (
 	`id` serial AUTO_INCREMENT NOT NULL,
 	`chat_id` varchar(255) NOT NULL,
-	`user_id` int,
+	`user_id` bigint unsigned,
 	`message` text NOT NULL,
 	`type` enum('sent','received') DEFAULT 'sent',
 	`created_at` timestamp DEFAULT (now()),
@@ -131,7 +131,7 @@ CREATE TABLE `users` (
 	`image` text,
 	`created_at` timestamp DEFAULT (now()),
 	`updated_at` timestamp DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
-	`role_id` int,
+	`role_id` bigint unsigned,
 	`telegram_chat_id` varchar(255),
 	CONSTRAINT `users_id` PRIMARY KEY(`id`),
 	CONSTRAINT `users_email_unique` UNIQUE(`email`)

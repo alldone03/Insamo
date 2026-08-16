@@ -16,7 +16,7 @@
         },
         "user_id": {
           "name": "user_id",
-          "type": "int",
+          "type": "bigint unsigned",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
@@ -120,14 +120,14 @@
         },
         "sensor_reading_id": {
           "name": "sensor_reading_id",
-          "type": "int",
+          "type": "bigint unsigned",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
         "device_id": {
           "name": "device_id",
-          "type": "int",
+          "type": "bigint unsigned",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
@@ -207,7 +207,7 @@
         },
         "device_id": {
           "name": "device_id",
-          "type": "int",
+          "type": "bigint unsigned",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
@@ -290,14 +290,14 @@
         },
         "user_id": {
           "name": "user_id",
-          "type": "int",
+          "type": "bigint unsigned",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
         "device_id": {
           "name": "device_id",
-          "type": "int",
+          "type": "bigint unsigned",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
@@ -491,7 +491,7 @@
         },
         "device_id": {
           "name": "device_id",
-          "type": "int",
+          "type": "bigint unsigned",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
@@ -684,7 +684,7 @@
         },
         "user_id": {
           "name": "user_id",
-          "type": "int",
+          "type": "bigint unsigned",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
@@ -843,7 +843,7 @@
         },
         "user_id": {
           "name": "user_id",
-          "type": "int",
+          "type": "bigint unsigned",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
@@ -973,7 +973,7 @@
         },
         "role_id": {
           "name": "role_id",
-          "type": "int",
+          "type": "bigint unsigned",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
