@@ -8,6 +8,17 @@ import { TelegramService } from '../services/TelegramService';
 import { SeismicClassificationService } from '../services/SeismicClassificationService';
 import { io } from '../../index';
 
+// Devices report their own local wall-clock time (WIB, UTC+7) with no timezone
+// marker (e.g. "2026-08-17 09:26:00"). Parsing that directly with `new Date()`
+// makes Node interpret it using the container's system timezone (UTC), silently
+// mislabeling a WIB timestamp as UTC with no shift applied. Explicitly anchor
+// unmarked timestamps to +07:00 so they convert to the correct UTC instant.
+function parseDeviceTimestamp(ts?: string): Date {
+  if (!ts) return new Date();
+  const hasTimezoneMarker = /Z$|[+-]\d{2}:?\d{2}$/.test(ts);
+  return hasTimezoneMarker ? new Date(ts) : new Date(`${ts.replace(' ', 'T')}+07:00`);
+}
+
 export class SensorReadingController extends Controller {
   async index(req: Request, res: Response) {
       try {
@@ -114,7 +125,7 @@ export class SensorReadingController extends Controller {
       // Insert sensor reading
       const [insertResult] = await db.insert(sensorReadings).values({
         device_id: device.id,
-        recorded_at: recorded_at ? new Date(recorded_at) : new Date(),
+        recorded_at: parseDeviceTimestamp(recorded_at),
         temperature: data.temperature ? Number(data.temperature) : null,
         humidity: data.humidity ? Number(data.humidity) : null,
         wind_speed: data.wind_speed ? Number(data.wind_speed) : null,
