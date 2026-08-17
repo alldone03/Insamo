@@ -1,21 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Activity, Table as TableIcon, Download, Search } from "lucide-react";
 import { api } from "../../lib/api";
-
-// Parse timestamp sebagai UTC supaya konversi ke WIB benar
-const parseUTC = (ts) => {
-    if (!ts) return new Date();
-    const str = typeof ts === 'string' ? ts : String(ts);
-    return new Date(str.includes('Z') || str.includes('+') ? str : str + 'Z');
-};
-
-const formatWIB = (ts) => {
-    return parseUTC(ts).toLocaleString('id-ID', {
-        timeZone: 'Asia/Jakarta',
-        day: '2-digit', month: '2-digit', year: 'numeric',
-        hour: '2-digit', minute: '2-digit', second: '2-digit'
-    });
-};
+import { formatWIBShort } from "../../lib/wib";
 
 const getConfidenceStyle = (confidence) => {
     if (confidence >= 0.7) return 'progress-error';
@@ -85,7 +71,7 @@ const EarthquakeHistory = () => {
                                         <td>{i + 1 + (page - 1) * 20}</td>
                                         <td className="font-bold">{log.device?.device_code}</td>
                                         <td>{log.device?.address || 'Unknown'}</td>
-                                        <td>{formatWIB(log.recorded_at)}</td>
+                                        <td>{formatWIBShort(log.recorded_at)}</td>
                                         <td>{log.vib_x || 0}</td>
                                         <td>{log.vib_y || 0}</td>
                                         <td>{log.vib_z || 0}</td>

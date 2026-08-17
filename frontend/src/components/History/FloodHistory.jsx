@@ -14,23 +14,9 @@ import {
 } from "recharts";
 import { api } from "../../lib/api";
 import { io } from "socket.io-client";
+import { formatWIBShort, wibStringToDate } from "../../lib/wib";
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444'];
-
-// Parse timestamp sebagai UTC supaya konversi ke WIB benar
-const parseUTC = (ts) => {
-    if (!ts) return new Date();
-    const str = typeof ts === 'string' ? ts : String(ts);
-    return new Date(str.includes('Z') || str.includes('+') ? str : str + 'Z');
-};
-
-const formatWIB = (ts) => {
-    return parseUTC(ts).toLocaleString('id-ID', {
-        timeZone: 'Asia/Jakarta',
-        day: '2-digit', month: '2-digit', year: 'numeric',
-        hour: '2-digit', minute: '2-digit', second: '2-digit'
-    });
-};
 
 const getStatus = (level, settings) => {
     const danger = settings?.danger_threshold || 80;
@@ -140,8 +126,8 @@ const FloodHistory = () => {
         if (!rawLogs.length) return [];
         const groups = {};
         rawLogs.forEach(log => {
-            const d = parseUTC(log.recorded_at);
-            const hour = `${String(d.getHours()).padStart(2, '0')}:00`;
+            const d = wibStringToDate(log.recorded_at);
+            const hour = `${String(d.getUTCHours()).padStart(2, '0')}:00`;
             if (!groups[hour]) groups[hour] = { sum: 0, count: 0 };
             groups[hour].sum += calibrateLevel(log.water_level || 0);
             groups[hour].count += 1;
@@ -156,10 +142,10 @@ const FloodHistory = () => {
         if (!rawLogs.length) return [];
         const groups = {};
         [...rawLogs].reverse().forEach(log => {
-            const d = parseUTC(log.recorded_at);
+            const d = wibStringToDate(log.recorded_at);
             const key = dateRange === '1d'
-                ? `${String(d.getHours()).padStart(2, '0')}:00`
-                : `${d.getDate()}/${d.getMonth() + 1}`;
+                ? `${String(d.getUTCHours()).padStart(2, '0')}:00`
+                : `${d.getUTCDate()}/${d.getUTCMonth() + 1}`;
             if (!groups[key]) groups[key] = { sum: 0, count: 0 };
             groups[key].sum += calibrateLevel(log.water_level || 0);
             groups[key].count += 1;
@@ -393,7 +379,7 @@ const FloodHistory = () => {
                                     const status = getStatus(calLevel, currentDeviceSettings);
                                     return (
                                         <tr key={log.id}>
-                                            <td>{formatWIB(log.recorded_at)}</td>
+                                            <td>{formatWIBShort(log.recorded_at)}</td>
                                             <td className="font-bold text-primary">{calLevel.toFixed(1)} cm</td>
                                             <td><span className={`badge badge-xs ${status.color}`}>{status.label}</span></td>
                                             <td>{(log.temperature || 0).toFixed(1)}</td>

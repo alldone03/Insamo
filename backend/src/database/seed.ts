@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import { hashSync } from 'bcryptjs';
 import { sql } from 'drizzle-orm';
 import { auth } from '../config/auth';
+import { isoInstantToWIBString } from '../lib/wib';
 
 dotenv.config();
 
@@ -91,8 +92,9 @@ async function run() {
         console.log('Seeding Sensor Readings...');
         for (const device of devices) {
             for (let i = 0; i < 10; i++) {
-                const recordedAt = new Date();
-                recordedAt.setMinutes(recordedAt.getMinutes() - i * 2);
+                const recordedAtDate = new Date();
+                recordedAtDate.setMinutes(recordedAtDate.getMinutes() - i * 2);
+                const recordedAt = isoInstantToWIBString(recordedAtDate.toISOString());
 
                 if (device.device_type === 'SIGMA') {
                     // Simulasi data akselerometer MPU6050 (m/s²) dengan noise ringan

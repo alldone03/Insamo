@@ -1,28 +1,7 @@
 import React from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Activity } from 'lucide-react';
-
-// Parse timestamp sebagai UTC agar konversi ke WIB benar
-const parseUTC = (ts) => {
-    if (!ts) return new Date();
-    const str = typeof ts === 'string' ? ts : String(ts);
-    // Kalau tidak ada info timezone, anggap UTC (tambah Z)
-    return new Date(str.includes('Z') || str.includes('+') ? str : str + 'Z');
-};
-
-const formatWIBShort = (ts) => {
-    if (!ts) return '';
-    return parseUTC(ts).toLocaleTimeString('id-ID', { timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit' });
-};
-
-const formatWIBFull = (ts) => {
-    if (!ts) return '';
-    return parseUTC(ts).toLocaleString('id-ID', {
-        timeZone: 'Asia/Jakarta',
-        day: '2-digit', month: '2-digit', year: 'numeric',
-        hour: '2-digit', minute: '2-digit', second: '2-digit'
-    });
-};
+import { formatWIBTimeOnly, formatWIBShort } from '../lib/wib';
 
 const GenericChart = ({ data, title, lines, yAxisLabel, color }) => {
     return (
@@ -39,7 +18,7 @@ const GenericChart = ({ data, title, lines, yAxisLabel, color }) => {
                             <XAxis
                                 dataKey="time"
                                 tick={{ fontSize: 10 }}
-                                tickFormatter={formatWIBShort}
+                                tickFormatter={formatWIBTimeOnly}
                             />
                             <YAxis
                                 tick={{ fontSize: 10 }}
@@ -48,7 +27,7 @@ const GenericChart = ({ data, title, lines, yAxisLabel, color }) => {
                             <Tooltip
                                 contentStyle={{ backgroundColor: 'rgba(0,0,0,0.8)', border: 'none', borderRadius: '8px', color: '#fff' }}
                                 itemStyle={{ color: '#fff' }}
-                                labelFormatter={formatWIBFull}
+                                labelFormatter={formatWIBShort}
                             />
                             <Legend wrapperStyle={{ fontSize: 10 }} />
                             {lines.map((line, i) => (

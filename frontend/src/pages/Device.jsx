@@ -13,6 +13,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { wibStringToDate } from "../lib/wib";
 
 const DEVICE_CATEGORIES = {
     FLOWS: {
@@ -216,7 +217,7 @@ export default function Device() {
             return { status: 'offline', label: 'OFFLINE', color: 'text-error' };
         }
         const latestReading = device.sensor_readings[0];
-        const recordedAt = new Date(latestReading.recorded_at);
+        const recordedAt = wibStringToDate(latestReading.recorded_at);
         const diffMinutes = (new Date() - recordedAt) / 1000 / 60;
         return diffMinutes < 1
             ? { status: 'online', label: 'ONLINE', color: 'text-success' }

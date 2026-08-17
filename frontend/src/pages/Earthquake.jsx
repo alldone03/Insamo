@@ -5,13 +5,7 @@ import MiniMap from '../components/MiniMap';
 import { api, getImageUrl } from '../lib/api';
 import InfoPopover from '../components/InfoPopover';
 import { io } from 'socket.io-client';
-
-// Parse timestamp sebagai UTC supaya konversi ke WIB benar
-const parseUTC = (ts) => {
-  if (!ts) return new Date();
-  const str = typeof ts === 'string' ? ts : String(ts);
-  return new Date(str.includes('Z') || str.includes('+') ? str : str + 'Z');
-};
+import { formatWIBTimeWithSeconds, formatWIBLongWithSeconds, wibStringToDate, nowAsWIBString } from '../lib/wib';
 
 const Earthquake = () => {
   const [devices, setDevices] = useState([]);
@@ -61,7 +55,7 @@ const Earthquake = () => {
       if (payload.device_type === 'SIGMA') {
         const { device_id, reading } = payload;
 
-        const storedReading = { ...reading, recorded_at: reading.recorded_at || new Date().toISOString() };
+        const storedReading = { ...reading, recorded_at: reading.recorded_at || nowAsWIBString() };
         setLatestReadings(prev => ({
           ...prev,
           [device_id]: storedReading
@@ -73,7 +67,7 @@ const Earthquake = () => {
           }
 
           const newPoint = {
-            time: reading.recorded_at || new Date().toISOString(),
+            time: reading.recorded_at || nowAsWIBString(),
             x: reading.vib_x || reading.tilt_x || 0, // Fallback if schema differs
             y: reading.vib_y || reading.tilt_y || 0,
             z: reading.vib_z || reading.tilt_z || 0,
@@ -136,7 +130,7 @@ const Earthquake = () => {
   const isDeviceOnline = (devId) => {
     const isRecent = (timestamp) => {
       if (!timestamp) return false;
-      return (currentTime - new Date(timestamp).getTime()) <= 60000;
+      return (currentTime - wibStringToDate(timestamp).getTime()) <= 60000;
     };
 
     if (latestReadings[devId]) {
@@ -237,7 +231,7 @@ const Earthquake = () => {
                   <div className="flex justify-between">
                     <span className="opacity-60 text-xs font-bold uppercase">Last Sync</span>
                     <span className="font-mono text-[10px] opacity-80 font-bold">
-                      {getReading(selectedDevice).recorded_at ? parseUTC(getReading(selectedDevice).recorded_at).toLocaleTimeString('id-ID', { timeZone: 'Asia/Jakarta' }) : '-'}
+                      {getReading(selectedDevice).recorded_at ? formatWIBTimeWithSeconds(getReading(selectedDevice).recorded_at) : '-'}
                     </span>
                   </div>
                 </div>
@@ -324,12 +318,7 @@ const Earthquake = () => {
             <div className="card-body">
               <div className="text-sm opacity-50 font-bold mb-4">
                 Terakhir diperbarui: {
-                  parseUTC(latestReadings[selectedDevice.id]?.recorded_at || new Date().toISOString())
-                    .toLocaleString('id-ID', {
-                      timeZone: 'Asia/Jakarta',
-                      day: 'numeric', month: 'long', year: 'numeric',
-                      hour: '2-digit', minute: '2-digit', second: '2-digit'
-                    }).replace(/\./g, '.')
+                  formatWIBLongWithSeconds(latestReadings[selectedDevice.id]?.recorded_at || nowAsWIBString())
                 } WIB
               </div>
               <div className="grid grid-cols-1 gap-4">

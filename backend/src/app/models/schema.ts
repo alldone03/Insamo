@@ -92,7 +92,11 @@ export const deviceSettings = mysqlTable('device_settings', {
 export const sensorReadings = mysqlTable('sensor_readings', {
     id: serial('id').primaryKey(),
     device_id: bigint('device_id', { mode: 'number', unsigned: true }).references(() => devices.id, { onDelete: 'cascade' }),
-    recorded_at: datetime('recorded_at').notNull(),
+    // string mode: no Date object round-trip, no implicit timezone conversion.
+    // This app only ever deals in WIB wall-clock time — every recorded_at value
+    // (from devices or backend-filled defaults) is stored/returned as a plain
+    // "YYYY-MM-DD HH:MM:SS" WIB string, displayed as-is by the frontend.
+    recorded_at: datetime('recorded_at', { mode: 'string' }).notNull(),
     temperature: double('temperature'),
     humidity: double('humidity'),
     wind_speed: double('wind_speed'),

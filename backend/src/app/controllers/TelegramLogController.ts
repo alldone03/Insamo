@@ -4,6 +4,7 @@ import { db } from '../../config/database';
 import { telegramLogs, users, devices, deviceUser, deviceSettings, sensorReadings } from '../models/schema';
 import { eq, desc, sql } from 'drizzle-orm';
 import { TelegramService } from '../services/TelegramService';
+import { wibStringToInstant } from '../../lib/wib';
 
 export class TelegramLogController extends Controller {
     // GET /api/telegram-logs
@@ -171,7 +172,7 @@ export class TelegramLogController extends Controller {
                                 orderBy: desc(sensorReadings.recorded_at)
                             });
 
-                            const isOnline = latest && (new Date().getTime() - new Date(latest.recorded_at).getTime()) < 10 * 60 * 1000;
+                            const isOnline = latest && (new Date().getTime() - wibStringToInstant(latest.recorded_at).getTime()) < 10 * 60 * 1000;
                             const statusEmoji = isOnline ? "🟢 ONLINE" : "🔴 OFFLINE";
 
                             response += `/device/${d.id}\n`;
@@ -218,7 +219,7 @@ export class TelegramLogController extends Controller {
                             if (!device) {
                                 await TelegramService.sendMessage(chatId, "❓ Device not found.");
                             } else {
-                                const isOnline = latest && (new Date().getTime() - new Date(latest.recorded_at).getTime()) < 10 * 60 * 1000;
+                                const isOnline = latest && (new Date().getTime() - wibStringToInstant(latest.recorded_at).getTime()) < 10 * 60 * 1000;
                                 const statusEmoji = isOnline ? "🟢 ONLINE" : "🔴 OFFLINE";
                                 
                                 let response = `📡 *DEVICE STATUS: ${device.name}*\n\n`;
@@ -232,7 +233,7 @@ export class TelegramLogController extends Controller {
                                 response += `*Coordinates:* ${device.latitude}, ${device.longitude}\n`;
                                 
                                 if (latest) {
-                                    const timeDiff = Math.floor((new Date().getTime() - new Date(latest.recorded_at).getTime()) / 60000);
+                                    const timeDiff = Math.floor((new Date().getTime() - wibStringToInstant(latest.recorded_at).getTime()) / 60000);
                                     response += `*Last Update:* ${timeDiff === 0 ? 'Just now' : `${timeDiff} min(s) ago`}\n\n`;
                                     
                                     response += `📊 *LATEST READINGS*\n`;

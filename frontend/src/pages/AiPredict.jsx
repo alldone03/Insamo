@@ -18,6 +18,7 @@ import {
 } from 'recharts';
 import { api } from '../lib/api';
 import InfoPopover from '../components/InfoPopover';
+import { formatWIBTimeOnly } from '../lib/wib';
 
 const AiPredict = () => {
   const [horizon, setHorizon] = useState('50');
@@ -566,11 +567,7 @@ const AiPredict = () => {
                             <XAxis
                               dataKey="time"
                               tick={{ fontSize: 10 }}
-                              tickFormatter={(timeStr) => {
-                                if (!timeStr) return '';
-                                const match = String(timeStr).match(/T(\d{2}):(\d{2})/);
-                                return match ? `${match[1]}:${match[2]}` : timeStr;
-                              }}
+                              tickFormatter={formatWIBTimeOnly}
                             />
                             <YAxis yAxisId="pga" tick={{ fontSize: 11 }} label={{ value: 'PGA (Gal)', angle: -90, position: 'insideLeft', fontSize: 10 }} />
                             <YAxis yAxisId="conf" orientation="right" domain={[0, 100]} tick={{ fontSize: 11 }} label={{ value: 'Confidence %', angle: 90, position: 'insideRight', fontSize: 10 }} />

@@ -1,21 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Mountain, Table as TableIcon, Download } from "lucide-react";
 import { api } from "../../lib/api";
-
-// Parse timestamp sebagai UTC supaya konversi ke WIB benar
-const parseUTC = (ts) => {
-    if (!ts) return new Date();
-    const str = typeof ts === 'string' ? ts : String(ts);
-    return new Date(str.includes('Z') || str.includes('+') ? str : str + 'Z');
-};
-
-const formatWIB = (ts) => {
-    return parseUTC(ts).toLocaleString('id-ID', {
-        timeZone: 'Asia/Jakarta',
-        day: '2-digit', month: '2-digit', year: 'numeric',
-        hour: '2-digit', minute: '2-digit', second: '2-digit'
-    });
-};
+import { formatWIBShort } from "../../lib/wib";
 
 const LandslideHistory = () => {
     const [logs, setLogs] = useState([]);
@@ -62,7 +48,7 @@ const LandslideHistory = () => {
                                         <td>{i + 1 + (page - 1) * 20}</td>
                                         <td className="font-bold">{log.device?.device_code}</td>
                                         <td>{log.device?.address || 'Unknown'}</td>
-                                        <td>{formatWIB(log.recorded_at)}</td>
+                                        <td>{formatWIBShort(log.recorded_at)}</td>
                                         <td>{log.soil_moisture || 0}%</td>
                                         <td>{log.magnitude || 0}</td>
                                         <td>{log.device_tilt || 0}°</td>

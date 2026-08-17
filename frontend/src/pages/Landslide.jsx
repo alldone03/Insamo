@@ -4,6 +4,7 @@ import GenericChart from '../components/GenericChart';
 import MiniMap from '../components/MiniMap';
 import { api, getImageUrl } from '../lib/api';
 import { io } from 'socket.io-client';
+import { wibStringToDate, nowAsWIBString } from '../lib/wib';
 
 const Landslide = () => {
   const [devices, setDevices] = useState([]);
@@ -50,7 +51,7 @@ const Landslide = () => {
       if (payload.device_type === 'LANDSLIDE') {
         const { device_id, reading } = payload;
 
-        const storedReading = { ...reading, recorded_at: reading.recorded_at || new Date().toISOString() };
+        const storedReading = { ...reading, recorded_at: reading.recorded_at || nowAsWIBString() };
         setLatestReadings(prev => ({
           ...prev,
           [device_id]: storedReading
@@ -62,7 +63,7 @@ const Landslide = () => {
           }
 
           const newPoint = {
-            time: reading.recorded_at || new Date().toISOString(),
+            time: reading.recorded_at || nowAsWIBString(),
             soil_moisture: reading.soil_moisture || 0,
             vib_x: reading.vib_x || 0,
             vib_y: reading.vib_y || 0,
@@ -107,7 +108,7 @@ const Landslide = () => {
   const isDeviceOnline = (devId) => {
     const isRecent = (timestamp) => {
       if (!timestamp) return false;
-      return (currentTime - new Date(timestamp).getTime()) <= 60000;
+      return (currentTime - wibStringToDate(timestamp).getTime()) <= 60000;
     };
 
     if (latestReadings[devId]) {

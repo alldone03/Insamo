@@ -4,6 +4,7 @@ import GenericChart from '../components/GenericChart';
 import MiniMap from '../components/MiniMap';
 import { api, getImageUrl } from '../lib/api';
 import { io } from 'socket.io-client';
+import { wibStringToDate, nowAsWIBString } from '../lib/wib';
 
 const getStatus = (level, settings) => {
   const danger = settings?.danger_threshold || 80;
@@ -67,7 +68,7 @@ const Flood = () => {
         const { device_id, reading } = payload;
 
         // Update latest reading map
-        const storedReading = { ...reading, recorded_at: reading.recorded_at || new Date().toISOString() };
+        const storedReading = { ...reading, recorded_at: reading.recorded_at || nowAsWIBString() };
         setLatestReadings(prev => ({
           ...prev,
           [device_id]: storedReading
@@ -83,7 +84,7 @@ const Flood = () => {
 
           // Add the new point if not already added to chart
           const newPoint = {
-            time: reading.recorded_at || new Date().toISOString(),
+            time: reading.recorded_at || nowAsWIBString(),
             water_level: calibrateLevel(reading.water_level || 0, currentDev),
             wind_speed: reading.wind_speed || 0,
             temperature: reading.temperature || 0,
@@ -127,7 +128,7 @@ const Flood = () => {
   const isDeviceOnline = (devId) => {
     const isRecent = (timestamp) => {
       if (!timestamp) return false;
-      return (currentTime - new Date(timestamp).getTime()) <= 60000;
+      return (currentTime - wibStringToDate(timestamp).getTime()) <= 60000;
     };
 
     if (latestReadings[devId]) {
