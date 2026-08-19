@@ -21,7 +21,16 @@ Adafruit_MPU6050 mpu;
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
 const int BUZZER_PIN = 27;
-float baseline_gravity = 0;
+
+// Baseline gravitasi per-sumbu, disesuaikan terus-menerus lewat low-pass
+// filter (bukan dikalibrasi sekali saat boot) supaya drift orientasi/suhu
+// alat dalam jangka panjang tidak salah kebaca sebagai getaran terus-menerus.
+// LPF_ALPHA kecil = baseline menyesuaikan pelan (~1-2 detik), jadi getaran
+// asli yang cepat tidak ikut terserap ke baseline.
+const float LPF_ALPHA = 0.05;
+float gravity_x = 0;
+float gravity_y = 0;
+float gravity_z = 0;
 
 // ===== Konfigurasi GPS NEO-M8N =====
 const int GPS_RX_PIN = 16;
@@ -123,17 +132,21 @@ void setup() {
   lcd.setCursor(0, 1);
   lcd.print("Tunggu 3 detik");
 
-  float sum = 0;
+  float sumX = 0, sumY = 0, sumZ = 0;
   sensors_event_t a, g, temp;
   for (int i = 0; i < 100; i++) {
     mpu.getEvent(&a, &g, &temp);
-    sum += sqrt(pow(a.acceleration.x, 2) +
-                pow(a.acceleration.y, 2) +
-                pow(a.acceleration.z, 2));
+    sumX += a.acceleration.x;
+    sumY += a.acceleration.y;
+    sumZ += a.acceleration.z;
     delay(10);
   }
-  baseline_gravity = sum / 100.0;
-  Serial.printf("[KALIBRASI] Baseline gravity: %.4f m/s²\n", baseline_gravity);
+  // Seed awal baseline per-sumbu; sesudah ini LPF di loop() yang menjaganya tetap akurat.
+  gravity_x = sumX / 100.0;
+  gravity_y = sumY / 100.0;
+  gravity_z = sumZ / 100.0;
+  Serial.printf("[KALIBRASI] Baseline gravity: x=%.4f y=%.4f z=%.4f m/s²\n",
+                gravity_x, gravity_y, gravity_z);
 
   // Koneksi WiFi
   lcd.clear();
@@ -185,10 +198,18 @@ void loop() {
   sensors_event_t a, g, temp;
   mpu.getEvent(&a, &g, &temp);
 
-  float resultant  = sqrt(pow(a.acceleration.x, 2) +
-                          pow(a.acceleration.y, 2) +
-                          pow(a.acceleration.z, 2));
-  float dynamic_ms2 = abs(resultant - baseline_gravity);
+  // Perbarui baseline gravitasi per-sumbu (low-pass filter, lihat komentar di deklarasi gravity_x/y/z).
+  gravity_x = LPF_ALPHA * a.acceleration.x + (1.0 - LPF_ALPHA) * gravity_x;
+  gravity_y = LPF_ALPHA * a.acceleration.y + (1.0 - LPF_ALPHA) * gravity_y;
+  gravity_z = LPF_ALPHA * a.acceleration.z + (1.0 - LPF_ALPHA) * gravity_z;
+
+  float dynamic_x = a.acceleration.x - gravity_x;
+  float dynamic_y = a.acceleration.y - gravity_y;
+  float dynamic_z = a.acceleration.z - gravity_z;
+
+  float dynamic_ms2 = sqrt(dynamic_x * dynamic_x +
+                            dynamic_y * dynamic_y +
+                            dynamic_z * dynamic_z);
   float pga_gal     = dynamic_ms2 * 100.0;
 
   bool isAboveThreshold = (pga_gal > THRESHOLD_GAL);
