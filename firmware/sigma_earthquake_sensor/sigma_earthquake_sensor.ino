@@ -20,7 +20,9 @@ const char* DEVICE_CODE = "SIGMA-006";
 Adafruit_MPU6050 mpu;
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
-const int BUZZER_PIN = 27;
+const int BUZZER_PIN    = 27;
+const int LED_GREEN_PIN = 26;
+const int LED_RED_PIN   = 25; // bukan 27 — itu sudah dipakai buzzer di firmware ini
 
 // Baseline gravitasi per-sumbu, disesuaikan terus-menerus lewat low-pass
 // filter (bukan dikalibrasi sekali saat boot) supaya drift orientasi/suhu
@@ -102,6 +104,11 @@ void setup() {
   Serial.begin(115200);
   pinMode(BUZZER_PIN, OUTPUT);
   digitalWrite(BUZZER_PIN, LOW);
+
+  pinMode(LED_GREEN_PIN, OUTPUT);
+  pinMode(LED_RED_PIN, OUTPUT);
+  digitalWrite(LED_GREEN_PIN, HIGH); // status awal = AMAN
+  digitalWrite(LED_RED_PIN, LOW);
 
   // GPS
   gpsSerial.begin(GPS_BAUD, SERIAL_8N1, GPS_RX_PIN, GPS_TX_PIN);
@@ -274,6 +281,22 @@ void loop() {
       gempaLokasiValid = false;
       digitalWrite(BUZZER_PIN, LOW);
     }
+  }
+
+  // 2b. LED indikator status (hijau = AMAN, merah = WASPADA/GEMPA)
+  switch (status) {
+    case AMAN:
+      digitalWrite(LED_GREEN_PIN, HIGH);
+      digitalWrite(LED_RED_PIN, LOW);
+      break;
+    case CROSSCHECK:
+      digitalWrite(LED_GREEN_PIN, LOW);
+      digitalWrite(LED_RED_PIN, (currentMillis / 200) % 2); // berkedip cepat saat verifikasi
+      break;
+    case GEMPA:
+      digitalWrite(LED_GREEN_PIN, LOW);
+      digitalWrite(LED_RED_PIN, HIGH); // menyala terus saat gempa terkonfirmasi
+      break;
   }
 
   // 3. Hitung Shindo (hanya saat GEMPA)
