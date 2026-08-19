@@ -205,10 +205,16 @@ void loop() {
   sensors_event_t a, g, temp;
   mpu.getEvent(&a, &g, &temp);
 
-  // Perbarui baseline gravitasi per-sumbu (low-pass filter, lihat komentar di deklarasi gravity_x/y/z).
-  gravity_x = LPF_ALPHA * a.acceleration.x + (1.0 - LPF_ALPHA) * gravity_x;
-  gravity_y = LPF_ALPHA * a.acceleration.y + (1.0 - LPF_ALPHA) * gravity_y;
-  gravity_z = LPF_ALPHA * a.acceleration.z + (1.0 - LPF_ALPHA) * gravity_z;
+  // Perbarui baseline gravitasi per-sumbu (low-pass filter) — TAPI HANYA saat status
+  // masih AMAN. Kalau baseline terus disesuaikan selagi CROSSCHECK/GEMPA, filter ini
+  // lama-lama akan "menganggap" guncangan yang sedang terjadi sebagai baseline normal
+  // yang baru, sehingga dynamic_ms2 menyusut dan status balik ke AMAN padahal alat
+  // masih terus digoyang. Membekukan baseline selama event aktif mencegah itu.
+  if (status == AMAN) {
+    gravity_x = LPF_ALPHA * a.acceleration.x + (1.0 - LPF_ALPHA) * gravity_x;
+    gravity_y = LPF_ALPHA * a.acceleration.y + (1.0 - LPF_ALPHA) * gravity_y;
+    gravity_z = LPF_ALPHA * a.acceleration.z + (1.0 - LPF_ALPHA) * gravity_z;
+  }
 
   float dynamic_x = a.acceleration.x - gravity_x;
   float dynamic_y = a.acceleration.y - gravity_y;
