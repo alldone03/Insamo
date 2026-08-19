@@ -4,6 +4,7 @@
 #include <LiquidCrystal_I2C.h>
 #include <TinyGPSPlus.h>
 #include <WiFi.h>
+#include <WiFiClientSecure.h>
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
 
@@ -12,9 +13,8 @@ const char* WIFI_SSID     = "NAMA_WIFI_KAMU";
 const char* WIFI_PASSWORD = "PASSWORD_WIFI_KAMU";
 
 // ===== Konfigurasi Backend =====
-// Ganti dengan IP server kamu (harus satu jaringan WiFi dengan ESP32)
-const char* API_URL     = "http://192.168.1.100:3000/api/sensor-readings";
-const char* DEVICE_CODE = "SIGMA-001";
+const char* API_URL     = "https://insamo.id/api/sensor-readings";
+const char* DEVICE_CODE = "SIGMA-006";
 
 // ===== Hardware =====
 Adafruit_MPU6050 mpu;
@@ -383,8 +383,14 @@ void kirimDataSensor(float ax, float ay, float az,
     return;
   }
 
+  // API_URL pakai https:// (insamo.id) — HTTPClient butuh client TLS eksplisit,
+  // kalau tidak koneksi akan gagal. setInsecure() = tidak verifikasi sertifikat
+  // server (cukup untuk kirim data sensor, tidak menyimpan data sensitif).
+  WiFiClientSecure secureClient;
+  secureClient.setInsecure();
+
   HTTPClient http;
-  http.begin(API_URL);
+  http.begin(secureClient, API_URL);
   http.addHeader("Content-Type", "application/json");
   http.setTimeout(5000); // timeout 5 detik
 
