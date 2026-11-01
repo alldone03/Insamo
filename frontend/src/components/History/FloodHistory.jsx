@@ -15,6 +15,7 @@ import {
 import { api } from "../../lib/api";
 import { io } from "socket.io-client";
 import { formatWIBShort, wibStringToDate } from "../../lib/wib";
+import * as XLSX from "xlsx";
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444'];
 
@@ -188,6 +189,34 @@ const FloodHistory = () => {
         return Object.keys(counts).map(key => ({ name: key, value: counts[key] })).filter(d => d.value > 0);
     }, [rawLogs, currentDeviceSettings]);
 
+    const handleExportExcel = () => {
+        if (!rawLogs.length) return;
+
+        const rows = rawLogs.map((log) => {
+            const calLevel = calibrateLevel(log.water_level || 0);
+            const status = getStatus(calLevel, currentDeviceSettings);
+            return {
+                "Waktu Recorded": formatWIBShort(log.recorded_at),
+                "Level (cm)": +calLevel.toFixed(1),
+                "Status": status.label,
+                "Temp (°C)": +(log.temperature || 0).toFixed(1),
+                "Wind (m/s)": +(log.wind_speed || 0).toFixed(1),
+            };
+        });
+
+        const worksheet = XLSX.utils.json_to_sheet(rows);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Flood History");
+
+        const deviceName = deviceId
+            ? devices.find((d) => String(d.id) === String(deviceId))?.name || "device"
+            : "all-devices";
+        const safeDeviceName = deviceName.replace(/[^a-z0-9-_]+/gi, "_");
+        const dateStr = new Date().toISOString().slice(0, 10);
+
+        XLSX.writeFile(workbook, `flood-history_${safeDeviceName}_${dateRange}_${dateStr}.xlsx`);
+    };
+
     const lastWaterLevel = calibrateLevel(rawLogs[0]?.water_level || 0);
     const totalData = rawLogs.length;
     const totalPages = Math.ceil(totalData / limit);
@@ -358,7 +387,11 @@ const FloodHistory = () => {
                         <h3 className="font-black italic flex items-center gap-2 text-sm">
                             <TableIcon size={16} /> DATA DETAIL (RAW)
                         </h3>
-                        <button className="btn btn-xs btn-outline gap-1">
+                        <button
+                            className="btn btn-xs btn-outline gap-1"
+                            onClick={handleExportExcel}
+                            disabled={!rawLogs.length}
+                        >
                             <Download size={12} /> EXCEL
                         </button>
                     </div>
